@@ -4,146 +4,92 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>SKF 5S – Audit & Checklist</title>
-  <meta name="description" content="SKF 5S con ricerca, filtri, progress, tema chiaro/scuro e PWA.">
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#071a34">
+  <meta name="theme-color" content="#005aa9">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-<header class="app-header glass">
+<header class="app-header">
   <div class="brand">
     <img src="assets/skf-logo.png" alt="SKF" class="logo">
-    <div class="title-wrap">
-      <h1>SKF 5S</h1>
-      <span class="subtitle">Audit & Checklist</span>
-    </div>
+    <h1>5S – Audit & Checklist</h1>
   </div>
-
-  <div class="toolbar">
-    <div class="search">
-      <svg viewBox="0 0 24 24" class="ico"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 10-.71.71l.27.28v.79L20 20.5 20.5 20l-5-6zM10 15a5 5 0 110-10 5 5 0 010 10z"/></svg>
-      <input id="q" placeholder="Cerca area o voce…">
-    </div>
-
-    <div class="filters">
-      <button class="chip active" data-filter="ALL">Tutte</button>
-      <button class="chip" data-filter="LATE">In ritardo</button>
-      <button class="chip" data-filter="CRIT">CRIT</button>
-      <button class="chip" data-filter="MAJ">MAJ</button>
-    </div>
-
-    <div class="actions">
-      <button id="btnExport" class="btn">Esporta</button>
-      <label class="btn file">
-        Importa <input id="fileImport" type="file" accept="application/json" hidden>
-      </label>
-      <button id="btnPrint" class="btn ghost">Stampa</button>
-      <button id="btnTheme" class="btn ghost" title="Tema chiaro/scuro">Tema</button>
-    </div>
-  </div>
+  <nav class="actions">
+    <button id="btnNewArea" class="btn primary">+ Area</button>
+    <button id="btnExport" class="btn">Esporta</button>
+    <label class="btn file">
+      Importa<input id="fileImport" type="file" accept="application/json" hidden>
+    </label>
+    <button id="btnPrint" class="btn">PDF</button>
+  </nav>
 </header>
 
 <main>
+  <!-- Dashboard -->
   <section id="dashboard" class="card dash">
+    <h2>Cruscotto</h2>
     <div class="kpis">
-      <div class="kpi">
-        <div class="kpi-title">Aree</div>
-        <div id="kpiAreas" class="kpi-val">0</div>
-      </div>
-      <div class="kpi">
-        <div class="kpi-title">Punteggio medio</div>
-        <div id="kpiScore" class="kpi-val">0%</div>
-        <div class="progress"><div id="progGlobal" class="bar" style="width:0%"></div></div>
-      </div>
-      <div class="kpi">
-        <div class="kpi-title">Azioni in ritardo</div>
-        <div id="kpiLate" class="kpi-val">0</div>
-      </div>
+      <div class="kpi"><div class="kpi-title">Aree</div><div id="kpiAreas" class="kpi-val">0</div></div>
+      <div class="kpi"><div class="kpi-title">Punteggio</div><div id="kpiScore" class="kpi-val">0%</div></div>
+      <div class="kpi"><div class="kpi-title">Ritardi</div><div id="kpiLate" class="kpi-val">0</div></div>
     </div>
-    <p class="muted">Pesi severità: OK=1, MIN=1, MAJ=2, CRIT=3. Filtri e ricerca agiscono sulla vista, non sui dati.</p>
+    <canvas id="scoreChart" width="200" height="200"></canvas>
   </section>
 
+  <!-- Aree -->
   <section id="areas"></section>
 </main>
 
-<!-- Template Area -->
 <template id="tplArea">
   <div class="area card">
     <div class="area-head">
-      <input class="area-name" placeholder="Nome area (es. OP30 Rettifica)">
-      <div class="area-score">
-        <span class="score-val">0%</span>
-        <div class="progress slim"><div class="bar bar-area" style="width:0%"></div></div>
-      </div>
+      <input class="area-name" placeholder="Nome area">
+      <span class="score-tag">Punteggio: <span class="score-val">0%</span></span>
       <div class="area-actions">
         <button class="btn ghost add-item">+ Voce</button>
-        <button class="btn ghost collapse">Comprimi</button>
-        <button class="btn danger delete-area">Elimina</button>
+        <button class="btn ghost collapse">▼</button>
+        <button class="btn danger delete-area">✖</button>
       </div>
     </div>
-
-    <div class="s-tabs">
-      <button data-s="1S" class="tab active">1S Selezionare <span class="pill score-1S">0%</span></button>
-      <button data-s="2S" class="tab">2S Sistemare <span class="pill score-2S">0%</span></button>
-      <button data-s="3S" class="tab">3S Splendere <span class="pill score-3S">0%</span></button>
-      <button data-s="4S" class="tab">4S Standardizzare <span class="pill score-4S">0%</span></button>
-      <button data-s="5S" class="tab">5S Sostenere <span class="pill score-5S">0%</span></button>
+    <div class="tabs">
+      <button data-s="1S" class="tab active">1S</button>
+      <button data-s="2S" class="tab">2S</button>
+      <button data-s="3S" class="tab">3S</button>
+      <button data-s="4S" class="tab">4S</button>
+      <button data-s="5S" class="tab">5S</button>
     </div>
-
-    <div class="s-panels">
-      <div class="panel active" data-s="1S">
-        <div class="panel-head">
-          <div class="progress slim"><div class="bar bar-1S" style="width:0%"></div></div>
-          <div class="quick">
-            <button class="chip mini add-preset" data-preset="1S">+ Preset</button>
-          </div>
-        </div>
-      </div>
-      <div class="panel" data-s="2S"><div class="panel-head"><div class="progress slim"><div class="bar bar-2S"></div></div><div class="quick"><button class="chip mini add-preset" data-preset="2S">+ Preset</button></div></div></div>
-      <div class="panel" data-s="3S"><div class="panel-head"><div class="progress slim"><div class="bar bar-3S"></div></div><div class="quick"><button class="chip mini add-preset" data-preset="3S">+ Preset</button></div></div></div>
-      <div class="panel" data-s="4S"><div class="panel-head"><div class="progress slim"><div class="bar bar-4S"></div></div><div class="quick"><button class="chip mini add-preset" data-preset="4S">+ Preset</button></div></div></div>
-      <div class="panel" data-s="5S"><div class="panel-head"><div class="progress slim"><div class="bar bar-5S"></div></div><div class="quick"><button class="chip mini add-preset" data-preset="5S">+ Preset</button></div></div></div>
+    <div class="panels">
+      <div class="panel active" data-s="1S"></div>
+      <div class="panel" data-s="2S"></div>
+      <div class="panel" data-s="3S"></div>
+      <div class="panel" data-s="4S"></div>
+      <div class="panel" data-s="5S"></div>
     </div>
-
-    <div class="empty muted">Nessuna voce: premi “+ Voce” o “+ Preset”.</div>
   </div>
 </template>
 
-<!-- Template Item -->
 <template id="tplItem">
   <div class="item">
-    <label class="check" title="Completa">
-      <input type="checkbox" class="chk"><span class="box"></span>
-    </label>
+    <input type="checkbox" class="chk">
+    <span class="sev-badge">OK</span>
     <input class="txt" placeholder="Descrizione…">
-    <select class="sev" title="Severità">
-      <option value="OK">OK</option>
-      <option value="MIN">MIN</option>
-      <option value="MAJ">MAJ</option>
-      <option value="CRIT">CRIT</option>
-    </select>
-    <input class="resp" placeholder="Responsabile">
-    <input type="date" class="due" title="Scadenza">
-    <input class="note" placeholder="Note/azione…">
-    <div class="row-actions">
-      <button class="icon-btn up" title="Sposta su">▲</button>
-      <button class="icon-btn down" title="Sposta giù">▼</button>
-      <button class="icon-btn del" title="Elimina">✕</button>
-    </div>
+    <input class="resp" placeholder="Resp.">
+    <input type="date" class="due">
+    <input class="note" placeholder="Note…">
+    <button class="btn tiny del">✖</button>
   </div>
 </template>
 
-<!-- Floating Action Button -->
-<button id="fabNewArea" class="fab" title="Nuova area">＋</button>
-
-<footer class="foot">
-  <p>© SKF – PWA offline. Dati salvati localmente.</p>
+<footer>
+  <p>© SKF – Dati salvati localmente. Installabile come app.</p>
 </footer>
 
 <script src="app.js"></script>
 <script>
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
+    navigator.serviceWorker.register('sw.js');
   }
 </script>
 </body>
