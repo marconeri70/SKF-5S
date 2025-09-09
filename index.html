@@ -22,15 +22,67 @@
   </div>
 </header>
 
-<section class="intro card">
-  <h2>Le 5S</h2>
-  <ul class="fiveS">
-    <li><strong>1S – (Selezionare):</strong> eliminare dal posto di lavoro ciò che è inutile.</li>
-    <li><strong>2S – (Sistemare):</strong> organizzare ciò che serve in modo ordinato e visibile.</li>
-    <li><strong>3S – (Splendere):</strong> mantenere pulito l’ambiente e le attrezzature.</li>
-    <li><strong>4S – (Standardizzare):</strong> stabilire regole visive e procedure condivise.</li>
-    <li><strong>5S – (Sostenere):</strong> rispettare e migliorare gli standard nel tempo.</li>
-  </ul>
+<section class="intro5s card">
+  <div class="intro-grid">
+    <!-- Grafico a torta stile brochure -->
+    <svg class="pie5s" viewBox="0 0 220 220" aria-label="Cosa è 5S">
+      <!-- cerchio di base -->
+      <circle cx="110" cy="110" r="100" fill="var(--bgSoft)"/>
+      <!-- 5S (blu) semicerchio esterno -->
+      <path d="M110,10
+               A100,100 0 0,1 210,110
+               L180,110
+               A70,70 0 0,0 110,40 Z" fill="var(--c5)"/>
+      <!-- 4S (verde) -->
+      <path d="M210,110
+               A100,100 0 0,1 110,210
+               L110,180
+               A70,70 0 0,0 180,110 Z" fill="var(--c4)"/>
+      <!-- 3S (arancio) -->
+      <path d="M110,210
+               A100,100 0 0,1 10,110
+               L40,110
+               A70,70 0 0,0 110,180 Z" fill="var(--c3)"/>
+      <!-- 2S (rosso) -->
+      <path d="M10,110
+               A100,100 0 0,1 110,10
+               L110,40
+               A70,70 0 0,0 40,110 Z" fill="var(--c2)"/>
+      <!-- 1S (viola) piccolo spicchio -->
+      <path d="M110,40
+               A70,70 0 0,1 140,110
+               L125,110
+               A55,55 0 0,0 110,55 Z" fill="var(--c1)"/>
+      <!-- foro centrale per effetto “spicchi” -->
+      <circle cx="110" cy="110" r="35" fill="var(--bg)"/>
+      <!-- Etichette S -->
+      <text x="165" y="70" class="pie-label">5S</text>
+      <text x="150" y="160" class="pie-label">4S</text>
+      <text x="70"  y="185" class="pie-label">3S</text>
+      <text x="30"  y="120" class="pie-label">2S</text>
+      <text x="118" y="95"  class="pie-label">1S</text>
+    </svg>
+
+    <!-- Testo a destra come nella brochure -->
+    <div class="intro-copy">
+      <h2>Cosa è 5S</h2>
+      <p>5S è un metodo per fornire un posto di lavoro <b>sicuro</b>, <b>ben organizzato</b> e <b>pulito</b>,
+      per fare il nostro lavoro facilmente e correttamente la prima volta.</p>
+
+      <ul class="legend5s">
+        <li><span class="dot" style="background:var(--c1)"></span>
+            <b class="tag s1">1S Selezionare</b> – Avere solo ciò che serve, eliminare il superfluo.</li>
+        <li><span class="dot" style="background:var(--c2)"></span>
+            <b class="tag s2">2S Sistemare</b> – Un posto per ogni cosa, tutto al suo posto.</li>
+        <li><span class="dot" style="background:var(--c3)"></span>
+            <b class="tag s3">3S Splendere</b> – Pulizia e rimozione delle fonti di sporco.</li>
+        <li><span class="dot" style="background:var(--c4)"></span>
+            <b class="tag s4">4S Standardizzare</b> – Regole e segnali visivi per mantenere l’ordine.</li>
+        <li><span class="dot" style="background:var(--c5)"></span>
+            <b class="tag s5">5S Sostenere</b> – Disciplina e miglioramento continuo.</li>
+      </ul>
+    </div>
+  </div>
 </section>
     
 <main>
