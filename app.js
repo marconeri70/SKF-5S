@@ -1,4 +1,4 @@
-/* SKF 5S – v7: UI + grafico (S predominante) + filtri + "Nuova area" con template */
+/* SKF 5S – v7: UI + grafico cruscotto (TOT + 1S..5S) + filtri + "Nuova area" con template */
 const elAreas = document.getElementById('areas');
 const elKpiAreas = document.getElementById('kpiAreas');
 const elKpiScore = document.getElementById('kpiScore');
@@ -218,33 +218,44 @@ function updateDashboard(){
 function fmtPct(x){ return Math.round(x*100) + "%"; }
 function isOverdue(iso){ if(!iso) return false; const d=new Date(iso+"T23:59:59"); const now=new Date(); return d<now; }
 
-/* ---- Grafico a barre: colore = S predominante ---- */
+/* ---- Grafico cruscotto: gruppi per area (TOT + 1S..5S con colori e %) ---- */
 function drawAreasChart(){
   const c = document.getElementById('chartAreas');
   if(!c) return;
   const ctx = c.getContext('2d');
-  const W = c.width = c.clientWidth * devicePixelRatio;
-  const H = c.height = 180 * devicePixelRatio;
-  ctx.scale(devicePixelRatio, devicePixelRatio);
+
+  // dimensioni (un po' più alto per etichette e legenda)
+  const Hpx = 220;
+  const W = c.width  = c.clientWidth * devicePixelRatio;
+  const H = c.height = Hpx * devicePixelRatio;
+  ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
   ctx.clearRect(0,0,W,H);
 
-  // Dati: punteggio area + S predominante (quella con score più alto)
-  const data = state.areas.map(a=>{
+  // dati: per ogni area -> TOT + byS
+  const groups = state.areas.map(a=>{
     const { byS, areaScore } = computeScores(a);
-    let bestS = "1S", bestVal = -1;
-    for(const s of ["1S","2S","3S","4S","5S"]) if(byS[s] > bestVal){ bestS = s; bestVal = byS[s]; }
-    return { name:a.name || 'Area', score: areaScore, mainS: bestS };
+    return {
+      name: a.name || 'Area',
+      vals: {
+        "TOT": areaScore,
+        "1S": byS["1S"]||0,
+        "2S": byS["2S"]||0,
+        "3S": byS["3S"]||0,
+        "4S": byS["4S"]||0,
+        "5S": byS["5S"]||0
+      }
+    };
   });
 
-  const padL=60, padR=16, padT=20, padB=26;
+  const padL=60, padR=16, padT=20, padB=38;      // bordo basso + alto per etichette
   const plotW = (W/devicePixelRatio) - padL - padR;
   const plotH = (H/devicePixelRatio) - padT - padB;
 
-  // assi + griglia
+  // assi + griglia %
   ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+  ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, padT+plotH); ctx.lineTo(padL+plotW, padT+plotH); ctx.stroke();
-
-  ctx.fillStyle = 'rgba(255,255,255,0.6)';
+  ctx.fillStyle = 'rgba(255,255,255,0.65)';
   ctx.font = '12px system-ui, Segoe UI, Roboto';
   for(let i=0;i<=4;i++){
     const yv=i*25, y = padT + plotH - (yv/100)*plotH;
@@ -253,38 +264,81 @@ function drawAreasChart(){
     ctx.fillText(yv+'%', 8, y+4);
   }
 
-  if (!data.length) return;
+  if (!groups.length) return;
 
-  const bw = Math.max(18, Math.min(60, plotW / (data.length*1.6)));
-  const gap = bw*0.6;
-  let x = padL + gap;
+  // palette dalle CSS variables
+  const gv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const COLORS = {
+    "TOT": gv('--muted') || '#9bb0d6',
+    "1S": gv('--c1') || '#7a56c6',
+    "2S": gv('--c2') || '#e44f37',
+    "3S": gv('--c3') || '#f3a11a',
+    "4S": gv('--c4') || '#35b468',
+    "5S": gv('--c5') || '#4b88ff'
+  };
 
-  // helper per prendere il valore da CSS variables
-  const getVar = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#61b0ff';
-  const varMap = { "1S":"--c1", "2S":"--c2", "3S":"--c3", "4S":"--c4", "5S":"--c5" };
+  // layout barre: per ogni area 6 barre (TOT + 1S..5S)
+  const METRICS = ["TOT","1S","2S","3S","4S","5S"];
+  const innerGap = 4;                 // spazio tra barre dello stesso gruppo
+  const barW     = 14;                // larghezza singola barra
+  const groupW   = METRICS.length*barW + (METRICS.length-1)*innerGap;
+  const areaGap  = Math.max(16, groupW * 0.8);     // spazio tra gruppi (aree)
 
-  data.forEach(d=>{
-    const h = d.score*plotH, y = padT + plotH - h;
+  // calcolo larghezza totale e punto di partenza (centratura)
+  const totalW = groups.length*groupW + (groups.length-1)*areaGap;
+  const startX = padL + Math.max(8, (plotW - totalW)/2);
 
-    // Colore della S predominante
-    ctx.fillStyle = getVar(varMap[d.mainS]);
+  // disegna gruppi
+  let x = startX;
+  groups.forEach(g=>{
+    let bx = x;
+    METRICS.forEach(m=>{
+      const val = g.vals[m] ?? 0;
+      const h = val * plotH;
+      const y = padT + plotH - h;
 
-    ctx.fillRect(x, y, bw, h);
+      // barra
+      ctx.fillStyle = COLORS[m];
+      ctx.fillRect(bx, y, barW, h);
 
-    // valore percentuale
-    ctx.fillStyle = 'rgba(255,255,255,0.9)';
-    ctx.textAlign = 'center';
-    ctx.fillText(Math.round(d.score*100)+'%', x + bw/2, y - 4);
+      // percentuale sopra
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.textAlign = 'center';
+      const topY = h>16 ? y-4 : padT + plotH - 2;
+      ctx.fillText(Math.round(val*100)+'%', bx + barW/2, topY);
 
-    // nome area
+      bx += barW + innerGap;
+    });
+
+    // etichetta area
     ctx.save();
-    ctx.translate(x + bw/2, padT + plotH + 14);
+    ctx.translate(x + groupW/2, padT + plotH + 16);
     ctx.rotate(-Math.PI/8);
-    ctx.fillText(d.name.length>12 ? d.name.slice(0,12)+'…' : d.name, 0, 0);
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.textAlign = 'center';
+    const nm = g.name.length>14 ? g.name.slice(0,14)+'…' : g.name;
+    ctx.fillText(nm, 0, 0);
     ctx.restore();
 
-    x += bw + gap;
+    x += groupW + areaGap;
   });
+
+  // legenda in alto a destra
+  const legendX = padL + plotW - 220, legendY = padT - 8;
+  ctx.save();
+  ctx.fillStyle = 'rgba(15,26,54,0.85)';
+  ctx.fillRect(legendX-8, legendY-12, 228, 24);
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  ctx.font = '12px system-ui, Segoe UI, Roboto';
+  let lx = legendX; const ly = legendY+4;
+  METRICS.forEach(m=>{
+    ctx.fillStyle = COLORS[m];
+    ctx.fillRect(lx, ly, 10, 10);
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.fillText(m, lx+14, ly+9);
+    lx += 42;
+  });
+  ctx.restore();
 }
 
 /* ---- Top controls ---- */
