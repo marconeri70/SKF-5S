@@ -1,4 +1,4 @@
-const CACHE='skf-5s-v7';
+const CACHE='skf-5s-v6';
 const ASSETS=['./','./index.html','./style.css','./app.js','./manifest.json',
 './assets/skf-logo.png','./assets/skf-192.png','./assets/skf-512.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)))});
