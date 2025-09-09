@@ -1,4 +1,4 @@
-/* SKF 5S – v6: UI + grafico + filtri (fix pannelli e punteggi) */
+/* SKF 5S – v7: UI + grafico + filtri + "Nuova area" con template  */
 const elAreas = document.getElementById('areas');
 const elKpiAreas = document.getElementById('kpiAreas');
 const elKpiScore = document.getElementById('kpiScore');
@@ -9,10 +9,11 @@ const elOnlyLate = document.getElementById('onlyLate');
 const elBtnClear = document.getElementById('btnClearFilters');
 const tplArea = document.getElementById('tplArea');
 const tplItem = document.getElementById('tplItem');
-const storeKey = 'skf.fiveS.v3';
+const storeKey = 'skf.fiveS.v7';
 
 const WEIGHTS = { OK:1, MIN:1, MAJ:2, CRIT:3 };
 
+/* ---- TEMPLATE di riferimento (modificalo come vuoi) ---- */
 const DEFAULTS = {
   areas: [
     {
@@ -44,13 +45,27 @@ const DEFAULTS = {
   ]
 };
 
+/* Crea una nuova area già piena copiando il template */
+function cloneDefaultArea(name = "Nuova area") {
+  const tpl = DEFAULTS.areas[0]
+    ? structuredClone(DEFAULTS.areas[0])
+    : { name:"", S:{ "1S":[], "2S":[], "3S":[], "4S":[], "5S":[] } };
+  tpl.name = name;
+  for (const s of ["1S","2S","3S","4S","5S"]) {
+    tpl.S[s] = (tpl.S[s] || []).map(it => ({
+      ...it, done:false, resp:"", due:"", note: it.note || ""
+    }));
+  }
+  return tpl;
+}
+
 let state = load();
 let ui = { q:"", sev:"ALL", onlyLate:false };
 
 render();
 updateDashboard();
 
-/* Storage */
+/* ---- Storage ---- */
 function load(){
   try{
     const raw = localStorage.getItem(storeKey);
@@ -59,7 +74,7 @@ function load(){
 }
 function save(){ localStorage.setItem(storeKey, JSON.stringify(state)); }
 
-/* Filters */
+/* ---- Filtri ---- */
 function applyFilters(item){
   const q = ui.q.trim().toLowerCase();
   if (ui.sev !== 'ALL' && item.sev !== ui.sev) return false;
@@ -71,14 +86,13 @@ function applyFilters(item){
   return true;
 }
 
-/* Rendering */
+/* ---- Rendering ---- */
 function render(){
   elAreas.innerHTML = '';
   state.areas.forEach((area, idx) => elAreas.appendChild(renderArea(area, idx)));
   updateDashboard();
   drawAreasChart();
 }
-
 function renderArea(area, idx){
   const node = tplArea.content.firstElementChild.cloneNode(true);
   const name = node.querySelector('.area-name');
@@ -94,7 +108,7 @@ function renderArea(area, idx){
   name.value = area.name;
   name.addEventListener('input', () => { state.areas[idx].name = name.value; save(); drawAreasChart(); });
 
-  // TAB switching
+  // Tabs
   node.querySelectorAll('.tab').forEach(tab=>{
     tab.addEventListener('click', ()=>{
       node.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
@@ -112,7 +126,7 @@ function renderArea(area, idx){
     (area.S[s] ||= []).forEach((item, iIdx) => { if (applyFilters(item)) panel.appendChild(renderItem(idx, s, iIdx, item)); });
   });
 
-  // Add item alla S attiva
+  // Aggiungi voce alla S attiva
   node.querySelector('.add-item').addEventListener('click', ()=>{
     const activeS = node.querySelector('.tab.active').dataset.s;
     const list = state.areas[idx].S[activeS];
@@ -120,7 +134,7 @@ function renderArea(area, idx){
     save(); render();
   });
 
-  // Collapse / Delete area
+  // Collapse / Delete
   node.querySelector('.collapse').addEventListener('click', (e)=>{
     node.classList.toggle('collapsed');
     e.target.textContent = node.classList.contains('collapsed') ? "Espandi" : "Comprimi";
@@ -136,7 +150,6 @@ function renderArea(area, idx){
 
   return node;
 }
-
 function renderItem(aIdx, sKey, iIdx, item){
   const node = tplItem.content.firstElementChild.cloneNode(true);
   const chk = node.querySelector('.chk');
@@ -171,7 +184,7 @@ function renderItem(aIdx, sKey, iIdx, item){
   return node;
 }
 
-/* Scoring & KPI */
+/* ---- Scoring & KPI ---- */
 function computeScores(area){
   const byS = {};
   let sumDone=0, sumTot=0;
@@ -205,7 +218,7 @@ function updateDashboard(){
 function fmtPct(x){ return Math.round(x*100) + "%"; }
 function isOverdue(iso){ if(!iso) return false; const d=new Date(iso+"T23:59:59"); const now=new Date(); return d<now; }
 
-/* Grafico a barre */
+/* ---- Grafico a barre ---- */
 function drawAreasChart(){
   const c = document.getElementById('chartAreas');
   if(!c) return;
@@ -252,9 +265,10 @@ function drawAreasChart(){
   });
 }
 
-/* Top controls */
+/* ---- Top controls ---- */
 document.getElementById('btnNewArea').addEventListener('click', ()=>{
-  state.areas.push({name:"Nuova area", S:{ "1S":[], "2S":[], "3S":[], "4S":[], "5S":[] }});
+  const name = (prompt("Nome nuova area?", "Nuova area") || "").trim() || "Nuova area";
+  state.areas.push(cloneDefaultArea(name));     // <<< crea area con tutte le voci
   save(); render();
 });
 document.getElementById('btnExport').addEventListener('click', ()=>{
@@ -285,5 +299,6 @@ elBtnClear.addEventListener('click', ()=>{
   elQ.value=''; elSev.value='ALL'; elOnlyLate.checked=false; render();
 });
 
-/* FIX principale: ricalcola tutto (pill, punteggi, grafico) */
+/* FIX: ricalcola TUTTO (pill, punteggi, grafico) ad ogni modifica */
 function updateAll(){ render(); }
+
