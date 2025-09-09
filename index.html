@@ -4,63 +4,77 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>SKF 5S – Audit & Checklist</title>
+  <meta name="description" content="SKF 5S: Selezionare, Sistemare, Splendere, Standardizzare, Sostenere. Audit con punteggio, responsabili e scadenze.">
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#005aa9">
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta name="theme-color" content="#0b1324">
 </head>
 <body>
 <header class="app-header">
   <div class="brand">
     <img src="assets/skf-logo.png" alt="SKF" class="logo">
-    <h1>5S – Audit & Checklist</h1>
+    <h1>SKF 5S – Audit & Checklist</h1>
   </div>
-  <nav class="actions">
-    <button id="btnNewArea" class="btn primary">+ Area</button>
-    <button id="btnExport" class="btn">Esporta</button>
+  <div class="actions">
+    <button id="btnNewArea" class="btn">+ Nuova area</button>
+    <button id="btnExport" class="btn">Esporta JSON</button>
     <label class="btn file">
-      Importa<input id="fileImport" type="file" accept="application/json" hidden>
+      Importa JSON <input id="fileImport" type="file" accept="application/json" hidden>
     </label>
-    <button id="btnPrint" class="btn">PDF</button>
-  </nav>
+    <button id="btnPrint" class="btn">Stampa/PDF</button>
+  </div>
 </header>
 
 <main>
-  <!-- Dashboard -->
+  <section class="intro card">
+    <h2>Perché 5S</h2>
+    <p>Posto sicuro, pulito e ordinato. Meno sprechi, più qualità.</p>
+    <details>
+      <summary>Linee guida rapide</summary>
+      <ul>
+        <li><b>1S Selezionare</b> – a cosa serve? perché qui? frequenza d’uso?</li>
+        <li><b>2S Sistemare</b> – posto giusto? presa/riconsegna facile? visibilità quantità?</li>
+        <li><b>3S Splendere</b> – fonti di sporco/perdite? come eliminarle alla radice?</li>
+        <li><b>4S Standardizzare</b> – limiti/spec visibili? procedure, SPL, colori standard?</li>
+        <li><b>5S Sostenere</b> – abitudini, autodisciplina, audit regolari.</li>
+      </ul>
+    </details>
+  </section>
+
   <section id="dashboard" class="card dash">
     <h2>Cruscotto</h2>
     <div class="kpis">
-      <div class="kpi"><div class="kpi-title">Aree</div><div id="kpiAreas" class="kpi-val">0</div></div>
-      <div class="kpi"><div class="kpi-title">Punteggio</div><div id="kpiScore" class="kpi-val">0%</div></div>
-      <div class="kpi"><div class="kpi-title">Ritardi</div><div id="kpiLate" class="kpi-val">0</div></div>
+      <div class="kpi"><div class="kpi-title">Totale aree</div><div id="kpiAreas" class="kpi-val">0</div></div>
+      <div class="kpi"><div class="kpi-title">Punteggio medio</div><div id="kpiScore" class="kpi-val">0%</div></div>
+      <div class="kpi"><div class="kpi-title">Azioni in ritardo</div><div id="kpiLate" class="kpi-val">0</div></div>
     </div>
-    <canvas id="scoreChart" width="200" height="200"></canvas>
+    <p class="muted">Punteggio = completamento ponderato per severità (OK=1, MIN=1, MAJ=2, CRIT=3).</p>
   </section>
 
-  <!-- Aree -->
   <section id="areas"></section>
 </main>
 
 <template id="tplArea">
   <div class="area card">
     <div class="area-head">
-      <input class="area-name" placeholder="Nome area">
-      <span class="score-tag">Punteggio: <span class="score-val">0%</span></span>
+      <input class="area-name" placeholder="Nome area (es. OP30 Rettifica)">
+      <div class="score">Punteggio area: <span class="score-val">0%</span></div>
       <div class="area-actions">
         <button class="btn ghost add-item">+ Voce</button>
-        <button class="btn ghost collapse">▼</button>
-        <button class="btn danger delete-area">✖</button>
+        <button class="btn ghost collapse">Comprimi</button>
+        <button class="btn danger delete-area">Elimina area</button>
       </div>
     </div>
-    <div class="tabs">
-      <button data-s="1S" class="tab active">1S</button>
-      <button data-s="2S" class="tab">2S</button>
-      <button data-s="3S" class="tab">3S</button>
-      <button data-s="4S" class="tab">4S</button>
-      <button data-s="5S" class="tab">5S</button>
+
+    <div class="s-tabs">
+      <button data-s="1S" class="tab active">1S Selezionare <span class="pill score-1S">0%</span></button>
+      <button data-s="2S" class="tab">2S Sistemare <span class="pill score-2S">0%</span></button>
+      <button data-s="3S" class="tab">3S Splendere <span class="pill score-3S">0%</span></button>
+      <button data-s="4S" class="tab">4S Standardizzare <span class="pill score-4S">0%</span></button>
+      <button data-s="5S" class="tab">5S Sostenere <span class="pill score-5S">0%</span></button>
     </div>
-    <div class="panels">
+
+    <div class="s-panels">
       <div class="panel active" data-s="1S"></div>
       <div class="panel" data-s="2S"></div>
       <div class="panel" data-s="3S"></div>
@@ -72,24 +86,32 @@
 
 <template id="tplItem">
   <div class="item">
-    <input type="checkbox" class="chk">
-    <span class="sev-badge">OK</span>
-    <input class="txt" placeholder="Descrizione…">
-    <input class="resp" placeholder="Resp.">
-    <input type="date" class="due">
-    <input class="note" placeholder="Note…">
-    <button class="btn tiny del">✖</button>
+    <label class="check">
+      <input type="checkbox" class="chk">
+      <span class="box"></span>
+    </label>
+    <input class="txt" placeholder="Descrizione della voce…">
+    <select class="sev" title="Severità">
+      <option value="OK">OK</option>
+      <option value="MIN">MIN</option>
+      <option value="MAJ">MAJ</option>
+      <option value="CRIT">CRIT</option>
+    </select>
+    <input class="resp" placeholder="Responsabile (es. Rossi)">
+    <input type="date" class="due" title="Scadenza">
+    <input class="note" placeholder="Note/azione…">
+    <button class="btn tiny del">×</button>
   </div>
 </template>
 
 <footer>
-  <p>© SKF – Dati salvati localmente. Installabile come app.</p>
+  <p>© SKF – Salvataggio locale (offline). Installabile come app (PWA).</p>
 </footer>
 
 <script src="app.js"></script>
 <script>
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js');
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
   }
 </script>
 </body>
