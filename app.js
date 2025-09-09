@@ -1,4 +1,4 @@
-/* SKF 5S – v7: UI + grafico + filtri + "Nuova area" con template  */
+/* SKF 5S – v7: UI + grafico (S predominante) + filtri + "Nuova area" con template */
 const elAreas = document.getElementById('areas');
 const elKpiAreas = document.getElementById('kpiAreas');
 const elKpiScore = document.getElementById('kpiScore');
@@ -13,7 +13,7 @@ const storeKey = 'skf.fiveS.v7';
 
 const WEIGHTS = { OK:1, MIN:1, MAJ:2, CRIT:3 };
 
-/* ---- TEMPLATE di riferimento (modificalo come vuoi) ---- */
+/* ---- TEMPLATE iniziale (modificalo come vuoi) ---- */
 const DEFAULTS = {
   areas: [
     {
@@ -119,7 +119,7 @@ function renderArea(area, idx){
     });
   });
 
-  // Pannelli + items (applica filtri)
+  // Pannelli + items (con filtri)
   node.querySelectorAll('.panel').forEach(panel=>{
     const s = panel.dataset.s;
     panel.innerHTML = '';
@@ -218,7 +218,7 @@ function updateDashboard(){
 function fmtPct(x){ return Math.round(x*100) + "%"; }
 function isOverdue(iso){ if(!iso) return false; const d=new Date(iso+"T23:59:59"); const now=new Date(); return d<now; }
 
-/* ---- Grafico a barre ---- */
+/* ---- Grafico a barre: colore = S predominante ---- */
 function drawAreasChart(){
   const c = document.getElementById('chartAreas');
   if(!c) return;
@@ -228,11 +228,19 @@ function drawAreasChart(){
   ctx.scale(devicePixelRatio, devicePixelRatio);
   ctx.clearRect(0,0,W,H);
 
-  const data = state.areas.map(a=>({ name:a.name || 'Area', score: computeScores(a).areaScore }));
+  // Dati: punteggio area + S predominante (quella con score più alto)
+  const data = state.areas.map(a=>{
+    const { byS, areaScore } = computeScores(a);
+    let bestS = "1S", bestVal = -1;
+    for(const s of ["1S","2S","3S","4S","5S"]) if(byS[s] > bestVal){ bestS = s; bestVal = byS[s]; }
+    return { name:a.name || 'Area', score: areaScore, mainS: bestS };
+  });
+
   const padL=60, padR=16, padT=20, padB=26;
   const plotW = (W/devicePixelRatio) - padL - padR;
   const plotH = (H/devicePixelRatio) - padT - padB;
 
+  // assi + griglia
   ctx.strokeStyle = 'rgba(255,255,255,0.2)';
   ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, padT+plotH); ctx.lineTo(padL+plotW, padT+plotH); ctx.stroke();
 
@@ -251,16 +259,30 @@ function drawAreasChart(){
   const gap = bw*0.6;
   let x = padL + gap;
 
+  // helper per prendere il valore da CSS variables
+  const getVar = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#61b0ff';
+  const varMap = { "1S":"--c1", "2S":"--c2", "3S":"--c3", "4S":"--c4", "5S":"--c5" };
+
   data.forEach(d=>{
     const h = d.score*plotH, y = padT + plotH - h;
-    ctx.fillStyle = '#61b0ff';
+
+    // Colore della S predominante
+    ctx.fillStyle = getVar(varMap[d.mainS]);
+
     ctx.fillRect(x, y, bw, h);
-    ctx.fillStyle = 'rgba(255,255,255,0.85)';
-    const nm = d.name.length>12 ? d.name.slice(0,12)+'…' : d.name;
-    ctx.save(); ctx.translate(x + bw/2, padT + plotH + 14); ctx.rotate(-Math.PI/8);
-    ctx.textAlign = 'center'; ctx.fillText(nm, 0, 0); ctx.restore();
-    ctx.fillStyle = 'rgba(255,255,255,0.8)';
-    ctx.textAlign = 'center'; ctx.fillText(Math.round(d.score*100)+'%', x + bw/2, y - 4);
+
+    // valore percentuale
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.textAlign = 'center';
+    ctx.fillText(Math.round(d.score*100)+'%', x + bw/2, y - 4);
+
+    // nome area
+    ctx.save();
+    ctx.translate(x + bw/2, padT + plotH + 14);
+    ctx.rotate(-Math.PI/8);
+    ctx.fillText(d.name.length>12 ? d.name.slice(0,12)+'…' : d.name, 0, 0);
+    ctx.restore();
+
     x += bw + gap;
   });
 }
@@ -268,7 +290,7 @@ function drawAreasChart(){
 /* ---- Top controls ---- */
 document.getElementById('btnNewArea').addEventListener('click', ()=>{
   const name = (prompt("Nome nuova area?", "Nuova area") || "").trim() || "Nuova area";
-  state.areas.push(cloneDefaultArea(name));     // <<< crea area con tutte le voci
+  state.areas.push(cloneDefaultArea(name));     // crea area con tutte le voci
   save(); render();
 });
 document.getElementById('btnExport').addEventListener('click', ()=>{
@@ -299,6 +321,7 @@ elBtnClear.addEventListener('click', ()=>{
   elQ.value=''; elSev.value='ALL'; elOnlyLate.checked=false; render();
 });
 
-/* FIX: ricalcola TUTTO (pill, punteggi, grafico) ad ogni modifica */
+/* Ricalcola TUTTO (pill, punteggi, grafico) ad ogni modifica */
 function updateAll(){ render(); }
+
 
