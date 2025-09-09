@@ -129,3 +129,45 @@ main{padding:16px;max-width:1200px;margin:auto}
   .pie5s{max-width:360px;margin:0 auto}
 }
 
+/* ====== Colori coerenti 5S per TAB e PILL ====== */
+/* Palette già definite:
+   --c1 viola (1S)  --c2 rosso (2S)  --c3 arancio (3S)
+   --c4 verde (4S)  --c5 blu (5S)
+*/
+
+/* Stato non attivo: solo bordi/accenni di colore */
+.tab[data-s="1S"]{ border-color: var(--c1) }
+.tab[data-s="2S"]{ border-color: var(--c2) }
+.tab[data-s="3S"]{ border-color: var(--c3) }
+.tab[data-s="4S"]{ border-color: var(--c4) }
+.tab[data-s="5S"]{ border-color: var(--c5) }
+
+/* Stato attivo: pieno colore, testo scuro per contrasto */
+.tab.active[data-s="1S"]{ background: var(--c1); color:#06122a; }
+.tab.active[data-s="2S"]{ background: var(--c2); color:#06122a; }
+.tab.active[data-s="3S"]{ background: var(--c3); color:#06122a; }
+.tab.active[data-s="4S"]{ background: var(--c4); color:#06122a; }
+.tab.active[data-s="5S"]{ background: var(--c5); color:#06122a; }
+
+/* La pillola (punteggio S) riprende il colore della S */
+.tab[data-s="1S"] .pill{ border-color: var(--c1); }
+.tab[data-s="2S"] .pill{ border-color: var(--c2); }
+.tab[data-s="3S"] .pill{ border-color: var(--c3); }
+.tab[data-s="4S"] .pill{ border-color: var(--c4); }
+.tab[data-s="5S"] .pill{ border-color: var(--c5); }
+
+.tab.active[data-s="1S"] .pill{ background:rgba(255,255,255,.9); color:#06122a; }
+.tab.active[data-s="2S"] .pill{ background:rgba(255,255,255,.9); color:#06122a; }
+.tab.active[data-s="3S"] .pill{ background:rgba(255,255,255,.9); color:#06122a; }
+.tab.active[data-s="4S"] .pill{ background:rgba(255,255,255,.9); color:#06122a; }
+.tab.active[data-s="5S"] .pill{ background:rgba(255,255,255,.9); color:#06122a; }
+
+/* Bordo superiore del pannello con la stessa tinta della S attiva */
+.panel.active[data-s="1S"]{ border-top-color: var(--c1); }
+.panel.active[data-s="2S"]{ border-top-color: var(--c2); }
+.panel.active[data-s="3S"]{ border-top-color: var(--c3); }
+.panel.active[data-s="4S"]{ border-top-color: var(--c4); }
+.panel.active[data-s="5S"]{ border-top-color: var(--c5); }
+
+/* Transizione morbida quando si cambia S */
+.tab, .pill, .panel { transition: all .2s ease; }
