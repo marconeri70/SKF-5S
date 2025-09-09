@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>SKF 5S – Audit & Checklist</title>
+  <title>SKF 5S v7 – Audit & Checklist</title>
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0b1324">
@@ -11,11 +11,11 @@
 <body>
 <header class="app-header">
   <div class="brand">
-    <img src="assets/skf-logo.png" alt="SKF" class="logo">
-    <h1>SKF 5S</h1>
+    <img src="assets/skf-logo.png" class="logo" alt="SKF">
+    <h1>SKF 5S <small class="ver">v7</small></h1>
   </div>
   <div class="actions">
-    <button id="btnNewArea" class="btn primary">+ Nuova area</button>
+    <button id="btnNewArea" class="btn primary" title="Crea area con tutte le voci">+ Nuova area</button>
     <button id="btnExport" class="btn">Esporta</button>
     <label class="btn file">Importa <input id="fileImport" type="file" accept="application/json" hidden></label>
     <button id="btnPrint" class="btn">Stampa</button>
@@ -25,27 +25,30 @@
 <main>
   <section class="controls card">
     <div class="filters">
-      <input id="q" placeholder="🔎 Cerca…">
-      <select id="sev">
+      <input id="q" placeholder="🔎 Cerca in descrizione / note / responsabile…">
+      <select id="sev" title="Filtra per severità">
         <option value="ALL">Severità: tutte</option>
         <option value="CRIT">CRIT</option>
         <option value="MAJ">MAJ</option>
         <option value="MIN">MIN</option>
         <option value="OK">OK</option>
       </select>
-      <label><input type="checkbox" id="onlyLate"> Solo in ritardo</label>
+      <label class="onlylate"><input type="checkbox" id="onlyLate"> Solo in ritardo</label>
       <button id="btnClearFilters" class="btn ghost">Pulisci</button>
     </div>
   </section>
 
   <section id="dashboard" class="card dash">
-    <h2>Cruscotto</h2>
-    <div class="kpis">
-      <div class="kpi"><div>Totale aree</div><div id="kpiAreas">0</div></div>
-      <div class="kpi"><div>Punteggio medio</div><div id="kpiScore">0%</div></div>
-      <div class="kpi"><div>Azioni in ritardo</div><div id="kpiLate">0</div></div>
+    <div class="dash-head">
+      <h2>Cruscotto</h2>
+      <div class="kpis">
+        <div class="kpi"><div>Totale aree</div><div id="kpiAreas">0</div></div>
+        <div class="kpi"><div>Punteggio medio</div><div id="kpiScore">0%</div></div>
+        <div class="kpi"><div>Azioni in ritardo</div><div id="kpiLate">0</div></div>
+      </div>
     </div>
-    <canvas id="chartAreas" height="180"></canvas>
+    <canvas id="chartAreas" height="180" aria-label="Punteggio per area"></canvas>
+    <p class="muted">Il punteggio è la percentuale di completamento ponderata: OK=1, MIN=1, MAJ=2, CRIT=3.</p>
   </section>
 
   <section id="areas"></section>
@@ -54,14 +57,15 @@
 <template id="tplArea">
   <div class="area card">
     <div class="area-head">
-      <input class="area-name" placeholder="Nome area">
+      <input class="area-name" placeholder="Nome area (es. Rettifica)">
       <div class="score">Punteggio: <span class="score-val">0%</span></div>
       <div class="area-actions">
-        <button class="btn ghost add-item">+ Voce</button>
+        <button class="btn ghost add-item" title="Aggiungi voce alla S selezionata">+ Voce</button>
         <button class="btn ghost collapse">Comprimi</button>
         <button class="btn danger delete-area">Elimina</button>
       </div>
     </div>
+
     <div class="s-tabs">
       <button data-s="1S" class="tab active">1S <span class="pill score-1S">0%</span></button>
       <button data-s="2S" class="tab">2S <span class="pill score-2S">0%</span></button>
@@ -69,6 +73,7 @@
       <button data-s="4S" class="tab">4S <span class="pill score-4S">0%</span></button>
       <button data-s="5S" class="tab">5S <span class="pill score-5S">0%</span></button>
     </div>
+
     <div class="s-panels">
       <div class="panel active" data-s="1S"></div>
       <div class="panel" data-s="2S"></div>
@@ -81,15 +86,15 @@
 
 <template id="tplItem">
   <div class="item">
-    <input type="checkbox" class="chk">
+    <input type="checkbox" class="chk" title="Completata">
     <input class="txt" placeholder="Descrizione…">
-    <select class="sev">
+    <select class="sev" title="Severità">
       <option>OK</option><option>MIN</option><option>MAJ</option><option>CRIT</option>
     </select>
     <input class="resp" placeholder="Responsabile">
-    <input type="date" class="due">
+    <input type="date" class="due" title="Scadenza">
     <input class="note" placeholder="Note…">
-    <button class="btn tiny del">×</button>
+    <button class="btn tiny del" title="Elimina">×</button>
   </div>
 </template>
 
@@ -99,10 +104,9 @@
 
 <script src="app.js"></script>
 <script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js');
-  }
+  if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
 </script>
 </body>
 </html>
+
 
