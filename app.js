@@ -1,11 +1,15 @@
-/* SKF 5S – Audit & Checklist (vanilla JS, localStorage, scoring, due dates) */
+/* SKF 5S – v3: UI + grafico + filtri (vanilla JS) */
 const elAreas = document.getElementById('areas');
 const elKpiAreas = document.getElementById('kpiAreas');
 const elKpiScore = document.getElementById('kpiScore');
 const elKpiLate = document.getElementById('kpiLate');
+const elQ = document.getElementById('q');
+const elSev = document.getElementById('sev');
+const elOnlyLate = document.getElementById('onlyLate');
+const elBtnClear = document.getElementById('btnClearFilters');
 const tplArea = document.getElementById('tplArea');
 const tplItem = document.getElementById('tplItem');
-const storeKey = 'skf.fiveS.v2';
+const storeKey = 'skf.fiveS.v3';
 
 const WEIGHTS = { OK:1, MIN:1, MAJ:2, CRIT:3 };
 
@@ -41,6 +45,8 @@ const DEFAULTS = {
 };
 
 let state = load();
+let ui = { q:"", sev:"ALL", onlyLate:false };
+
 render();
 updateDashboard();
 
@@ -53,11 +59,28 @@ function load(){
 }
 function save(){ localStorage.setItem(storeKey, JSON.stringify(state)); }
 
+/* ---- Filters ---- */
+function applyFilters(item){
+  const q = ui.q.trim().toLowerCase();
+  const sev = ui.sev;
+  const ol = ui.onlyLate;
+  if (sev !== 'ALL' && item.sev !== sev) return false;
+  if (q){
+    const bag = `${item.t||''} ${item.note||''} ${item.resp||''}`.toLowerCase();
+    if (!bag.includes(q)) return false;
+  }
+  if (ol){
+    if (!isOverdue(item.due) || item.done) return false;
+  }
+  return true;
+}
+
 /* ---- Rendering ---- */
 function render(){
   elAreas.innerHTML = '';
   state.areas.forEach((area, idx) => elAreas.appendChild(renderArea(area, idx)));
   updateDashboard();
+  drawAreasChart();
 }
 function renderArea(area, idx){
   const node = tplArea.content.firstElementChild.cloneNode(true);
@@ -72,8 +95,9 @@ function renderArea(area, idx){
   };
 
   name.value = area.name;
-  name.addEventListener('input', () => { state.areas[idx].name = name.value; save(); });
+  name.addEventListener('input', () => { state.areas[idx].name = name.value; save(); drawAreasChart(); });
 
+  // tabs
   node.querySelectorAll('.tab').forEach(tab=>{
     tab.addEventListener('click', ()=>{
       node.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
@@ -84,18 +108,24 @@ function renderArea(area, idx){
     });
   });
 
+  // panels + items (respect filters)
   node.querySelectorAll('.panel').forEach(panel=>{
     const s = panel.dataset.s;
-    (area.S[s] ||= []).forEach((item, iIdx) => panel.appendChild(renderItem(idx, s, iIdx, item)));
+    panel.innerHTML = '';
+    (area.S[s] ||= []).forEach((item, iIdx) => {
+      if (applyFilters(item)) panel.appendChild(renderItem(idx, s, iIdx, item));
+    });
   });
 
+  // add item
   node.querySelector('.add-item').addEventListener('click', ()=>{
     const activeS = node.querySelector('.tab.active').dataset.s;
     const list = state.areas[idx].S[activeS];
-    list.push({t:"", sev:"OK", done:false, note:"", resp:"", due:""}); 
+    list.push({t:"", sev:"OK", done:false, note:"", resp:"", due:""});
     save(); render();
   });
 
+  // collapse / delete
   node.querySelector('.collapse').addEventListener('click', (e)=>{
     node.classList.toggle('collapsed');
     e.target.textContent = node.classList.contains('collapsed') ? "Espandi" : "Comprimi";
@@ -104,6 +134,7 @@ function renderArea(area, idx){
     if(confirm('Eliminare area?')){ state.areas.splice(idx,1); save(); render(); }
   });
 
+  // scoring
   const { areaScore, byS } = computeScores(area);
   scoreArea.textContent = fmtPct(areaScore);
   Object.entries(byS).forEach(([k,v]) => { if (pills[k]) pills[k].textContent = fmtPct(v); });
@@ -133,11 +164,11 @@ function renderItem(aIdx, sKey, iIdx, item){
 
   chk.addEventListener('change', ()=>{
     const it = state.areas[aIdx].S[sKey][iIdx];
-    it.done = chk.checked; save(); node.classList.toggle('ok', it.done); updateAllScores();
+    it.done = chk.checked; save(); node.classList.toggle('ok', it.done); updateAll();
   });
   txt.addEventListener('input', ()=>{ state.areas[aIdx].S[sKey][iIdx].t = txt.value; save(); });
   sev.addEventListener('change', ()=>{ 
-    state.areas[aIdx].S[sKey][iIdx].sev = sev.value; node.dataset.sev = sev.value; save(); updateAllScores();
+    state.areas[aIdx].S[sKey][iIdx].sev = sev.value; node.dataset.sev = sev.value; save(); updateAll();
   });
   note.addEventListener('input', ()=>{ state.areas[aIdx].S[sKey][iIdx].note = note.value; save(); });
   resp.addEventListener('input', ()=>{ state.areas[aIdx].S[sKey][iIdx].resp = resp.value; save(); });
@@ -154,7 +185,7 @@ function renderItem(aIdx, sKey, iIdx, item){
 function computeScores(area){
   const byS = {};
   let sumDone=0, sumTot=0;
-  for(const s of ["1S","2S","3S","4S","5S"]){
+  for(const s of ["1S","2S","3S","4S","5S"]) {
     const list = area.S[s] || [];
     let d=0, t=0;
     list.forEach(it => { const w=WEIGHTS[it.sev]||1; t+=w; if(it.done) d+=w; });
@@ -163,23 +194,93 @@ function computeScores(area){
   }
   return { areaScore: sumTot ? sumDone/sumTot : 0, byS };
 }
-function updateAllScores(){ render(); }
-function updateDashboard(){
-  elKpiAreas.textContent = state.areas.length;
+function overallStats(){
   let totD=0, totT=0, late=0;
   state.areas.forEach(a=>{
-    for(const s of ["1S","2S","3S","4S","5S"]){
+    for(const s of ["1S","2S","3S","4S","5S"]) {
       (a.S[s]||[]).forEach(it=>{
         const w=WEIGHTS[it.sev]||1; totT+=w; if(it.done) totD+=w;
         if (isOverdue(it.due) && !it.done) late++;
       });
     }
   });
-  elKpiScore.textContent = fmtPct(totT ? totD/totT : 0);
+  return { score: (totT? totD/totT : 0), late };
+}
+function updateDashboard(){
+  elKpiAreas.textContent = state.areas.length;
+  const { score, late } = overallStats();
+  elKpiScore.textContent = fmtPct(score);
   elKpiLate.textContent = late;
 }
 function fmtPct(x){ return Math.round(x*100) + "%"; }
 function isOverdue(iso){ if(!iso) return false; const d=new Date(iso+"T23:59:59"); const now=new Date(); return d<now; }
+
+/* ---- Chart (canvas 2D) ---- */
+function drawAreasChart(){
+  const c = document.getElementById('chartAreas');
+  if(!c) return;
+  const ctx = c.getContext('2d');
+  const W = c.width = c.clientWidth * devicePixelRatio;
+  const H = c.height = 180 * devicePixelRatio;
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+  ctx.clearRect(0,0,W,H);
+
+  // data: area names + scores
+  const data = state.areas.map(a=>({ name:a.name || 'Area', score: computeScores(a).areaScore }));
+  const padL=60, padR=16, padT=20, padB=26;
+  const plotW = (W/devicePixelRatio) - padL - padR;
+  const plotH = (H/devicePixelRatio) - padT - padB;
+
+  // axes
+  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padL, padT);
+  ctx.lineTo(padL, padT+plotH);
+  ctx.lineTo(padL+plotW, padT+plotH);
+  ctx.stroke();
+
+  // y grid and labels (0,25,50,75,100)
+  ctx.fillStyle = 'rgba(255,255,255,0.6)';
+  ctx.font = '12px system-ui, Segoe UI, Roboto';
+  for(let i=0;i<=4;i++){
+    const yv = i*25;
+    const y = padT + plotH - (yv/100)*plotH;
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL+plotW, y); ctx.stroke();
+    ctx.fillText(yv+'%', 8, y+4);
+  }
+
+  if (data.length === 0) return;
+
+  const bw = Math.max(18, Math.min(60, plotW / (data.length*1.6)));
+  const gap = bw*0.6;
+  let x = padL + gap;
+
+  data.forEach((d)=>{
+    const h = (d.score*plotH);
+    const y = padT + plotH - h;
+    // bar
+    ctx.fillStyle = '#61b0ff';
+    ctx.fillRect(x, y, bw, h);
+    // label
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    const nm = d.name.length>12 ? d.name.slice(0,12)+'…' : d.name;
+    ctx.save();
+    ctx.translate(x + bw/2, padT + plotH + 14);
+    ctx.rotate(-Math.PI/8);
+    ctx.textAlign = 'center';
+    ctx.fillText(nm, 0, 0);
+    ctx.restore();
+
+    // value on top
+    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+    ctx.textAlign = 'center';
+    ctx.fillText(Math.round(d.score*100)+'%', x + bw/2, y - 4);
+
+    x += bw + gap;
+  });
+}
 
 /* ---- Top controls ---- */
 document.getElementById('btnNewArea').addEventListener('click', ()=>{
@@ -204,3 +305,15 @@ document.getElementById('fileImport').addEventListener('change', async (e)=>{
   }catch(err){ alert('JSON non valido: ' + err.message); }
 });
 document.getElementById('btnPrint').addEventListener('click', ()=>window.print());
+
+// filters bindings
+elQ.addEventListener('input', ()=>{ ui.q = elQ.value; render(); });
+elSev.addEventListener('change', ()=>{ ui.sev = elSev.value; render(); });
+elOnlyLate.addEventListener('change', ()=>{ ui.onlyLate = elOnlyLate.checked; render(); });
+elBtnClear.addEventListener('click', ()=>{
+  ui = { q:'', sev:'ALL', onlyLate:false };
+  elQ.value=''; elSev.value='ALL'; elOnlyLate.checked=false; render();
+});
+
+function updateAll(){ updateDashboard(); drawAreasChart(); }
+
