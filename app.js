@@ -1,4 +1,4 @@
-/* SKF 5S – v7: UI + grafico + filtri (fix pannelli e punteggi) */
+/* SKF 5S – v6: UI + grafico + filtri (fix pannelli e punteggi) */
 const elAreas = document.getElementById('areas');
 const elKpiAreas = document.getElementById('kpiAreas');
 const elKpiScore = document.getElementById('kpiScore');
