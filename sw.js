@@ -1,4 +1,4 @@
-const CACHE = 'skf-5s-v4';
+const CACHE = 'skf-5s-v5';
 const ASSETS = [
   './',
   './index.html',
@@ -25,3 +25,4 @@ self.addEventListener('fetch', e=>{
     }))
   );
 });
+
