@@ -2,12 +2,55 @@
 const storeKey = 'skf.fiveS.v7.5';
 const POINTS=[0,1,3,5];
 
-// Voci base (ampliabili con il tuo Excel)
-const VOC_1S=["Zona pedonale pavimento","Zona di lavoro (pavimento, macchina)","Materiali","Informazioni","Processo di etichettatura"];
-const VOC_2S=["Sicurezza","Qualità","Posizione Pre-Fissate","Documenti","Concetti"];
-const VOC_3S=["Pulizia","Misure preventive","La pulizia è di routine e esiste un piano per un risultato duraturo"];
-const VOC_4S=["Aree di  passaggio","Area di lavoro","Materiali","Informazione","Visual Management"];
-const VOC_5S=["Piano per sostenere il risultato","Piano per risultati duraturi","Coinvolgimento dei membri del team"];
+// --- VOCI UFFICIALI DAL TUO EXCEL ---
+const VOC_1S = [
+  "Zona pedonale pavimento",
+  "Zona di lavoro (pavimento, macchina)",
+  "Materiali",
+  "Informazioni",
+  "Processo di etichettatura",
+  "Piano per sostenere il risultato",
+  "Coinvolgimento dei membri del team"
+];
+
+const VOC_2S = [
+  "1-S Stato",
+  "Sicurezza",
+  "Qualità",
+  "Posizione Pre-Fissate",
+  "Documenti",
+  "Concetti",
+  "Piano per risultati duraturi",
+  "Coinvolgimento dei membri del team"
+];
+
+const VOC_3S = [
+  "1-S Stato",
+  "2-S Stato",
+  "Pulizia",
+  "Misure preventive",
+  "La pulizia è di routine e esiste un piano per un risultato duraturo",
+  "Coinvolgimento dei membri del team"
+];
+
+// NB: Il tuo foglio “4-S & 5-S” contiene elementi di entrambe le S.
+// Ho assegnato a 4S questi (A–F + N, O):
+const VOC_4S = [
+  "Aree di passaggio",
+  "Area di lavoro",
+  "Materiali",
+  "Informazione",
+  "Visual Management",
+  "Posti prefissati",
+  "Management Visivo",
+  "Standard & Documentazione"
+];
+
+// E a 5S questi (P, Q):
+const VOC_5S = [
+  "Ognuno & Ogni giorno",
+  "Miglioramento Continuo"
+];
 
 const elAreas = document.getElementById('areas');
 const elKpiAreas = document.getElementById('kpiAreas');
