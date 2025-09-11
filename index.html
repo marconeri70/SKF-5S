@@ -1,1 +1,175 @@
-<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>SKF 5S v7.2</title><link rel='stylesheet' href='style.css'></head><body><header class='app-header'><div class='brand'><img src='assets/skf-logo.svg' class='logo' alt='SKF'><h1>SKF 5S <small class='ver'>v7.2</small></h1></div><div class='actions'><button id='btnNewArea' class='btn primary'>+ Nuova linea</button><button id='btnExport' class='btn'>Esporta</button><label class='btn file'>Importa <input id='fileImport' type='file' accept='application/json' hidden></label><button id='btnPrint' class='btn'>Stampa</button></div></header><main><section class='controls card'><div class='filters'><input id='q' placeholder='Cerca...'><select id='lineFilter'></select><div class='sector-toggles'><button id='btnFgr' class='btn seg'>Rettifica</button><button id='btnAsm' class='btn seg'>Montaggio</button><button id='btnAll' class='btn seg active'>Tutti</button></div><label class='onlylate'><input type='checkbox' id='onlyLate'> Solo in ritardo</label><button id='btnClearFilters' class='btn ghost'>Pulisci</button></div></section><section id='dashboard' class='card dash'><div class='dash-head'><h2>Cruscotto</h2><div class='kpis'><div class='kpi'><div>Totale linee</div><div id='kpiAreas'>0</div></div><div class='kpi'><div>Punteggio medio</div><div id='kpiScore'>0%</div></div><div class='kpi'><div>Azioni in ritardo</div><div id='kpiLate'>0</div></div></div></div><canvas id='chartAreas' height='240'></canvas></section><section id='areas'></section></main><template id='tplArea'><div class='area card'><div class='area-head'><div class='line-title'><label>Linea</label><input class='area-line' placeholder='es. L2'></div><div class='sector-pick'><label>Settore</label><div class='mini-toggles'><button class='btn mini sec-ret'>Rettifica</button><button class='btn mini sec-mont'>Montaggio</button></div></div><div class='score'>Punteggio: <span class='score-val'>0%</span></div><div class='area-actions'><button class='btn ghost add-item'>+ Voce</button><button class='btn ghost collapse'>Comprimi</button><button class='btn danger delete-area'>Elimina</button></div></div><div class='s-tabs'><button data-s='1S' class='tab active'>1S <span class='pill score-1S'>0%</span></button><button data-s='2S' class='tab'>2S <span class='pill score-2S'>0%</span></button><button data-s='3S' class='tab'>3S <span class='pill score-3S'>0%</span></button><button data-s='4S' class='tab'>4S <span class='pill score-4S'>0%</span></button><button data-s='5S' class='tab'>5S <span class='pill score-5S'>0%</span></button></div><div class='s-panels'><div class='panel active' data-s='1S'></div><div class='panel' data-s='2S'></div><div class='panel' data-s='3S'></div><div class='panel' data-s='4S'></div><div class='panel' data-s='5S'></div></div></div></template><template id='tplItem'><div class='item'><input class='txt' placeholder='Descrizione...'><select class='points'><option value='0'>Punti: 0</option><option value='1'>Punti: 1</option><option value='3'>Punti: 3</option><option value='5'>Punti: 5</option></select><input class='resp' placeholder='Responsabile'><input type='date' class='due'><input class='note' placeholder='Note...'><button class='btn tiny del'>×</button></div></template><script src='app.js'></script></body></html>
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SKF 5S v7.2 – Audit & Checklist</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0b1324">
+</head>
+<body>
+<header class="app-header">
+  <div class="brand">
+    <img src="assets/skf-logo.png" class="logo" alt="SKF">
+    <h1>SKF 5S <small class="ver">v7.2</small></h1>
+  </div>
+  <div class="actions">
+    <button id="btnNewArea" class="btn primary" title="Crea nuova LINEA con tutte le voci">+ Nuova linea</button>
+    <button id="btnExport" class="btn">Esporta</button>
+    <label class="btn file">Importa <input id="fileImport" type="file" accept="application/json" hidden></label>
+    <button id="btnPrint" class="btn">Stampa</button>
+  </div>
+</header>
+
+<!-- Intro 5S in pseudo-3D -->
+<section class="intro5s card">
+  <div class="intro-grid">
+    <svg class="pie5s" viewBox="0 0 240 220" aria-label="Cosa è 5S">
+      <defs>
+        <radialGradient id="g5" cx="50%" cy="45%" r="70%">
+          <stop offset="0" stop-color="#6aa0ff"/><stop offset="1" stop-color="#3869d8"/>
+        </radialGradient>
+        <radialGradient id="g4" cx="50%" cy="45%" r="70%">
+          <stop offset="0" stop-color="#56dc8e"/><stop offset="1" stop-color="#279557"/>
+        </radialGradient>
+        <radialGradient id="g3" cx="50%" cy="45%" r="70%">
+          <stop offset="0" stop-color="#ffd57a"/><stop offset="1" stop-color="#e59213"/>
+        </radialGradient>
+        <radialGradient id="g2" cx="50%" cy="45%" r="70%">
+          <stop offset="0" stop-color="#ff7f6a"/><stop offset="1" stop-color="#cf3521"/>
+        </radialGradient>
+        <radialGradient id="g1" cx="50%" cy="45%" r="70%">
+          <stop offset="0" stop-color="#a68cff"/><stop offset="1" stop-color="#6a4aca"/>
+        </radialGradient>
+        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000" flood-opacity="0.35"/>
+        </filter>
+      </defs>
+      <g filter="url(#shadow)">
+        <circle cx="120" cy="110" r="104" fill="var(--bgSoft)"/>
+        <path d="M120,6 A104,104 0 0,1 224,110 L188,110 A68,68 0 0,0 120,42 Z" fill="url(#g5)"/>
+        <path d="M224,110 A104,104 0 0,1 120,214 L120,178 A68,68 0 0,0 188,110 Z" fill="url(#g4)"/>
+        <path d="M120,214 A104,104 0 0,1 16,110 L52,110 A68,68 0 0,0 120,178 Z" fill="url(#g3)"/>
+        <path d="M16,110 A104,104 0 0,1 120,6 L120,42 A68,68 0 0,0 52,110 Z" fill="url(#g2)"/>
+        <path d="M120,42 A68,68 0 0,1 152,110 L136,110 A52,52 0 0,0 120,58 Z" fill="url(#g1)"/>
+        <circle cx="120" cy="110" r="34" fill="var(--bg)"/>
+      </g>
+      <text x="180" y="65" class="pie-label">5S</text>
+      <text x="160" y="168" class="pie-label">4S</text>
+      <text x="72"  y="192" class="pie-label">3S</text>
+      <text x="28"  y="120" class="pie-label">2S</text>
+      <text x="126" y="96"  class="pie-label">1S</text>
+    </svg>
+
+    <div class="intro-copy">
+      <h2>Cosa è 5S</h2>
+      <p>5S fornisce un posto di lavoro <b>sicuro</b>, <b>organizzato</b> e <b>pulito</b>, per fare bene al primo colpo.</p>
+      <ul class="legend5s">
+        <li><span class="dot" style="background:var(--c1)"></span><b class="tag s1">1S Selezionare</b> – tenere solo ciò che serve.</li>
+        <li><span class="dot" style="background:var(--c2)"></span><b class="tag s2">2S Sistemare</b> – ordine e posizioni chiare.</li>
+        <li><span class="dot" style="background:var(--c3)"></span><b class="tag s3">3S Splendere</b> – pulizia e rimozione fonti di sporco.</li>
+        <li><span class="dot" style="background:var(--c4)"></span><b class="tag s4">4S Standardizzare</b> – regole e segnali visivi.</li>
+        <li><span class="dot" style="background:var(--c5)"></span><b class="tag s5">5S Sostenere</b> – disciplina e miglioramento.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<main>
+  <section class="controls card">
+    <div class="filters">
+      <input id="q" placeholder="🔎 Cerca in descrizione / note / responsabile…">
+      <select id="lineFilter" title="Filtra per Linea"></select>
+
+      <div class="sector-toggles" role="group" aria-label="Settore">
+        <button id="btnFgr" class="btn seg">Rettifica</button>
+        <button id="btnAsm" class="btn seg">Montaggio</button>
+        <button id="btnAll" class="btn seg active">Tutti</button>
+      </div>
+
+      <label class="onlylate"><input type="checkbox" id="onlyLate"> Solo in ritardo</label>
+      <button id="btnClearFilters" class="btn ghost">Pulisci</button>
+    </div>
+  </section>
+
+  <section id="dashboard" class="card dash">
+    <div class="dash-head">
+      <h2>Cruscotto</h2>
+      <div class="kpis">
+        <div class="kpi"><div>Totale linee</div><div id="kpiAreas">0</div></div>
+        <div class="kpi"><div>Punteggio medio</div><div id="kpiScore">0%</div></div>
+        <div class="kpi"><div>Azioni in ritardo</div><div id="kpiLate">0</div></div>
+      </div>
+    </div>
+    <canvas id="chartAreas" height="240" aria-label="Linee: TOT + 1S..5S"></canvas>
+    <p class="muted">Score = somma Punti / (5 × n.voci). Punti ammessi: 0, 1, 3, 5.</p>
+  </section>
+
+  <section id="areas"></section>
+</main>
+
+<template id="tplArea">
+  <div class="area card">
+    <div class="area-head">
+      <div class="line-title">
+        <label>Linea</label>
+        <input class="area-line" placeholder="es. L2">
+      </div>
+      <div class="sector-pick">
+        <label>Settore</label>
+        <div class="mini-toggles">
+          <button class="btn mini sec-ret">Rettifica</button>
+          <button class="btn mini sec-mont">Montaggio</button>
+        </div>
+      </div>
+      <div class="score">Punteggio: <span class="score-val">0%</span></div>
+      <div class="area-actions">
+        <button class="btn ghost add-item" title="Aggiungi voce alla S selezionata">+ Voce</button>
+        <button class="btn ghost collapse">Comprimi</button>
+        <button class="btn danger delete-area">Elimina</button>
+      </div>
+    </div>
+
+    <div class="s-tabs">
+      <button data-s="1S" class="tab active">1S <span class="pill score-1S">0%</span></button>
+      <button data-s="2S" class="tab">2S <span class="pill score-2S">0%</span></button>
+      <button data-s="3S" class="tab">3S <span class="pill score-3S">0%</span></button>
+      <button data-s="4S" class="tab">4S <span class="pill score-4S">0%</span></button>
+      <button data-s="5S" class="tab">5S <span class="pill score-5S">0%</span></button>
+    </div>
+
+    <div class="s-panels">
+      <div class="panel active" data-s="1S"></div>
+      <div class="panel" data-s="2S"></div>
+      <div class="panel" data-s="3S"></div>
+      <div class="panel" data-s="4S"></div>
+      <div class="panel" data-s="5S"></div>
+    </div>
+  </div>
+</template>
+
+<template id="tplItem">
+  <div class="item">
+    <input class="txt" placeholder="Descrizione…">
+    <select class="points" title="Punti">
+      <option value="0">Punti: 0</option>
+      <option value="1">Punti: 1</option>
+      <option value="3">Punti: 3</option>
+      <option value="5">Punti: 5</option>
+    </select>
+    <input class="resp" placeholder="Responsabile">
+    <input type="date" class="due" title="Scadenza">
+    <input class="note" placeholder="Note…">
+    <button class="btn tiny del" title="Elimina">×</button>
+  </div>
+</template>
+
+<footer>
+  <p>© SKF – Funziona offline, installabile come app (PWA)</p>
+</footer>
+
+<script src="app.js"></script>
+<script> if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); } </script>
+</body>
+</html>
