@@ -1,24 +1,82 @@
 :root{
   --bg:#0b1324; --card:#0f1934; --muted:#9bb0d6; --text:#eef4ff;
   --accent:#61b0ff; --outline:#233154; --ink:#081226;
+  /* colori 5S */
   --c1:#7a56c6; --c2:#e44f37; --c3:#f3a11a; --c4:#35b468; --c5:#4b88ff;
 }
-body{margin:0;background:#0b1324;color:var(--text);font:16px system-ui}
-.app-header{position:sticky;top:0;z-index:5;background:#0f1934;padding:10px 16px;display:flex;justify-content:space-between;align-items:center}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#0b1324,#0e1831 30%,#0b1324);color:var(--text);font:16px/1.45 system-ui,Segoe UI,Roboto,Arial}
+
+/* Header */
+.app-header{position:sticky;top:0;z-index:5;background:rgba(11,19,36,.85);backdrop-filter:blur(8px);padding:10px 16px;border-bottom:1px solid var(--outline);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.brand{display:flex;gap:10px;align-items:center}
 .logo{height:36px}
-.btn{background:#1a2444;border:1px solid var(--outline);color:var(--text);padding:8px 12px;border-radius:12px;cursor:pointer}
+.ver{font-size:.85rem;color:var(--muted);margin-left:.4rem}
+
+/* Bottoni & card */
+.btn{background:#1a2444;border:1px solid var(--outline);color:var(--text);padding:8px 12px;border-radius:12px;cursor:pointer;font-weight:600}
 .btn.primary{background:var(--accent);color:var(--ink);border:0}
-.btn.ghost{background:#142043}.btn.danger{background:#ef476f;border:0}
-.card{background:var(--card);border:1px solid var(--outline);border-radius:16px;padding:16px;margin:12px 0}
-.s-tabs,.sector-tabs{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap}
-.tab.s{padding:6px 10px;border-radius:999px;background:#0f1b38;color:#fff;cursor:pointer}
-.tab.s[data-s="1S"].active{background:var(--c1)}.tab.s[data-s="2S"].active{background:var(--c2)}
-.tab.s[data-s="3S"].active{background:var(--c3)}.tab.s[data-s="4S"].active{background:var(--c4)}
-.tab.s[data-s="5S"].active{background:var(--c5)}
+.btn.ghost{background:#142043}
+.btn.danger{background:#ef476f;border:0}
+.btn.seg{padding:6px 10px;border-radius:10px}
+.btn.seg.active{outline:2px solid var(--accent)}
+.btn.tiny{padding:4px 8px;border-radius:8px;background:#142043}
+.card{background:var(--card);border:1px solid var(--outline);border-radius:16px;padding:16px;margin:12px 16px;box-shadow:0 10px 28px rgba(0,0,0,.25)}
+
+/* Filtri */
+.controls .filters{display:grid;grid-template-columns:1.2fr 180px auto 140px 120px;gap:10px;align-items:end}
+.controls input,.controls select{padding:10px;border-radius:10px;border:1px solid var(--outline);background:#0b1733;color:var(--text)}
+.controls .sector-toggles{display:flex;gap:8px;align-items:center}
+.controls .onlylate{display:flex;align-items:center;gap:8px}
+
+/* Dashboard */
+.dash-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(160px,1fr));gap:12px}
+.kpi{background:#0f1a36;border:1px solid var(--outline);border-radius:14px;padding:12px;text-align:center}
+.kpi div:first-child{color:var(--muted)}
+.kpi div:last-child{font-size:1.6rem;font-weight:800}
+#chartAreas{width:100%;display:block;background:#0f1a36;border:1px solid var(--outline);border-radius:12px}
+
+/* Bottoni Linee sotto al grafico */
+.line-buttons{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.line-buttons .btn{background:#142043;border:1px solid var(--outline)}
+.line-buttons .btn.active{outline:2px solid var(--accent)}
+
+/* Aree/Linee */
+.area-head{display:grid;grid-template-columns:220px auto auto;gap:12px;align-items:end}
+.lbl{display:block;color:var(--muted);font-size:.85rem;margin-bottom:4px}
+.area-line{padding:10px;border-radius:12px;border:1px solid var(--outline);background:#0e1833;color:#fff;font-weight:700}
+.score{color:var(--muted)}
+.area-actions{display:flex;gap:8px;justify-content:flex-end}
+
+/* Settori & 5S */
+.sector-tabs{display:flex;gap:8px;margin-top:10px}
+.tab.sec{background:#0f1b38;border:1px solid var(--outline);border-radius:999px;padding:6px 10px}
+.tab.sec.active{background:#1e2b56}
+.s-tabs{display:flex;gap:8px;margin:12px 0 6px;flex-wrap:wrap}
+.tab.s{border:1px solid var(--outline);background:#0f1b38;color:#fff;padding:6px 10px;border-radius:999px;cursor:pointer;display:inline-flex;gap:8px;align-items:center}
+.tab.s[data-s="1S"]{border-color:var(--c1)} .tab.s.active[data-s="1S"]{background:var(--c1);color:#06122a}
+.tab.s[data-s="2S"]{border-color:var(--c2)} .tab.s.active[data-s="2S"]{background:var(--c2);color:#06122a}
+.tab.s[data-s="3S"]{border-color:var(--c3)} .tab.s.active[data-s="3S"]{background:var(--c3);color:#06122a}
+.tab.s[data-s="4S"]{border-color:var(--c4)} .tab.s.active[data-s="4S"]{background:var(--c4);color:#06122a}
+.tab.s[data-s="5S"]{border-color:var(--c5)} .tab.s.active[data-s="5S"]{background:var(--c5);color:#06122a}
+.pill{background:#0c1730;border:1px solid var(--outline);border-radius:999px;padding:2px 8px;font-size:.8rem}
+
+/* Pannelli & item */
 .panel{display:none;border-top:1px dashed var(--outline);padding-top:8px}
 .panel.active{display:block}
-.item{display:grid;grid-template-columns:1.6fr 120px 1fr 150px 1fr auto;gap:8px;align-items:center;background:#0f1a36;border:1px solid var(--outline);border-radius:12px;padding:8px;margin:8px 0}
-.points,.txt,.resp,.due,.note{padding:8px;border-radius:8px;background:#0c1730;color:#fff;border:1px solid var(--outline)}
-.line-buttons{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-.line-buttons .btn{background:#142043;color:#fff}
+.item{display:grid;grid-template-columns:1.6fr 120px 1fr 150px 1.3fr auto;gap:8px;align-items:center;background:#0f1a36;border:1px solid var(--outline);border-radius:12px;padding:8px;margin:8px 0}
+.item input,.item select{background:#0c1730;color:#fff;border:1px solid var(--outline);padding:8px;border-radius:10px}
+.item.late{outline:2px dashed #ef476f}
+
+@media (max-width:1100px){
+  .controls .filters{grid-template-columns:1fr 160px auto 140px 120px}
+  .area-head{grid-template-columns:1fr auto auto}
+  .item{grid-template-columns:1fr 120px 1fr 1fr auto}
+}
+@media print{
+  header,.btn,footer,.controls{display:none!important}
+  body{background:white;color:black}
+  .card{box-shadow:none;border-color:#999}
+}
 
