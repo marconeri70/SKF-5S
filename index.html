@@ -22,6 +22,65 @@
   </div>
 </header>
 
+  <!-- INTRO 5S -->
+<section class="intro5s card">
+  <div class="intro-grid">
+    <!-- Donut 5S -->
+    <svg class="pie5s" viewBox="0 0 220 220" aria-label="Cosa è 5S">
+      <defs>
+        <mask id="ring">
+          <rect x="0" y="0" width="220" height="220" fill="white"/>
+          <circle cx="110" cy="110" r="55" fill="black"/>
+        </mask>
+      </defs>
+      <circle cx="110" cy="110" r="100" fill="#0f1a36"/>
+      <!-- 5S -->
+      <path d="M110,10 A100,100 0 0,1 210,110 L110,110 Z" fill="var(--c5)" mask="url(#ring)"/>
+      <!-- 4S -->
+      <path d="M210,110 A100,100 0 0,1 110,210 L110,110 Z" fill="var(--c4)" mask="url(#ring)"/>
+      <!-- 3S -->
+      <path d="M110,210 A100,100 0 0,1 10,110 L110,110 Z" fill="var(--c3)" mask="url(#ring)"/>
+      <!-- 2S -->
+      <path d="M10,110 A100,100 0 0,1 110,10 L110,110 Z" fill="var(--c2)" mask="url(#ring)"/>
+      <!-- 1S (piccola fetta) -->
+      <path d="M110,10 A100,100 0 0,1 140,40 L110,110 Z" fill="var(--c1)" mask="url(#ring)"/>
+      <!-- Etichette -->
+      <text x="170" y="75" class="pie-label">5S</text>
+      <text x="155" y="165" class="pie-label">4S</text>
+      <text x="75"  y="190" class="pie-label">3S</text>
+      <text x="30"  y="120" class="pie-label">2S</text>
+      <text x="115" y="95"  class="pie-label">1S</text>
+    </svg>
+
+    <!-- Testo e legenda -->
+    <div class="intro-copy">
+      <h2>Cosa è 5S</h2>
+      <p>
+        5S è un metodo per fornire un posto di lavoro
+        <b>sicuro</b>, <b>ben organizzato</b> e <b>pulito</b>,
+        per fare il nostro lavoro facilmente e correttamente la prima volta.
+      </p>
+      <ul class="legend5s">
+        <li><span class="dot" style="background:var(--c1)"></span>
+          <b class="tag s1">1S Selezionare</b> – Avere solo ciò che serve, eliminare il superfluo.
+        </li>
+        <li><span class="dot" style="background:var(--c2)"></span>
+          <b class="tag s2">2S Sistemare</b> – Un posto per tutto e tutto al suo posto.
+        </li>
+        <li><span class="dot" style="background:var(--c3)"></span>
+          <b class="tag s3">3S Splendere</b> – Pulire e rimuovere le cause dello sporco.
+        </li>
+        <li><span class="dot" style="background:var(--c4)"></span>
+          <b class="tag s4">4S Standardizzare</b> – Regole e segnali visivi chiari.
+        </li>
+        <li><span class="dot" style="background:var(--c5)"></span>
+          <b class="tag s5">5S Sostenere</b> – Disciplina, abitudine e miglioramento continuo.
+        </li>
+      </ul>
+    </div>
+  </div>
+</section>
+
 <section class="controls card">
   <div class="filters">
     <input id="q" placeholder="🔎 Cerca in descrizione / note / responsabile…">
