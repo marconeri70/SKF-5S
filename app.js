@@ -1,71 +1,60 @@
-/* SKF 5S – v7: UI + grafico cruscotto (TOT + 1S..5S) + filtri + "Nuova area" con template */
+/* SKF 5S – v7.1: PUNTI (0/1/3/5) + Linee (L2,L3,...) + Settori + Grafico per Linea */
 const elAreas = document.getElementById('areas');
 const elKpiAreas = document.getElementById('kpiAreas');
 const elKpiScore = document.getElementById('kpiScore');
 const elKpiLate = document.getElementById('kpiLate');
 const elQ = document.getElementById('q');
-const elSev = document.getElementById('sev');
+const elLineFilter = document.getElementById('lineFilter');
+const elSectorFilter = document.getElementById('sectorFilter');
 const elOnlyLate = document.getElementById('onlyLate');
 const elBtnClear = document.getElementById('btnClearFilters');
 const tplArea = document.getElementById('tplArea');
 const tplItem = document.getElementById('tplItem');
-const storeKey = 'skf.fiveS.v7';
+const storeKey = 'skf.fiveS.v7.1';
 
-const WEIGHTS = { OK:1, MIN:1, MAJ:2, CRIT:3 };
+/* PUNTI permessi */
+const POINTS = [0,1,3,5];
 
-/* ---- TEMPLATE iniziale (modificalo come vuoi) ---- */
+/* TEMPLATE iniziale - puoi personalizzare le voci */
 const DEFAULTS = {
   areas: [
     {
-      name: "Rettifica",
+      name: "Rettifica OP30",
+      line: "L2",
+      sector: "Rettifica",
       S: {
         "1S": [
-          {t:"Rimuovere utensili non usati negli ultimi 30 gg", sev:"MIN", done:false, note:"", resp:"", due:""},
-          {t:"Separare ricambi buoni da scarti", sev:"MAJ", done:false, note:"", resp:"", due:""}
+          {t:"Zona pedonale pavimento", p:1, note:"", resp:"", due:""},
+          {t:"Materiali: separare superfluo", p:3, note:"", resp:"", due:""}
         ],
         "2S": [
-          {t:"Ombre a terra/etichette per posizioni attrezzi", sev:"MIN", done:false, note:"", resp:"", due:""},
-          {t:"Kanban min/max consumabili", sev:"MAJ", done:false, note:"", resp:"", due:""}
+          {t:"Posizioni predefinite attrezzi", p:1, note:"", resp:"", due:""},
+          {t:"Documenti aggiornati/visibili", p:3, note:"", resp:"", due:""}
         ],
         "3S": [
-          {t:"Ispezione perdite olio/coolant (tubi/valvole)", sev:"CRIT", done:false, note:"", resp:"", due:""},
-          {t:"Pulizia area pavimento/macchina", sev:"MIN", done:false, note:"", resp:"", due:""},
-          {t:"Azione causa radice perdite ricorrenti", sev:"MAJ", done:false, note:"", resp:"", due:""}
+          {t:"Pulizia area e macchine", p:1, note:"", resp:"", due:""},
+          {t:"Misure preventive perdite", p:3, note:"", resp:"", due:""}
         ],
         "4S": [
-          {t:"SPL: cambio mola & check livelli", sev:"MAJ", done:false, note:"", resp:"", due:""},
-          {t:"Colori standard tubi/valvole", sev:"MIN", done:false, note:"", resp:"", due:""}
+          {t:"Visual management in reparto", p:1, note:"", resp:"", due:""}
         ],
         "5S": [
-          {t:"Audit settimanale con punteggio", sev:"MIN", done:false, note:"", resp:"", due:""},
-          {t:"Brief 5’ inizio turno (sicurezza+5S)", sev:"MIN", done:false, note:"", resp:"", due:""}
+          {t:"Audit periodico e mantenimento", p:1, note:"", resp:"", due:""}
         ]
       }
     }
   ]
 };
 
-/* Crea una nuova area già piena copiando il template */
-function cloneDefaultArea(name = "Nuova area") {
-  const tpl = DEFAULTS.areas[0]
-    ? structuredClone(DEFAULTS.areas[0])
-    : { name:"", S:{ "1S":[], "2S":[], "3S":[], "4S":[], "5S":[] } };
-  tpl.name = name;
-  for (const s of ["1S","2S","3S","4S","5S"]) {
-    tpl.S[s] = (tpl.S[s] || []).map(it => ({
-      ...it, done:false, resp:"", due:"", note: it.note || ""
-    }));
-  }
-  return tpl;
-}
-
 let state = load();
-let ui = { q:"", sev:"ALL", onlyLate:false };
 
+let ui = { q:"", line:"ALL", sector:"ALL", onlyLate:false };
+
+initFiltersFromState();
 render();
 updateDashboard();
 
-/* ---- Storage ---- */
+/* ---------- Storage ---------- */
 function load(){
   try{
     const raw = localStorage.getItem(storeKey);
@@ -74,28 +63,89 @@ function load(){
 }
 function save(){ localStorage.setItem(storeKey, JSON.stringify(state)); }
 
-/* ---- Filtri ---- */
-function applyFilters(item){
-  const q = ui.q.trim().toLowerCase();
-  if (ui.sev !== 'ALL' && item.sev !== ui.sev) return false;
-  if (q){
-    const bag = `${item.t||''} ${item.note||''} ${item.resp||''}`.toLowerCase();
-    if (!bag.includes(q)) return false;
+/* ---------- Utility Score PUNTI ---------- */
+/* Score S = somma punti / (5 * n.voci) */
+function scoreList(list){
+  if(!list || list.length===0) return 0;
+  const sum = list.reduce((a,it)=> a + (Number(it.p)||0), 0);
+  return sum / (5*list.length);
+}
+function computeScores(area){
+  const byS = {};
+  let sum = 0, max = 0;
+  for(const s of ["1S","2S","3S","4S","5S"]){
+    const list = area.S[s] || [];
+    const sScore = scoreList(list);
+    byS[s] = sScore;
+    max += 5 * list.length;
+    sum += list.reduce((a,it)=> a + (Number(it.p)||0), 0);
   }
-  if (ui.onlyLate && (!isOverdue(item.due) || item.done)) return false;
+  const areaScore = max>0 ? (sum/max) : 0;
+  return { areaScore, byS };
+}
+function overallStats(filteredAreas){
+  const areas = filteredAreas || state.areas;
+  let sum=0, max=0, late=0;
+  areas.forEach(a=>{
+    for(const s of ["1S","2S","3S","4S","5S"]){
+      (a.S[s]||[]).forEach(it=>{
+        max += 5;
+        sum += Number(it.p)||0;
+        if (isOverdue(it.due)) late++;
+      });
+    }
+  });
+  return { score: max? (sum/max) : 0, late };
+}
+function fmtPct(x){ return Math.round(x*100) + "%"; }
+function isOverdue(iso){ if(!iso) return false; const d=new Date(iso+"T23:59:59"); const now=new Date(); return d<now; }
+
+/* ---------- Filtri ---------- */
+function matchFilters(area){
+  if(ui.line!=="ALL" && (area.line||"").trim()!==ui.line) return false;
+  if(ui.sector!=="ALL" && (area.sector||"").trim()!==ui.sector) return false;
   return true;
 }
-
-/* ---- Rendering ---- */
-function render(){
-  elAreas.innerHTML = '';
-  state.areas.forEach((area, idx) => elAreas.appendChild(renderArea(area, idx)));
-  updateDashboard();
-  drawAreasChart();
+function filteredAreas(){
+  return state.areas.filter(a=> matchFilters(a));
 }
+function initFiltersFromState(){
+  // popola select linea dinamicamente
+  const lines = Array.from(new Set(state.areas.map(a=> (a.line||"").trim()).filter(Boolean))).sort();
+  elLineFilter.innerHTML = '<option value="ALL">Linea: Tutte</option>' + lines.map(l=>`<option value="${l}">${l}</option>`).join('');
+  elLineFilter.value = ui.line;
+}
+
+/* ---------- Rendering ---------- */
+function render(){
+  initFiltersFromState(); // aggiorna elenco linee
+  const areasToShow = state.areas.filter(a=>{
+    if(!matchFilters(a)) return false;
+    // filtro testuale e "solo in ritardo" sugli item
+    if(ui.q.trim()==="" && !ui.onlyLate) return true;
+    // se filtro attivo, verifica che almeno un item nell'area soddisfi
+    const q = ui.q.trim().toLowerCase();
+    for(const s of ["1S","2S","3S","4S","5S"]){
+      for(const it of (a.S[s]||[])){
+        if(ui.onlyLate && !isOverdue(it.due)) continue;
+        const bag = `${it.t||''} ${it.note||''} ${it.resp||''}`.toLowerCase();
+        if(bag.includes(q)) return true;
+      }
+    }
+    return false;
+  });
+
+  elAreas.innerHTML = '';
+  areasToShow.forEach((area, idx) => elAreas.appendChild(renderArea(area, state.areas.indexOf(area))));
+  updateDashboard(areasToShow);
+  drawAreasChart(); // usa filtri correnti
+}
+
 function renderArea(area, idx){
   const node = tplArea.content.firstElementChild.cloneNode(true);
   const name = node.querySelector('.area-name');
+  const line = node.querySelector('.area-line');
+  const sector = node.querySelector('.area-sector');
   const scoreArea = node.querySelector('.score-val');
   const pills = {
     "1S": node.querySelector('.score-1S'),
@@ -105,8 +155,13 @@ function renderArea(area, idx){
     "5S": node.querySelector('.score-5S'),
   };
 
-  name.value = area.name;
+  name.value = area.name || "";
+  line.value = area.line || "";
+  sector.value = area.sector || "Rettifica";
+
   name.addEventListener('input', () => { state.areas[idx].name = name.value; save(); drawAreasChart(); });
+  line.addEventListener('input', () => { state.areas[idx].line = line.value.trim(); save(); render(); });
+  sector.addEventListener('change', () => { state.areas[idx].sector = sector.value; save(); render(); });
 
   // Tabs
   node.querySelectorAll('.tab').forEach(tab=>{
@@ -119,18 +174,18 @@ function renderArea(area, idx){
     });
   });
 
-  // Pannelli + items (con filtri)
+  // Panels
   node.querySelectorAll('.panel').forEach(panel=>{
     const s = panel.dataset.s;
     panel.innerHTML = '';
-    (area.S[s] ||= []).forEach((item, iIdx) => { if (applyFilters(item)) panel.appendChild(renderItem(idx, s, iIdx, item)); });
+    (area.S[s] ||= []).forEach((item, iIdx) => panel.appendChild(renderItem(idx, s, iIdx, item)));
   });
 
   // Aggiungi voce alla S attiva
   node.querySelector('.add-item').addEventListener('click', ()=>{
     const activeS = node.querySelector('.tab.active').dataset.s;
     const list = state.areas[idx].S[activeS];
-    list.push({t:"", sev:"OK", done:false, note:"", resp:"", due:""});
+    list.push({t:"", p:0, note:"", resp:"", due:""});
     save(); render();
   });
 
@@ -150,29 +205,26 @@ function renderArea(area, idx){
 
   return node;
 }
+
 function renderItem(aIdx, sKey, iIdx, item){
   const node = tplItem.content.firstElementChild.cloneNode(true);
-  const chk = node.querySelector('.chk');
   const txt = node.querySelector('.txt');
-  const sev = node.querySelector('.sev');
+  const points = node.querySelector('.points');
   const note = node.querySelector('.note');
   const resp = node.querySelector('.resp');
   const due = node.querySelector('.due');
 
-  txt.value = item.t; sev.value = item.sev; chk.checked = item.done;
-  note.value = item.note; resp.value = item.resp || ""; due.value = item.due || "";
-  node.dataset.sev = item.sev;
-  node.classList.toggle('ok', item.done);
+  txt.value = item.t || "";
+  points.value = String(POINTS.includes(Number(item.p)) ? item.p : 0);
+  note.value = item.note || "";
+  resp.value = item.resp || "";
+  due.value = item.due || "";
 
-  const setLate = ()=> node.classList.toggle('late', isOverdue(due.value) && !chk.checked);
+  const setLate = ()=> node.classList.toggle('late', isOverdue(due.value));
   setLate();
 
-  chk.addEventListener('change', ()=>{
-    const it = state.areas[aIdx].S[sKey][iIdx];
-    it.done = chk.checked; save(); updateAll();
-  });
   txt.addEventListener('input', ()=>{ state.areas[aIdx].S[sKey][iIdx].t = txt.value; save(); });
-  sev.addEventListener('change', ()=>{ state.areas[aIdx].S[sKey][iIdx].sev = sev.value; save(); updateAll(); });
+  points.addEventListener('change', ()=>{ state.areas[aIdx].S[sKey][iIdx].p = Number(points.value); save(); updateAll(); });
   note.addEventListener('input', ()=>{ state.areas[aIdx].S[sKey][iIdx].note = note.value; save(); });
   resp.addEventListener('input', ()=>{ state.areas[aIdx].S[sKey][iIdx].resp = resp.value; save(); });
   due.addEventListener('change', ()=>{ state.areas[aIdx].S[sKey][iIdx].due = due.value; save(); setLate(); updateDashboard(); });
@@ -184,74 +236,60 @@ function renderItem(aIdx, sKey, iIdx, item){
   return node;
 }
 
-/* ---- Scoring & KPI ---- */
-function computeScores(area){
-  const byS = {};
-  let sumDone=0, sumTot=0;
-  for(const s of ["1S","2S","3S","4S","5S"]) {
-    const list = area.S[s] || [];
-    let d=0, t=0;
-    list.forEach(it => { const w=WEIGHTS[it.sev]||1; t+=w; if(it.done) d+=w; });
-    byS[s] = t ? d/t : 0;
-    sumDone += d; sumTot += t;
-  }
-  return { areaScore: sumTot ? sumDone/sumTot : 0, byS };
-}
-function overallStats(){
-  let totD=0, totT=0, late=0;
-  state.areas.forEach(a=>{
-    for(const s of ["1S","2S","3S","4S","5S"]) {
-      (a.S[s]||[]).forEach(it=>{
-        const w=WEIGHTS[it.sev]||1; totT+=w; if(it.done) totD+=w;
-        if (isOverdue(it.due) && !it.done) late++;
-      });
-    }
-  });
-  return { score: (totT? totD/totT : 0), late };
-}
-function updateDashboard(){
-  elKpiAreas.textContent = state.areas.length;
-  const { score, late } = overallStats();
+/* ---------- Dashboard & KPI ---------- */
+function updateDashboard(areas){
+  const arr = areas || filteredAreas();
+  elKpiAreas.textContent = arr.length;
+  const { score, late } = overallStats(arr);
   elKpiScore.textContent = fmtPct(score);
   elKpiLate.textContent = late;
 }
-function fmtPct(x){ return Math.round(x*100) + "%"; }
-function isOverdue(iso){ if(!iso) return false; const d=new Date(iso+"T23:59:59"); const now=new Date(); return d<now; }
 
-/* ---- Grafico cruscotto: gruppi per area (TOT + 1S..5S con colori e %) ---- */
+/* ---------- Grafico per LINEA (TOT + 1S..5S) con filtri Linea/Settore ---------- */
 function drawAreasChart(){
   const c = document.getElementById('chartAreas');
   if(!c) return;
   const ctx = c.getContext('2d');
 
-  // dimensioni (un po' più alto per etichette e legenda)
-  const Hpx = 220;
+  const Hpx = 240;
   const W = c.width  = c.clientWidth * devicePixelRatio;
   const H = c.height = Hpx * devicePixelRatio;
   ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
   ctx.clearRect(0,0,W,H);
 
-  // dati: per ogni area -> TOT + byS
-  const groups = state.areas.map(a=>{
-    const { byS, areaScore } = computeScores(a);
-    return {
-      name: a.name || 'Area',
-      vals: {
-        "TOT": areaScore,
-        "1S": byS["1S"]||0,
-        "2S": byS["2S"]||0,
-        "3S": byS["3S"]||0,
-        "4S": byS["4S"]||0,
-        "5S": byS["5S"]||0
-      }
-    };
+  // Raggruppa per LINEA, applicando filtri (settore e linea)
+  const areas = filteredAreas();
+  const byLine = {};
+  areas.forEach(a=>{
+    const line = (a.line||'').trim() || '—';
+    if(!byLine[line]) byLine[line] = [];
+    byLine[line].push(a);
   });
 
-  const padL=60, padR=16, padT=20, padB=38;      // bordo basso + alto per etichette
+  // Calcola score per Linea aggregando le aree della linea
+  const groups = Object.entries(byLine).map(([line, list])=>{
+    let totals = { "1S":{sum:0,max:0}, "2S":{sum:0,max:0}, "3S":{sum:0,max:0}, "4S":{sum:0,max:0}, "5S":{sum:0,max:0} };
+    list.forEach(a=>{
+      for(const s of ["1S","2S","3S","4S","5S"]){
+        (a.S[s]||[]).forEach(it=>{ totals[s].sum += Number(it.p)||0; totals[s].max += 5; });
+      }
+    });
+    const byS = {};
+    for(const s of ["1S","2S","3S","4S","5S"]){
+      byS[s] = totals[s].max ? (totals[s].sum / totals[s].max) : 0;
+    }
+    const totSum = Object.values(totals).reduce((a,v)=>a+v.sum,0);
+    const totMax = Object.values(totals).reduce((a,v)=>a+v.max,0);
+    const areaScore = totMax? (totSum/totMax) : 0;
+
+    return { line, vals: { "TOT": areaScore, "1S":byS["1S"], "2S":byS["2S"], "3S":byS["3S"], "4S":byS["4S"], "5S":byS["5S"] } };
+  }).sort((a,b)=> a.line.localeCompare(b.line));
+
+  const padL=60, padR=16, padT=20, padB=44;
   const plotW = (W/devicePixelRatio) - padL - padR;
   const plotH = (H/devicePixelRatio) - padT - padB;
 
-  // assi + griglia %
+  // assi + griglia
   ctx.strokeStyle = 'rgba(255,255,255,0.2)';
   ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, padT+plotH); ctx.lineTo(padL+plotW, padT+plotH); ctx.stroke();
@@ -266,26 +304,17 @@ function drawAreasChart(){
 
   if (!groups.length) return;
 
-  // palette dalle CSS variables
+  // palette
   const gv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-  const COLORS = {
-    "TOT": gv('--muted') || '#9bb0d6',
-    "1S": gv('--c1') || '#7a56c6',
-    "2S": gv('--c2') || '#e44f37',
-    "3S": gv('--c3') || '#f3a11a',
-    "4S": gv('--c4') || '#35b468',
-    "5S": gv('--c5') || '#4b88ff'
-  };
+  const COLORS = { "TOT": gv('--muted')||'#9bb0d6', "1S":gv('--c1')||'#7a56c6', "2S":gv('--c2')||'#e44f37', "3S":gv('--c3')||'#f3a11a', "4S":gv('--c4')||'#35b468', "5S":gv('--c5')||'#4b88ff' };
 
-  // layout barre: per ogni area 6 barre (TOT + 1S..5S)
+  // layout barre: 6 per gruppo
   const METRICS = ["TOT","1S","2S","3S","4S","5S"];
-  const innerGap = 4;                 // spazio tra barre dello stesso gruppo
-  const barW     = 14;                // larghezza singola barra
-  const groupW   = METRICS.length*barW + (METRICS.length-1)*innerGap;
-  const areaGap  = Math.max(16, groupW * 0.8);     // spazio tra gruppi (aree)
+  const innerGap = 4, barW = 14;
+  const groupW = METRICS.length*barW + (METRICS.length-1)*innerGap;
+  const groupGap = Math.max(18, groupW * 0.9);
 
-  // calcolo larghezza totale e punto di partenza (centratura)
-  const totalW = groups.length*groupW + (groups.length-1)*areaGap;
+  const totalW = groups.length*groupW + (groups.length-1)*groupGap;
   const startX = padL + Math.max(8, (plotW - totalW)/2);
 
   // disegna gruppi
@@ -297,11 +326,9 @@ function drawAreasChart(){
       const h = val * plotH;
       const y = padT + plotH - h;
 
-      // barra
       ctx.fillStyle = COLORS[m];
       ctx.fillRect(bx, y, barW, h);
 
-      // percentuale sopra
       ctx.fillStyle = 'rgba(255,255,255,0.9)';
       ctx.textAlign = 'center';
       const topY = h>16 ? y-4 : padT + plotH - 2;
@@ -310,20 +337,19 @@ function drawAreasChart(){
       bx += barW + innerGap;
     });
 
-    // etichetta area
+    // etichetta LINEA sotto il gruppo
     ctx.save();
-    ctx.translate(x + groupW/2, padT + plotH + 16);
-    ctx.rotate(-Math.PI/8);
-    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.translate(x + groupW/2, padT + plotH + 20);
+    ctx.rotate(-Math.PI/12);
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
     ctx.textAlign = 'center';
-    const nm = g.name.length>14 ? g.name.slice(0,14)+'…' : g.name;
-    ctx.fillText(nm, 0, 0);
+    ctx.fillText(g.line, 0, 0);
     ctx.restore();
 
-    x += groupW + areaGap;
+    x += groupW + groupGap;
   });
 
-  // legenda in alto a destra
+  // legenda
   const legendX = padL + plotW - 220, legendY = padT - 8;
   ctx.save();
   ctx.fillStyle = 'rgba(15,26,54,0.85)';
@@ -341,12 +367,20 @@ function drawAreasChart(){
   ctx.restore();
 }
 
-/* ---- Top controls ---- */
+/* ---------- Top controls ---------- */
 document.getElementById('btnNewArea').addEventListener('click', ()=>{
   const name = (prompt("Nome nuova area?", "Nuova area") || "").trim() || "Nuova area";
-  state.areas.push(cloneDefaultArea(name));     // crea area con tutte le voci
+  const line = (prompt("Linea (es. L2, L3…)?", "L2") || "").trim();
+  const sector = (prompt("Settore? (Rettifica/Montaggio)", "Rettifica") || "Rettifica").trim();
+  const tpl = structuredClone(DEFAULTS.areas[0]);
+  tpl.name = name; tpl.line = line; tpl.sector = (sector==='Montaggio'?'Montaggio':'Rettifica');
+  for(const s of ["1S","2S","3S","4S","5S"]){
+    tpl.S[s] = (tpl.S[s]||[]).map(it=>({ t:it.t, p:0, note:"", resp:"", due:"" })); // reset PUNTI e campi
+  }
+  state.areas.push(tpl);
   save(); render();
 });
+
 document.getElementById('btnExport').addEventListener('click', ()=>{
   const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
   const a = Object.assign(document.createElement('a'), {
@@ -366,16 +400,17 @@ document.getElementById('fileImport').addEventListener('change', async (e)=>{
 });
 document.getElementById('btnPrint').addEventListener('click', ()=>window.print());
 
-// Filtri
+/* Filtri */
 elQ.addEventListener('input', ()=>{ ui.q = elQ.value; render(); });
-elSev.addEventListener('change', ()=>{ ui.sev = elSev.value; render(); });
+elLineFilter.addEventListener('change', ()=>{ ui.line = elLineFilter.value; render(); });
+elSectorFilter.addEventListener('change', ()=>{ ui.sector = elSectorFilter.value; render(); });
 elOnlyLate.addEventListener('change', ()=>{ ui.onlyLate = elOnlyLate.checked; render(); });
 elBtnClear.addEventListener('click', ()=>{
-  ui = { q:'', sev:'ALL', onlyLate:false };
-  elQ.value=''; elSev.value='ALL'; elOnlyLate.checked=false; render();
+  ui = { q:'', line:'ALL', sector:'ALL', onlyLate:false };
+  elQ.value=''; elLineFilter.value='ALL'; elSectorFilter.value='ALL'; elOnlyLate.checked=false; render();
 });
 
-/* Ricalcola TUTTO (pill, punteggi, grafico) ad ogni modifica */
+/* Re-render globale su modifiche che impattano i punteggi/grafico */
 function updateAll(){ render(); }
 
 
