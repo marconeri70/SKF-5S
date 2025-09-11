@@ -115,28 +115,70 @@ function render(){
   list.forEach((area, idx)=> elAreas.appendChild(renderArea(area, state.areas.indexOf(area))));
   updateDashboard(list);
   drawAreasChart();
+  function buildLineButtons(){
+  const host = document.getElementById('lineBtns');
+  if(!host) return;
+  host.innerHTML = ''; // ripulisci
+  buildLineButtons();
+
+  // “Tutte”
+  const bAll = document.createElement('button');
+  bAll.className = 'btn' + (ui.line==='ALL' ? ' active' : '');
+  bAll.textContent = 'Tutte';
+  bAll.addEventListener('click', ()=>{
+    ui.line = 'ALL';
+    const sel = document.getElementById('lineFilter');
+    if (sel) sel.value = 'ALL';
+    render();
+    window.scrollTo({top: host.offsetTop, behavior: 'smooth'});
+  });
+  host.appendChild(bAll);
+
+  // Elenco linee presenti nei dati
+  const lines = Array.from(new Set(state.areas.map(a => (a.line||'').trim()).filter(Boolean))).sort();
+  lines.forEach(line=>{
+    const btn = document.createElement('button');
+    btn.className = 'btn' + (ui.line===line ? ' active' : '');
+    btn.textContent = line;
+    btn.addEventListener('click', ()=>{
+      ui.line = line;
+      const sel = document.getElementById('lineFilter');
+      if (sel) sel.value = line;
+      render();
+      // porta in vista la prima card di quella linea
+      setTimeout(()=>{
+        const card = [...document.querySelectorAll('.area .area-line')]
+          .find(i => i.value.trim() === line)?.closest('.area');
+        card?.scrollIntoView({behavior:'smooth', block:'start'});
+      }, 0);
+    });
+    host.appendChild(btn);
+  });
+}
+
 }
 function renderArea(area, idx){
-  const node = tplArea.content.firstElementChild.cloneNode(true);
-  const lineEl = node.querySelector('.area-line');
-  const scoreArea = node.querySelector('.score-val');
-  const btnSecRet = node.querySelector('.sec-ret');
-  const btnSecMon = node.querySelector('.sec-mont');
-  const pills = {
-    "1S": node.querySelector('.score-1S'),
-    "2S": node.querySelector('.score-2S'),
-    "3S": node.querySelector('.score-3S'),
-    "4S": node.querySelector('.score-4S'),
-    "5S": node.querySelector('.score-5S'),
-  };
+  btnSecRet.addEventListener('click', ()=>{
+  state.areas[idx].sector = "Rettifica"; save();
+  // apri davvero la vista del settore: applica filtro e ricarica
+  ui.sector = "Rettifica";
+  document.getElementById('btnFgr')?.classList.add('active');
+  document.getElementById('btnAsm')?.classList.remove('active');
+  document.getElementById('btnAll')?.classList.remove('active');
+  render();
+  // scroll dolce alla linea appena toccata
+  setTimeout(()=> node.scrollIntoView({behavior:'smooth', block:'start'}), 0);
+});
 
-  lineEl.value = area.line || "";
-  btnSecRet.classList.toggle('active', area.sector==="Rettifica");
-  btnSecMon.classList.toggle('active', area.sector==="Montaggio");
-
-  lineEl.addEventListener('input', ()=>{ state.areas[idx].line = lineEl.value.trim(); save(); render(); });
-  btnSecRet.addEventListener('click', ()=>{ state.areas[idx].sector="Rettifica"; save(); render(); });
-  btnSecMon.addEventListener('click', ()=>{ state.areas[idx].sector="Montaggio"; save(); render(); });
+btnSecMon.addEventListener('click', ()=>{
+  state.areas[idx].sector = "Montaggio"; save();
+  ui.sector = "Montaggio";
+  document.getElementById('btnAsm')?.classList.add('active');
+  document.getElementById('btnFgr')?.classList.remove('active');
+  document.getElementById('btnAll')?.classList.remove('active');
+  render();
+  setTimeout(()=> node.scrollIntoView({behavior:'smooth', block:'start'}), 0);
+});
 
   // Tabs
   node.querySelectorAll('.tab').forEach(tab=>{
