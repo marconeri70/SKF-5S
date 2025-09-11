@@ -96,3 +96,11 @@ main{padding:16px;max-width:1200px;margin:auto}
   .card{box-shadow:none;border-color:#999}
 }
 
+.line-buttons{
+  display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;
+}
+.line-buttons .btn{
+  background:#142043; border:1px solid var(--outline); color:var(--text);
+  padding:6px 10px; border-radius:10px; cursor:pointer;
+}
+.line-buttons .btn.active{ outline:2px solid var(--accent); }
