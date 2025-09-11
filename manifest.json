@@ -1,1 +1,8 @@
-{}
+{
+  "name": "SKF 5S (classic)",
+  "short_name": "SKF 5S",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0b1324",
+  "theme_color": "#0b1324"
+}
