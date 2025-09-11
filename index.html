@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>SKF 5S v7.4 – Audit & Checklist</title>
+  <title>SKF 5S v7.5 – Linee con Rettifica+Montaggio</title>
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0b1324">
@@ -11,81 +11,45 @@
 <body>
 <header class="app-header">
   <div class="brand">
-    <img src="assets/skf-logo.png" class="logo" alt="SKF">
-    <h1>SKF 5S <small class="ver">v7.4</small></h1>
+    <img src="assets/skf-logo.png" onerror="this.onerror=null;this.src='assets/skf-logo.svg';" class="logo" alt="SKF">
+    <h1>SKF 5S <small class="ver">v7.5</small></h1>
   </div>
   <div class="actions">
-    <button id="btnNewArea" class="btn primary" title="Crea LINEA con tutte le voci">+ Nuova linea</button>
+    <button id="btnNewArea" class="btn primary">+ Nuova linea</button>
     <button id="btnExport" class="btn">Esporta</button>
     <label class="btn file">Importa <input id="fileImport" type="file" accept="application/json" hidden></label>
     <button id="btnPrint" class="btn">Stampa</button>
   </div>
 </header>
 
-<!-- Intro 5S come la tua brochure -->
-<section class="intro5s card">
-  <div class="intro-grid">
-    <svg class="pie5s" viewBox="0 0 220 220" aria-label="Cosa è 5S">
-      <circle cx="110" cy="110" r="100" fill="var(--bgSoft)"/>
-      <path d="M110,10 A100,100 0 0,1 210,110 L180,110 A70,70 0 0,0 110,40 Z" fill="var(--c5)"/>
-      <path d="M210,110 A100,100 0 0,1 110,210 L110,180 A70,70 0 0,0 180,110 Z" fill="var(--c4)"/>
-      <path d="M110,210 A100,100 0 0,1 10,110 L40,110 A70,70 0 0,0 110,180 Z" fill="var(--c3)"/>
-      <path d="M10,110 A100,100 0 0,1 110,10 L110,40 A70,70 0 0,0 40,110 Z" fill="var(--c2)"/>
-      <path d="M110,40 A70,70 0 0,1 140,110 L125,110 A55,55 0 0,0 110,55 Z" fill="var(--c1)"/>
-      <circle cx="110" cy="110" r="35" fill="var(--bg)"/>
-      <text x="165" y="70" class="pie-label">5S</text>
-      <text x="150" y="160" class="pie-label">4S</text>
-      <text x="70"  y="185" class="pie-label">3S</text>
-      <text x="30"  y="120" class="pie-label">2S</text>
-      <text x="118" y="95"  class="pie-label">1S</text>
-    </svg>
-
-    <div class="intro-copy">
-      <h2>Cosa è 5S</h2>
-      <p>5S fornisce un posto di lavoro <b>sicuro</b>, <b>organizzato</b> e <b>pulito</b>, per fare bene al primo colpo.</p>
-      <ul class="legend5s">
-        <li><span class="dot" style="background:var(--c1)"></span><b class="tag s1">1S Selezionare</b> – tenere solo ciò che serve.</li>
-        <li><span class="dot" style="background:var(--c2)"></span><b class="tag s2">2S Sistemare</b> – un posto per ogni cosa.</li>
-        <li><span class="dot" style="background:var(--c3)"></span><b class="tag s3">3S Splendere</b> – pulire ed eliminare le cause.</li>
-        <li><span class="dot" style="background:var(--c4)"></span><b class="tag s4">4S Standardizzare</b> – regole e segnali visivi.</li>
-        <li><span class="dot" style="background:var(--c5)"></span><b class="tag s5">5S Sostenere</b> – disciplina e miglioramento.</li>
-      </ul>
+<section class="controls card">
+  <div class="filters">
+    <input id="q" placeholder="🔎 Cerca in descrizione / note / responsabile…">
+    <select id="lineFilter" title="Filtra per Linea"></select>
+    <div class="sector-toggles" role="group" aria-label="Settore">
+      <button id="btnAll" class="btn seg active">Tutti</button>
+      <button id="btnFgr" class="btn seg">Rettifica</button>
+      <button id="btnAsm" class="btn seg">Montaggio</button>
     </div>
+    <label class="onlylate"><input type="checkbox" id="onlyLate"> Solo in ritardo</label>
+    <button id="btnClearFilters" class="btn ghost">Pulisci</button>
   </div>
 </section>
 
-<main>
-  <section class="controls card">
-    <div class="filters">
-      <input id="q" placeholder="🔎 Cerca in descrizione / note / responsabile…">
-      <select id="lineFilter" title="Filtra per Linea"></select>
-      <div class="sector-toggles" role="group" aria-label="Settore">
-        <button id="btnAll" class="btn seg active">Tutti</button>
-        <button id="btnFgr" class="btn seg">Rettifica</button>
-        <button id="btnAsm" class="btn seg">Montaggio</button>
-      </div>
-      <label class="onlylate"><input type="checkbox" id="onlyLate"> Solo in ritardo</label>
-      <button id="btnClearFilters" class="btn ghost">Pulisci</button>
+<section id="dashboard" class="card dash">
+  <div class="dash-head">
+    <h2>Cruscotto</h2>
+    <div class="kpis">
+      <div class="kpi"><div>Linee</div><div id="kpiAreas">0</div></div>
+      <div class="kpi"><div>Punteggio medio</div><div id="kpiScore">0%</div></div>
+      <div class="kpi"><div>Azioni in ritardo</div><div id="kpiLate">0</div></div>
     </div>
-  </section>
+  </div>
+  <canvas id="chartAreas" height="240"></canvas>
+  <div id="lineBtns" class="line-buttons"></div>
+</section>
 
-  <section id="dashboard" class="card dash">
-    <div class="dash-head">
-      <h2>Cruscotto</h2>
-      <div class="kpis">
-        <div class="kpi"><div>Totale linee</div><div id="kpiAreas">0</div></div>
-        <div class="kpi"><div>Punteggio medio</div><div id="kpiScore">0%</div></div>
-        <div class="kpi"><div>Azioni in ritardo</div><div id="kpiLate">0</div></div>
-      </div>
-    </div>
-    <canvas id="chartAreas" height="220"></canvas>
-    <div id="lineBtns" class="line-buttons"></div>   <!-- NUOVO -->
-    <p class="muted">Score = somma Punti / (5 × n.voci). Punti ammessi: 0, 1, 3, 5.</p>
-
-  </section>
-
-  <section id="areas"></section>
-</main>
+<section id="areas"></section>
 
 <template id="tplArea">
   <div class="area card">
@@ -93,13 +57,6 @@
       <div>
         <label class="lbl">Linea</label>
         <input class="area-line" placeholder="es. L2">
-      </div>
-      <div>
-        <label class="lbl">Settore</label>
-        <div class="mini-toggles">
-          <button class="btn mini sec-ret">Rettifica</button>
-          <button class="btn mini sec-mont">Montaggio</button>
-        </div>
       </div>
       <div class="score">Punteggio: <span class="score-val">0%</span></div>
       <div class="area-actions">
@@ -109,12 +66,19 @@
       </div>
     </div>
 
+    <!-- Sotto-schede Settore -->
+    <div class="sector-tabs">
+      <button data-sector="Rettifica" class="tab sec active">Rettifica</button>
+      <button data-sector="Montaggio" class="tab sec">Montaggio</button>
+    </div>
+
+    <!-- Tab 5S -->
     <div class="s-tabs">
-      <button data-s="1S" class="tab active">1S <span class="pill score-1S">0%</span></button>
-      <button data-s="2S" class="tab">2S <span class="pill score-2S">0%</span></button>
-      <button data-s="3S" class="tab">3S <span class="pill score-3S">0%</span></button>
-      <button data-s="4S" class="tab">4S <span class="pill score-4S">0%</span></button>
-      <button data-s="5S" class="tab">5S <span class="pill score-5S">0%</span></button>
+      <button data-s="1S" class="tab s active">1S <span class="pill score-1S">0%</span></button>
+      <button data-s="2S" class="tab s">2S <span class="pill score-2S">0%</span></button>
+      <button data-s="3S" class="tab s">3S <span class="pill score-3S">0%</span></button>
+      <button data-s="4S" class="tab s">4S <span class="pill score-4S">0%</span></button>
+      <button data-s="5S" class="tab s">5S <span class="pill score-5S">0%</span></button>
     </div>
 
     <div class="s-panels">
@@ -144,11 +108,12 @@
 </template>
 
 <footer>
-  <p>© SKF – Funziona offline, installabile come app (PWA)</p>
+  <p>© SKF – PWA offline</p>
 </footer>
 
 <script src="app.js"></script>
 <script> if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); } </script>
 </body>
 </html>
+
 
