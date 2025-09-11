@@ -80,3 +80,15 @@ body{margin:0;background:linear-gradient(180deg,#0b1324,#0e1831 30%,#0b1324);col
   .card{box-shadow:none;border-color:#999}
 }
 
+/* Intro 5S */
+.intro5s{margin-top:16px}
+.intro-grid{display:grid;grid-template-columns:260px 1fr;gap:18px;align-items:center}
+.pie5s{width:100%;height:auto;display:block}
+.pie5s .pie-label{font:700 16px/1 system-ui,Segoe UI,Roboto; fill:#fff; opacity:.9}
+.intro-copy h2{margin:.2rem 0 6px}
+.intro-copy p{margin:.2rem 0 10px;color:var(--muted)}
+.legend5s{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.legend5s .dot{display:inline-block;width:14px;height:14px;border-radius:50%;margin-right:8px;vertical-align:middle}
+.legend5s .tag{padding:2px 8px;border-radius:999px;color:#06122a;background:rgba(255,255,255,.92);margin-right:6px}
+.tag.s1{border:2px solid var(--c1)} .tag.s2{border:2px solid var(--c2)} .tag.s3{border:2px solid var(--c3)} .tag.s4{border:2px solid var(--c4)} .tag.s5{border:2px solid var(--c5)}
+@media (max-width:900px){ .intro-grid{grid-template-columns:1fr} .pie5s{max-width:360px;margin:0 auto} }
