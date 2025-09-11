@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>SKF 5S v7 – Audit & Checklist</title>
+  <title>SKF 5S v7.1 – Audit & Checklist</title>
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0b1324">
@@ -12,7 +12,7 @@
 <header class="app-header">
   <div class="brand">
     <img src="assets/skf-logo.png" class="logo" alt="SKF">
-    <h1>SKF 5S <small class="ver">v7</small></h1>
+    <h1>SKF 5S <small class="ver">v7.1</small></h1>
   </div>
   <div class="actions">
     <button id="btnNewArea" class="btn primary" title="Crea area con tutte le voci">+ Nuova area</button>
@@ -22,40 +22,17 @@
   </div>
 </header>
 
+<!-- Intro (opzionale) -->
 <section class="intro5s card">
   <div class="intro-grid">
-    <!-- Grafico a torta stile brochure -->
     <svg class="pie5s" viewBox="0 0 220 220" aria-label="Cosa è 5S">
-      <!-- cerchio di base -->
       <circle cx="110" cy="110" r="100" fill="var(--bgSoft)"/>
-      <!-- 5S (blu) semicerchio esterno -->
-      <path d="M110,10
-               A100,100 0 0,1 210,110
-               L180,110
-               A70,70 0 0,0 110,40 Z" fill="var(--c5)"/>
-      <!-- 4S (verde) -->
-      <path d="M210,110
-               A100,100 0 0,1 110,210
-               L110,180
-               A70,70 0 0,0 180,110 Z" fill="var(--c4)"/>
-      <!-- 3S (arancio) -->
-      <path d="M110,210
-               A100,100 0 0,1 10,110
-               L40,110
-               A70,70 0 0,0 110,180 Z" fill="var(--c3)"/>
-      <!-- 2S (rosso) -->
-      <path d="M10,110
-               A100,100 0 0,1 110,10
-               L110,40
-               A70,70 0 0,0 40,110 Z" fill="var(--c2)"/>
-      <!-- 1S (viola) piccolo spicchio -->
-      <path d="M110,40
-               A70,70 0 0,1 140,110
-               L125,110
-               A55,55 0 0,0 110,55 Z" fill="var(--c1)"/>
-      <!-- foro centrale per effetto “spicchi” -->
+      <path d="M110,10 A100,100 0 0,1 210,110 L180,110 A70,70 0 0,0 110,40 Z" fill="var(--c5)"/>
+      <path d="M210,110 A100,100 0 0,1 110,210 L110,180 A70,70 0 0,0 180,110 Z" fill="var(--c4)"/>
+      <path d="M110,210 A100,100 0 0,1 10,110 L40,110 A70,70 0 0,0 110,180 Z" fill="var(--c3)"/>
+      <path d="M10,110 A100,100 0 0,1 110,10 L110,40 A70,70 0 0,0 40,110 Z" fill="var(--c2)"/>
+      <path d="M110,40 A70,70 0 0,1 140,110 L125,110 A55,55 0 0,0 110,55 Z" fill="var(--c1)"/>
       <circle cx="110" cy="110" r="35" fill="var(--bg)"/>
-      <!-- Etichette S -->
       <text x="165" y="70" class="pie-label">5S</text>
       <text x="150" y="160" class="pie-label">4S</text>
       <text x="70"  y="185" class="pie-label">3S</text>
@@ -63,38 +40,29 @@
       <text x="118" y="95"  class="pie-label">1S</text>
     </svg>
 
-    <!-- Testo a destra come nella brochure -->
     <div class="intro-copy">
       <h2>Cosa è 5S</h2>
-      <p>5S è un metodo per fornire un posto di lavoro <b>sicuro</b>, <b>ben organizzato</b> e <b>pulito</b>,
-      per fare il nostro lavoro facilmente e correttamente la prima volta.</p>
-
+      <p>5S fornisce un posto di lavoro <b>sicuro</b>, <b>organizzato</b> e <b>pulito</b>, per fare il lavoro bene al primo colpo.</p>
       <ul class="legend5s">
-        <li><span class="dot" style="background:var(--c1)"></span>
-            <b class="tag s1">1S Selezionare</b> – Avere solo ciò che serve, eliminare il superfluo.</li>
-        <li><span class="dot" style="background:var(--c2)"></span>
-            <b class="tag s2">2S Sistemare</b> – Un posto per ogni cosa, tutto al suo posto.</li>
-        <li><span class="dot" style="background:var(--c3)"></span>
-            <b class="tag s3">3S Splendere</b> – Pulizia e rimozione delle fonti di sporco.</li>
-        <li><span class="dot" style="background:var(--c4)"></span>
-            <b class="tag s4">4S Standardizzare</b> – Regole e segnali visivi per mantenere l’ordine.</li>
-        <li><span class="dot" style="background:var(--c5)"></span>
-            <b class="tag s5">5S Sostenere</b> – Disciplina e miglioramento continuo.</li>
+        <li><span class="dot" style="background:var(--c1)"></span><b class="tag s1">1S Selezionare</b> – tenere solo ciò che serve.</li>
+        <li><span class="dot" style="background:var(--c2)"></span><b class="tag s2">2S Sistemare</b> – ordine e posizioni chiare.</li>
+        <li><span class="dot" style="background:var(--c3)"></span><b class="tag s3">3S Splendere</b> – pulizia e rimozione fonti di sporco.</li>
+        <li><span class="dot" style="background:var(--c4)"></span><b class="tag s4">4S Standardizzare</b> – regole e segnali visivi.</li>
+        <li><span class="dot" style="background:var(--c5)"></span><b class="tag s5">5S Sostenere</b> – disciplina e miglioramento.</li>
       </ul>
     </div>
   </div>
 </section>
-    
+
 <main>
   <section class="controls card">
     <div class="filters">
       <input id="q" placeholder="🔎 Cerca in descrizione / note / responsabile…">
-      <select id="sev" title="Filtra per severità">
-        <option value="ALL">Severità: tutte</option>
-        <option value="CRIT">CRIT</option>
-        <option value="MAJ">MAJ</option>
-        <option value="MIN">MIN</option>
-        <option value="OK">OK</option>
+      <select id="lineFilter" title="Filtra per Linea"></select>
+      <select id="sectorFilter" title="Filtra per Settore">
+        <option value="ALL">Settore: Tutti</option>
+        <option value="Rettifica">Rettifica</option>
+        <option value="Montaggio">Montaggio</option>
       </select>
       <label class="onlylate"><input type="checkbox" id="onlyLate"> Solo in ritardo</label>
       <button id="btnClearFilters" class="btn ghost">Pulisci</button>
@@ -110,8 +78,8 @@
         <div class="kpi"><div>Azioni in ritardo</div><div id="kpiLate">0</div></div>
       </div>
     </div>
-    <canvas id="chartAreas" height="180" aria-label="Punteggio per area"></canvas>
-    <p class="muted">Il punteggio è la percentuale di completamento ponderata: OK=1, MIN=1, MAJ=2, CRIT=3.</p>
+    <canvas id="chartAreas" height="220" aria-label="Linee: TOT + 1S..5S"></canvas>
+    <p class="muted">Score = somma Punti / (5 × n.voci). Punti possibili: 0, 1, 3, 5.</p>
   </section>
 
   <section id="areas"></section>
@@ -120,7 +88,14 @@
 <template id="tplArea">
   <div class="area card">
     <div class="area-head">
-      <input class="area-name" placeholder="Nome area (es. Rettifica)">
+      <input class="area-name" placeholder="Nome area (es. Rettifica OP30)">
+      <div class="area-meta">
+        <input class="area-line" placeholder="Linea (es. L2)">
+        <select class="area-sector" title="Settore">
+          <option value="Rettifica">Rettifica</option>
+          <option value="Montaggio">Montaggio</option>
+        </select>
+      </div>
       <div class="score">Punteggio: <span class="score-val">0%</span></div>
       <div class="area-actions">
         <button class="btn ghost add-item" title="Aggiungi voce alla S selezionata">+ Voce</button>
@@ -149,10 +124,12 @@
 
 <template id="tplItem">
   <div class="item">
-    <input type="checkbox" class="chk" title="Completata">
     <input class="txt" placeholder="Descrizione…">
-    <select class="sev" title="Severità">
-      <option>OK</option><option>MIN</option><option>MAJ</option><option>CRIT</option>
+    <select class="points" title="Punti">
+      <option value="0">Punti: 0</option>
+      <option value="1">Punti: 1</option>
+      <option value="3">Punti: 3</option>
+      <option value="5">Punti: 5</option>
     </select>
     <input class="resp" placeholder="Responsabile">
     <input type="date" class="due" title="Scadenza">
@@ -171,5 +148,4 @@
 </script>
 </body>
 </html>
-
 
