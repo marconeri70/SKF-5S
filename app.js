@@ -71,6 +71,34 @@ function makeArea(line, sector){
 }
 
 let state = load();
+// --- PATCH DI SICUREZZA ---
+// se non ci sono aree, creane una di default
+if (!state.areas || !Array.isArray(state.areas) || state.areas.length === 0) {
+  state = { areas: [ makeArea("L2", "Rettifica") ] };
+  save();
+}
+
+// reset filtri all'avvio, per evitare di nascondere tutto
+let ui = { q:"", line:"ALL", sector:"ALL", onlyLate:false };
+
+// in più, assicura che ogni area abbia le 5S e i campi richiesti (migrazione)
+state.areas = state.areas.map(a => {
+  const safe = { line: a.line || "Lx", sector: (a.sector === "Montaggio" ? "Montaggio" : "Rettifica"), S: a.S || {} };
+  for (const s of ["1S","2S","3S","4S","5S"]) {
+    if (!Array.isArray(safe.S[s])) {
+      // ricrea con le voci di default
+      const src = s==="1S"?VOC_1S: s==="2S"?VOC_2S: s==="3S"?VOC_3S: s==="4S"?VOC_4S: VOC_5S;
+      safe.S[s] = src.map(t=>({ t, p:0, note:"", resp:"", due:"" }));
+    } else {
+      // normalizza struttura punti
+      safe.S[s] = safe.S[s].map(it => ({ t: it.t || "", p: Number(it.p)||0, note: it.note||"", resp: it.resp||"", due: it.due||"" }));
+    }
+  }
+  return safe;
+});
+save();
+// --- FINE PATCH ---
+
 let ui = { q:"", line:"ALL", sector:"ALL", onlyLate:false };
 
 initFiltersFromState();
