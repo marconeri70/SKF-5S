@@ -2,54 +2,56 @@
 const storeKey = 'skf.fiveS.v7.5';
 const POINTS=[0,1,3,5];
 
-// --- VOCI UFFICIALI DAL TUO EXCEL ---
+// --- VOCI UFFICIALI DAL TUO EXCEL (titolo + descrizione) ---
 const VOC_1S = [
-  "Zona pedonale pavimento",
-  "Zona di lavoro (pavimento, macchina)",
-  "Materiali",
-  "Informazioni",
-  "Processo di etichettatura",
-  "Piano per sostenere il risultato",
-  "Coinvolgimento dei membri del team"
+  {"title":"Zona pedonale pavimento","desc":"L'area pedonale è esente da congestione/ostacoli (area libera) e da pericoli di inciampo"},
+  {"title":"Zona di lavoro (pavimento, macchina)","desc":"Nell'area sono presenti solo i materiali di consumo, gli strumenti, le attrezzature, i mobili necessari per il lavoro attuale. Gli inutili (riparazione/rottamazione/vecchi mobili o macchine non in uso/attrezzature con difetto minore) sono stati rimossi o contrassegnati per la rimozione."},
+  {"title":"Materiali","desc":"Nell'area è presente solo il materiale necessario per l’ordine in corso (per evitare confusione, viene conservato solo materiale in lavorazione). Materiali obsoleti o non necessari sono stati rimossi."},
+  {"title":"Informazioni","desc":"Nell'area sono presenti in buone condizioni solo documenti, schermi, illustrazioni, cartelli, poster necessari e pertinenti per il lavoro in corso."},
+  {"title":"Processo di etichettatura","desc":"Sono definiti l'area etichetta rossa, il processo e il team."},
+  {"title":"Piano per sostenere il risultato","desc":"Lavagna 5S con azioni correttive/piani, foto Prima & Dopo, punteggio audit, SPL, gestita bene."}
 ];
 
 const VOC_2S = [
-  "1-S Stato",
-  "Sicurezza",
-  "Qualità",
-  "Posizione Pre-Fissate",
-  "Documenti",
-  "Concetti",
-  "Piano per risultati duraturi",
-  "Coinvolgimento dei membri del team"
+  {"title":"1-S Stato","desc":"Area e team sono definiti e i membri comprendono 5S complessive e i dettagli di 1S."},
+  {"title":"Sicurezza","desc":"Tutti gli articoli/attrezzature relative alla sicurezza sono chiaramente contrassegnati e facilmente accessibili."},
+  {"title":"Qualità","desc":"Tutte le stazioni di qualità sono ben definite e organizzate (strumenti di misurazione, master, ecc.)."},
+  {"title":"Documenti","desc":"Tutti i file/documenti sono chiaramente identificati e organizzati nel punto di utilizzo."},
+  {"title":"Concetti","desc":"I miglioramenti sono realizzati secondo i concetti: punto d’uso, ergonomia, eliminazione confusione e sprechi."},
+  {"title":"Posizioni prefissate","desc":"Sono applicate posizioni fisse/ombre per attrezzi e materiali (visuali e intuitive)."},
+  {"title":"Visual Management di base","desc":"Marcature/etichette, linee a pavimento, colori standard e segnaletica sono implementati."}
 ];
 
 const VOC_3S = [
-  "1-S Stato",
-  "2-S Stato",
-  "Pulizia",
-  "Misure preventive",
-  "La pulizia è di routine e esiste un piano per un risultato duraturo",
-  "Coinvolgimento dei membri del team"
+  {"title":"1-S Stato","desc":"Stato di 1S mantenuto."},
+  {"title":"2-S Stato","desc":"Stato di 2S mantenuto."},
+  {"title":"Pulizia","desc":"Le aree sono pulite, prive di perdite, ruggine, polvere; sono puliti anche punti difficili."},
+  {"title":"Misure preventive","desc":"Le cause dello sporco/perdite sono rimosse e si prevengono ricadute."},
+  {"title":"Pulire è routine","desc":"Esiste una routine di pulizia con responsabilità e frequenze definite (finestre, angoli, pareti, porte, armadi, macchine, ecc.)."},
+  {"title":"Standard di pulizia","desc":"Standard/checklist della pulizia esposti e seguiti."}
 ];
 
-// NB: Il tuo foglio “4-S & 5-S” contiene elementi di entrambe le S.
-// Ho assegnato a 4S questi (A–F + N, O):
 const VOC_4S = [
-  "Aree di passaggio",
-  "Area di lavoro",
-  "Materiali",
-  "Informazione",
-  "Visual Management",
-  "Posti prefissati",
-  "Management Visivo",
-  "Standard & Documentazione"
+  {"title":"Aree di passaggio","desc":"Non si deposita nulla nelle aree di passaggio; nessun ostacolo o pericolo di inciampo (pavimento libero)."},
+  {"title":"Area di lavoro","desc":"Solo il necessario: utensili, attrezzature, arredi in uso. Il resto rimosso o in area di attesa rimozione."},
+  {"title":"Materiali","desc":"Solo i materiali necessari per il lavoro attuale sono presenti; obsoleti/non necessari rimossi."},
+  {"title":"Informazione","desc":"Solo informazioni necessarie e pertinenti, in buone condizioni, presenti nell’area."},
+  {"title":"Visual Management","desc":"La cultura 5S è esposta; indicatori visuali funzionano bene per la routine 1S."},
+  {"title":"Posizioni prefissate","desc":"Posti prefissati e/o sagome a terra/pannelli; facile capire cosa manca/dove metterlo."},
+  {"title":"Standard lavoro & check","desc":"Standard (SPL), check-list e istruzioni sono visibili e usate; tutti li seguono."},
+  {"title":"Etichette e colori","desc":"Etichette chiare; codifica colori coerente per tubi/valvole/strumenti; cartelli ben leggibili."},
+  {"title":"Marcature su tubi/valvole","desc":"Tubi, valvole e strumenti identificati con colori e marcature standard."},
+  {"title":"Segnaletica a terra","desc":"Linee e campiture a terra presenti, leggibili e mantenute."},
+  {"title":"Punti di ispezione","desc":"Sono evidenti i punti di controllo/ispezione e cosa verificare."},
+  {"title":"Single Point Lessons (SPL)","desc":"SPL visibili, chiare, aggiornate e usate nella routine quotidiana."},
+  {"title":"Standard & documentazione","desc":"Standard 5S consolidati; documentazione di riferimento aggiornata e disponibile."},
+  {"title":"Management visivo avanzato","desc":"Allarmi visivi, kanban, indicatori scorte/consumi e livelli min/max ben implementati."},
+  {"title":"Misure preventive","desc":"Le anomalie notate durante pulizia sono registrate/analizzate ed eliminate alla radice."}
 ];
 
-// E a 5S questi (P, Q):
 const VOC_5S = [
-  "Ognuno & Ogni giorno",
-  "Miglioramento Continuo"
+  {"title":"Ognuno & ogni giorno","desc":"Tutti (inclusi i nuovi) sono formati sugli standard 5S e coinvolti nel mantenimento quotidiano."},
+  {"title":"Miglioramento continuo","desc":"Evidenza prima/dopo delle postazioni migliorate; i miglioramenti si mantengono come riferimento."}
 ];
 
 const elAreas = document.getElementById('areas');
@@ -67,9 +69,10 @@ const tplArea = document.getElementById('tplArea');
 const tplItem = document.getElementById('tplItem');
 
 function makeSectorSet(){ 
-  const map=l=>l.map(t=>({t, p:0, note:"", resp:"", due:""}));
+  const map = l => l.map(o => ({ t:o.title, d:o.desc, p:0, note:"", resp:"", due:"" }));
   return { "1S":map(VOC_1S), "2S":map(VOC_2S), "3S":map(VOC_3S), "4S":map(VOC_4S), "5S":map(VOC_5S) };
 }
+
 function makeArea(line){ 
   return { line, sectors:{ "Rettifica": makeSectorSet(), "Montaggio": makeSectorSet() } }; 
 }
@@ -243,21 +246,44 @@ function renderArea(area){
 
 function renderItem(area, sector, sKey, iIdx, item){
   const node = tplItem.content.firstElementChild.cloneNode(true);
+  const descHost = tplItem.content.children[1].cloneNode(true); // <div class="desc">
   const txt=node.querySelector('.txt'), points=node.querySelector('.points'),
-        note=node.querySelector('.note'), resp=node.querySelector('.resp'), due=node.querySelector('.due');
-  txt.value=item.t||""; points.value=String(POINTS.includes(+item.p)?item.p:0); 
+        note=node.querySelector('.note'), resp=node.querySelector('.resp'), due=node.querySelector('.due'),
+        info=node.querySelector('.info');
+
+  // Valori iniziali
+  txt.value=item.t||""; points.value=String([0,1,3,5].includes(+item.p)?item.p:0);
   note.value=item.note||""; resp.value=item.resp||""; due.value=item.due||"";
+  descHost.innerHTML = item.d ? `<h4>${item.t}</h4><p>${item.d}</p>` : "";
+
+  // Evidenza ritardi
   const setLate=()=> node.classList.toggle('late', isOverdue(due.value)); setLate();
+
+  // Bind
   txt.addEventListener('input', ()=>{ item.t = txt.value; save(); });
   points.addEventListener('change', ()=>{ item.p = +points.value; save(); updateDashboard(); drawAreasChart(); });
   note.addEventListener('input', ()=>{ item.note = note.value; save(); });
   resp.addEventListener('input', ()=>{ item.resp = resp.value; save(); });
   due.addEventListener('change', ()=>{ item.due = due.value; save(); setLate(); updateDashboard(); });
+
+  // Toggle descrizione (bottone “i” o clic sul titolo)
+  const toggle = ()=> descHost.classList.toggle('show');
+  info.addEventListener('click', toggle);
+  txt.addEventListener('focus', ()=>{}); // mantiene editabile
+  txt.addEventListener('dblclick', toggle); // doppio clic sul titolo apre/chiude descrizione
+
+  // Elimina item
   node.querySelector('.del').addEventListener('click', ()=>{
     const arr = area.sectors[sector][sKey]; arr.splice(iIdx,1); save(); render();
   });
-  return node;
+
+  // wrapper: item + descrizione
+  const wrap = document.createDocumentFragment();
+  wrap.appendChild(node);
+  wrap.appendChild(descHost);
+  return wrap;
 }
+
 
 /* -------- Dashboard & Grafico -------- */
 function updateDashboard(list){
