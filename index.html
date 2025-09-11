@@ -152,7 +152,8 @@
 
 <template id="tplItem">
   <div class="item">
-    <input class="txt" placeholder="Descrizione…">
+    <button class="btn tiny info" title="Dettaglio">i</button>
+    <input class="txt" placeholder="Titolo…">
     <select class="points" title="Punti">
       <option value="0">Punti: 0</option>
       <option value="1">Punti: 1</option>
@@ -164,6 +165,7 @@
     <input class="note" placeholder="Note…">
     <button class="btn tiny del" title="Elimina">×</button>
   </div>
+  <div class="desc"></div> <!-- pannello descrizione collassabile -->
 </template>
 
 <footer>
