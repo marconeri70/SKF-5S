@@ -92,3 +92,16 @@ body{margin:0;background:linear-gradient(180deg,#0b1324,#0e1831 30%,#0b1324);col
 .legend5s .tag{padding:2px 8px;border-radius:999px;color:#06122a;background:rgba(255,255,255,.92);margin-right:6px}
 .tag.s1{border:2px solid var(--c1)} .tag.s2{border:2px solid var(--c2)} .tag.s3{border:2px solid var(--c3)} .tag.s4{border:2px solid var(--c4)} .tag.s5{border:2px solid var(--c5)}
 @media (max-width:900px){ .intro-grid{grid-template-columns:1fr} .pie5s{max-width:360px;margin:0 auto} }
+
+/* Pannello descrizione item */
+.item{grid-template-columns:auto 1.4fr 120px 1fr 150px 1.3fr auto}
+.item .info{background:#27407e;border:1px solid var(--outline)}
+.desc{
+  display:none; margin:6px 0 10px; padding:10px 12px;
+  border:1px dashed var(--outline); border-radius:10px;
+  background:#0b1530; color:#eaf0ff; line-height:1.35;
+}
+.desc.show{display:block}
+.desc h4{margin:0 0 6px;font-size:0.95rem}
+.desc p{margin:0}
+
