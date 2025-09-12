@@ -375,4 +375,23 @@ elBtnClear.addEventListener('click', ()=>{
 // Ridisegna grafico al resize
 window.addEventListener('resize', ()=>{ drawAreasChart(); });
 
+// =============================
+// TOGGLE TEMA (Chiaro/Scuro)
+// =============================
+const themeBtn = document.getElementById("btnTheme");
+const root = document.documentElement;
+
+// Al primo avvio: se c'è preferenza salvata in localStorage, la applico
+if(localStorage.getItem("theme") === "dark"){
+  root.classList.add("dark");
+  themeBtn.textContent = "🌙 Tema";
+}
+
+// Al click cambio tema
+themeBtn.addEventListener("click", ()=>{
+  root.classList.toggle("dark");
+  const isDark = root.classList.contains("dark");
+  localStorage.setItem("theme", isDark ? "dark":"light");
+  themeBtn.textContent = isDark ? "🌙 Tema" : "🌞 Tema";
+});
 
