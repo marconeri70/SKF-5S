@@ -1,5 +1,5 @@
 // Nome della cache (cambialo quando aggiorni l'app per forzare refresh)
-const CACHE_NAME = "skf5s-cache-v1";
+const CACHE_NAME = "skf5s-cache-v3";
 
 // Elenco file da mettere in cache
 const FILES_TO_CACHE = [
