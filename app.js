@@ -1,59 +1,56 @@
-/* SKF 5S – v7.5: ogni Linea contiene due insiemi (Rettifica + Montaggio) */
-const storeKey = 'skf.fiveS.v7.5';
-const POINTS=[0,1,3,5];
+/* SKF 5S – v7.6 */
+const storeKey = 'skf.fiveS.v7.6';
+const POINTS = [0,1,3,5];
 
-// --- VOCI UFFICIALI DAL TUO EXCEL (titolo + descrizione) ---
+/* ===== Voci 5S (titolo+descrizione) – sintesi dal tuo Excel ===== */
 const VOC_1S = [
-  {"title":"Zona pedonale pavimento","desc":"L'area pedonale è esente da congestione/ostacoli (area libera) e da pericoli di inciampo"},
-  {"title":"Zona di lavoro (pavimento, macchina)","desc":"Nell'area sono presenti solo i materiali di consumo, gli strumenti, le attrezzature, i mobili necessari per il lavoro attuale. Gli inutili (riparazione/rottamazione/vecchi mobili o macchine non in uso/attrezzature con difetto minore) sono stati rimossi o contrassegnati per la rimozione."},
-  {"title":"Materiali","desc":"Nell'area è presente solo il materiale necessario per l’ordine in corso (per evitare confusione, viene conservato solo materiale in lavorazione). Materiali obsoleti o non necessari sono stati rimossi."},
-  {"title":"Informazioni","desc":"Nell'area sono presenti in buone condizioni solo documenti, schermi, illustrazioni, cartelli, poster necessari e pertinenti per il lavoro in corso."},
-  {"title":"Processo di etichettatura","desc":"Sono definiti l'area etichetta rossa, il processo e il team."},
-  {"title":"Piano per sostenere il risultato","desc":"Lavagna 5S con azioni correttive/piani, foto Prima & Dopo, punteggio audit, SPL, gestita bene."}
+  {title:"Zona pedonale pavimento",desc:"L'area pedonale è esente da congestione/ostacoli (area libera) e da pericoli di inciampo"},
+  {title:"Zona di lavoro (pavimento, macchina)",desc:"Presenti solo materiali/strumenti necessari al lavoro attuale; il resto rimosso o contrassegnato"},
+  {title:"Materiali",desc:"Solo materiale necessario per l’ordine in corso; obsoleti/non necessari rimossi"},
+  {title:"Informazioni",desc:"Solo documenti/poster utili in buone condizioni"},
+  {title:"Processo di etichettatura",desc:"Definiti area etichetta rossa, processo e team"},
+  {title:"Piano per sostenere il risultato",desc:"Lavagna 5S con azioni, foto Prima/Dopo, punteggi, SPL aggiornati"}
 ];
-
 const VOC_2S = [
-  {"title":"1-S Stato","desc":"Area e team sono definiti e i membri comprendono 5S complessive e i dettagli di 1S."},
-  {"title":"Sicurezza","desc":"Tutti gli articoli/attrezzature relative alla sicurezza sono chiaramente contrassegnati e facilmente accessibili."},
-  {"title":"Qualità","desc":"Tutte le stazioni di qualità sono ben definite e organizzate (strumenti di misurazione, master, ecc.)."},
-  {"title":"Documenti","desc":"Tutti i file/documenti sono chiaramente identificati e organizzati nel punto di utilizzo."},
-  {"title":"Concetti","desc":"I miglioramenti sono realizzati secondo i concetti: punto d’uso, ergonomia, eliminazione confusione e sprechi."},
-  {"title":"Posizioni prefissate","desc":"Sono applicate posizioni fisse/ombre per attrezzi e materiali (visuali e intuitive)."},
-  {"title":"Visual Management di base","desc":"Marcature/etichette, linee a pavimento, colori standard e segnaletica sono implementati."}
+  {title:"1-S Stato",desc:"Team e area definiti, 1S compresa e mantenuta"},
+  {title:"Sicurezza",desc:"Articoli/attrezzature sicurezza segnati e accessibili"},
+  {title:"Qualità",desc:"Postazioni qualità definite e ordinate"},
+  {title:"Documenti",desc:"File/documenti identificati e al punto d’uso"},
+  {title:"Concetti",desc:"Miglioramenti: punto d’uso, ergonomia, no sprechi/confusione"},
+  {title:"Posizioni prefissate",desc:"Posti fissi/sagome per attrezzi/materiali"},
+  {title:"Visual Management di base",desc:"Linee, etichette, colori standard attivi"}
 ];
-
 const VOC_3S = [
-  {"title":"1-S Stato","desc":"Stato di 1S mantenuto."},
-  {"title":"2-S Stato","desc":"Stato di 2S mantenuto."},
-  {"title":"Pulizia","desc":"Le aree sono pulite, prive di perdite, ruggine, polvere; sono puliti anche punti difficili."},
-  {"title":"Misure preventive","desc":"Le cause dello sporco/perdite sono rimosse e si prevengono ricadute."},
-  {"title":"Pulire è routine","desc":"Esiste una routine di pulizia con responsabilità e frequenze definite (finestre, angoli, pareti, porte, armadi, macchine, ecc.)."},
-  {"title":"Standard di pulizia","desc":"Standard/checklist della pulizia esposti e seguiti."}
+  {title:"1-S Stato",desc:"Stato di 1S mantenuto"},
+  {title:"2-S Stato",desc:"Stato di 2S mantenuto"},
+  {title:"Pulizia",desc:"Aree pulite, anche punti difficili; niente perdite/ruggine/polvere"},
+  {title:"Misure preventive",desc:"Rimosse cause di sporco/perdite; prevenute ricadute"},
+  {title:"Pulire è routine",desc:"Routine di pulizia con responsabilità e frequenze"},
+  {title:"Standard di pulizia",desc:"Standard e checklist visibili e seguiti"}
 ];
-
 const VOC_4S = [
-  {"title":"Aree di passaggio","desc":"Non si deposita nulla nelle aree di passaggio; nessun ostacolo o pericolo di inciampo (pavimento libero)."},
-  {"title":"Area di lavoro","desc":"Solo il necessario: utensili, attrezzature, arredi in uso. Il resto rimosso o in area di attesa rimozione."},
-  {"title":"Materiali","desc":"Solo i materiali necessari per il lavoro attuale sono presenti; obsoleti/non necessari rimossi."},
-  {"title":"Informazione","desc":"Solo informazioni necessarie e pertinenti, in buone condizioni, presenti nell’area."},
-  {"title":"Visual Management","desc":"La cultura 5S è esposta; indicatori visuali funzionano bene per la routine 1S."},
-  {"title":"Posizioni prefissate","desc":"Posti prefissati e/o sagome a terra/pannelli; facile capire cosa manca/dove metterlo."},
-  {"title":"Standard lavoro & check","desc":"Standard (SPL), check-list e istruzioni sono visibili e usate; tutti li seguono."},
-  {"title":"Etichette e colori","desc":"Etichette chiare; codifica colori coerente per tubi/valvole/strumenti; cartelli ben leggibili."},
-  {"title":"Marcature su tubi/valvole","desc":"Tubi, valvole e strumenti identificati con colori e marcature standard."},
-  {"title":"Segnaletica a terra","desc":"Linee e campiture a terra presenti, leggibili e mantenute."},
-  {"title":"Punti di ispezione","desc":"Sono evidenti i punti di controllo/ispezione e cosa verificare."},
-  {"title":"Single Point Lessons (SPL)","desc":"SPL visibili, chiare, aggiornate e usate nella routine quotidiana."},
-  {"title":"Standard & documentazione","desc":"Standard 5S consolidati; documentazione di riferimento aggiornata e disponibile."},
-  {"title":"Management visivo avanzato","desc":"Allarmi visivi, kanban, indicatori scorte/consumi e livelli min/max ben implementati."},
-  {"title":"Misure preventive","desc":"Le anomalie notate durante pulizia sono registrate/analizzate ed eliminate alla radice."}
+  {title:"Aree di passaggio",desc:"Nessun deposito o ostacolo; pavimento libero"},
+  {title:"Area di lavoro",desc:"Solo il necessario; resto in attesa rimozione"},
+  {title:"Materiali",desc:"Solo i materiali per il lavoro attuale"},
+  {title:"Informazione",desc:"Solo informazioni necessarie e in buono stato"},
+  {title:"Visual Management",desc:"Indicatori visivi efficaci nella routine"},
+  {title:"Posizioni prefissate",desc:"Facile capire cosa manca e dove va rimesso"},
+  {title:"Standard lavoro & check",desc:"SPL/istruzioni/check-list visibili e usate"},
+  {title:"Etichette e colori",desc:"Etichette chiare, codici colore coerenti"},
+  {title:"Marcature tubi/valvole",desc:"Tubi/valvole/strumenti marcati con colori standard"},
+  {title:"Segnaletica a terra",desc:"Linee/campiture presenti e mantenute"},
+  {title:"Punti di ispezione",desc:"Chiari i punti e cosa verificare"},
+  {title:"Single Point Lessons",desc:"SPL aggiornate e usate"},
+  {title:"Standard & documentazione",desc:"Documentazione aggiornata e disponibile"},
+  {title:"Management visivo avanzato",desc:"Kanban, scorte, allarmi visivi attivi"},
+  {title:"Misure preventive",desc:"Anomalie registrate/risolte alla radice"}
 ];
-
 const VOC_5S = [
-  {"title":"Ognuno & ogni giorno","desc":"Tutti (inclusi i nuovi) sono formati sugli standard 5S e coinvolti nel mantenimento quotidiano."},
-  {"title":"Miglioramento continuo","desc":"Evidenza prima/dopo delle postazioni migliorate; i miglioramenti si mantengono come riferimento."}
+  {title:"Ognuno & ogni giorno",desc:"Tutti formati sugli standard e coinvolti"},
+  {title:"Miglioramento continuo",desc:"Evidenza prima/dopo; miglioramenti mantenuti"}
 ];
 
+/* ===== Riferimenti DOM ===== */
 const elAreas = document.getElementById('areas');
 const elKpiAreas = document.getElementById('kpiAreas');
 const elKpiScore = document.getElementById('kpiScore');
@@ -68,81 +65,47 @@ const btnAll = document.getElementById('btnAll');
 const tplArea = document.getElementById('tplArea');
 const tplItem = document.getElementById('tplItem');
 
-function makeSectorSet(){ 
-  const map = l => l.map(o => ({ t:o.title, d:o.desc, p:0, note:"", resp:"", due:"" }));
+/* ===== Helpers ===== */
+function makeSectorSet(){
+  const map = l => l.map(o => ({t:o.title, d:o.desc, p:0, note:"", resp:"", due:""}));
   return { "1S":map(VOC_1S), "2S":map(VOC_2S), "3S":map(VOC_3S), "4S":map(VOC_4S), "5S":map(VOC_5S) };
 }
+function makeArea(line){ return { line, sectors:{ "Rettifica":makeSectorSet(), "Montaggio":makeSectorSet() } }; }
+function fmtPct(x){ return Math.round(x*100)+'%'; }
+function isOverdue(iso){ if(!iso) return false; return new Date(iso+'T23:59:59') < new Date(); }
 
-function makeArea(line){ 
-  return { line, sectors:{ "Rettifica": makeSectorSet(), "Montaggio": makeSectorSet() } }; 
-}
-
-// Load + migrazioni da versioni precedenti
+/* ===== Storage + Migrazioni ===== */
 let state = load();
-if(!state.areas || !state.areas.length){
-  state = { areas:[ makeArea("L2") ] }; save();
-} else if (state.areas[0] && state.areas[0].S){ // v7.3/7.4 -> v7.5
-  state.areas = state.areas.map(a=>{
-    const line = a.line || a.name || "Lx";
-    const sectors = { "Rettifica": makeSectorSet(), "Montaggio": makeSectorSet() };
-    const srcSect = a.sector || "Rettifica";
-    ["1S","2S","3S","4S","5S"].forEach(s=>{
-      sectors[srcSect][s] = (a.S?.[s]||[]).map(it=>({ 
-        t:it.t||"", p:+it.p||0, note:it.note||"", resp:it.resp||"", due:it.due||"" 
-      }));
-    });
-    return { line, sectors };
-  });
-  save();
-}
-
-let ui = { q:"", line:"ALL", sector:"ALL", onlyLate:false };
-render(); updateDashboard();
-
-/* -------- Storage -------- */
-function load(){
-  try{
-    const raw = localStorage.getItem(storeKey) || 
-                localStorage.getItem('skf.fiveS.v7.4') || 
-                localStorage.getItem('skf.fiveS.v7.3.classic');
-    return raw? JSON.parse(raw) : {areas:[]};
-  }catch(e){ return {areas:[]}; }
-}
+if(!state.areas?.length){ state = { areas:[ makeArea("L2") ] }; save(); }
+function load(){ try{ const raw=localStorage.getItem(storeKey) || localStorage.getItem('skf.fiveS.v7.5'); return raw? JSON.parse(raw) : {areas:[]}; }catch(e){ return {areas:[]}; } }
 function save(){ localStorage.setItem(storeKey, JSON.stringify(state)); }
 
-/* -------- Calcoli punteggi -------- */
-function scoreList(list){ if(!list||!list.length) return 0; const s=list.reduce((a,it)=>a+(+it.p||0),0); return s/(5*list.length); }
+/* ===== Calcoli ===== */
+function scoreList(list){ if(!list?.length) return 0; const s=list.reduce((a,it)=>a+(+it.p||0),0); return s/(5*list.length); }
 function computeScores(area, sector){
-  const getSet = (sec)=> area.sectors[sec];
-  const byS = {};
-  let sum=0,max=0;
   const secs = sector==="ALL"? ["Rettifica","Montaggio"] : [sector];
+  const byS={}; let sum=0,max=0;
   ["1S","2S","3S","4S","5S"].forEach(s=>{
-    let arr=[]; secs.forEach(sec=> arr = arr.concat(getSet(sec)[s]||[]));
+    let arr=[]; secs.forEach(sec=> arr=arr.concat(area.sectors[sec][s]||[]));
     byS[s]=scoreList(arr);
-    sum += arr.reduce((a,it)=>a+(+it.p||0),0); max += 5*arr.length;
+    sum+=arr.reduce((a,it)=>a+(+it.p||0),0); max+=5*arr.length;
   });
   return { areaScore: max? (sum/max):0, byS };
 }
 function overallStats(list){
-  const arr=list||filteredAreas();
-  let sum=0,max=0,late=0;
+  const arr=list||filteredAreas(); let sum=0,max=0,late=0;
   arr.forEach(a=>{
-    const secs = ui.sector==="ALL"? ["Rettifica","Montaggio"] : [ui.sector];
-    secs.forEach(sec=>{
-      ["1S","2S","3S","4S","5S"].forEach(s=> 
-        (a.sectors[sec][s]||[]).forEach(it=>{
-          sum+=(+it.p||0); max+=5; if(isOverdue(it.due)) late++;
-        })
+    (["Rettifica","Montaggio"]).forEach(sec=>{
+      ["1S","2S","3S","4S","5S"].forEach(s=>
+        (a.sectors[sec][s]||[]).forEach(it=>{ sum+=(+it.p||0); max+=5; if(isOverdue(it.due)) late++; })
       );
     });
   });
-  return { score:max? (sum/max):0, late };
+  return { score:max?(sum/max):0, late };
 }
-function fmtPct(x){ return Math.round(x*100)+'%'; }
-function isOverdue(iso){ if(!iso) return false; return new Date(iso+'T23:59:59') < new Date(); }
 
-/* -------- Filtri -------- */
+/* ===== Filtri ===== */
+let ui = { q:"", line:"ALL", sector:"ALL", onlyLate:false };
 function matchFilters(a){
   if(ui.line!=="ALL" && (a.line||"").trim()!==ui.line) return false;
   if(ui.q.trim()==='' && !ui.onlyLate) return true;
@@ -162,11 +125,11 @@ function matchFilters(a){
 function filteredAreas(){ return state.areas.filter(matchFilters); }
 function refreshLineOptions(){
   const lines = Array.from(new Set(state.areas.map(a=>(a.line||'').trim()).filter(Boolean))).sort();
-  const opts = ['<option value="ALL">Linea: Tutte</option>', ...lines.map(l=>`<option value="${l}">${l}</option>`)].join('');
-  elLineFilter.innerHTML = opts; if(!lines.includes(ui.line)) ui.line='ALL'; elLineFilter.value=ui.line;
+  elLineFilter.innerHTML = ['<option value="ALL">Linea: Tutte</option>', ...lines.map(l=>`<option value="${l}">${l}</option>`)].join('');
+  if(!lines.includes(ui.line)) ui.line='ALL'; elLineFilter.value=ui.line;
 }
 
-/* -------- Rendering -------- */
+/* ===== Rendering ===== */
 function render(){
   refreshLineOptions();
   const list = filteredAreas();
@@ -178,7 +141,7 @@ function render(){
 function renderArea(area){
   const node = tplArea.content.firstElementChild.cloneNode(true);
   const lineEl = node.querySelector('.area-line');
-  const scoreArea = node.querySelector('.score-val');
+  const scoreEl = node.querySelector('.score-val');
   const sTabs = node.querySelector('.s-tabs');
   const sectorTabs = node.querySelectorAll('.tab.sec');
   const panels = node.querySelectorAll('.panel');
@@ -186,42 +149,37 @@ function renderArea(area){
   let localSector = (ui.sector==="ALL"? "Rettifica" : ui.sector);
   let localS = "1S";
 
-  lineEl.value = area.line || "";
-  lineEl.addEventListener('input', ()=>{ area.line = lineEl.value.trim(); save(); render(); });
+  lineEl.value = area.line||"";
+  lineEl.addEventListener('input', ()=>{ area.line=lineEl.value.trim(); save(); render(); });
 
   sectorTabs.forEach(btn=>btn.addEventListener('click', ()=>{
     sectorTabs.forEach(b=>b.classList.remove('active')); btn.classList.add('active');
-    localSector = btn.dataset.sector;
-    refillPanels();
-    updateScores();
+    localSector = btn.dataset.sector; refillPanels(); updateScore();
   }));
-  sectorTabs.forEach(b=> b.classList.toggle('active', b.dataset.sector===localSector));
+  sectorTabs.forEach(b=>b.classList.toggle('active', b.dataset.sector===localSector));
 
   sTabs.querySelectorAll('.tab.s').forEach(tab=>{
     tab.addEventListener('click', ()=>{
       sTabs.querySelectorAll('.tab.s').forEach(t=>t.classList.remove('active'));
-      tab.classList.add('active');
-      localS = tab.dataset.s;
+      tab.classList.add('active'); localS = tab.dataset.s;
       panels.forEach(p=>p.classList.toggle('active', p.dataset.s===localS));
     });
   });
 
   node.querySelector('.add-item').addEventListener('click', ()=>{
-    const arr = area.sectors[localSector][localS];
-    arr.push({t:"", p:0, note:"", resp:"", due:""}); save(); refillPanels(); updateScores();
+    area.sectors[localSector][localS].push({t:"", d:"", p:0, note:"", resp:"", due:""});
+    save(); refillPanels(); updateScore();
   });
   node.querySelector('.collapse').addEventListener('click', (e)=>{
     node.classList.toggle('collapsed'); e.target.textContent = node.classList.contains('collapsed') ? "Espandi" : "Comprimi";
   });
   node.querySelector('.delete-area').addEventListener('click', ()=>{
-    if(confirm('Eliminare la linea?')){
-      const ix = state.areas.indexOf(area); state.areas.splice(ix,1); save(); render();
-    }
+    if(confirm('Eliminare la linea?')){ state.areas.splice(state.areas.indexOf(area),1); save(); render(); }
   });
 
   function refillPanels(){
     panels.forEach(panel=>{
-      const s = panel.dataset.s; panel.innerHTML='';
+      const s=panel.dataset.s; panel.innerHTML='';
       (area.sectors[localSector][s]||[]).forEach((it,i)=> panel.appendChild(renderItem(area, localSector, s, i, it)));
       panel.classList.toggle('active', s===localS);
     });
@@ -235,57 +193,54 @@ function renderArea(area){
     const { byS } = computeScores(area, localSector);
     Object.entries(byS).forEach(([k,v])=> pills[k].textContent = fmtPct(v));
   }
-  function updateScores(){
-    const { areaScore } = computeScores(area, localSector==="ALL"?"ALL":localSector);
-    scoreArea.textContent = fmtPct(areaScore);
+  function updateScore(){
+    scoreEl.textContent = fmtPct( computeScores(area, localSector).areaScore );
   }
 
-  refillPanels(); updateScores();
+  refillPanels(); updateScore();
   return node;
 }
 
 function renderItem(area, sector, sKey, iIdx, item){
+  const frag = document.createDocumentFragment();
   const node = tplItem.content.firstElementChild.cloneNode(true);
-  const descHost = tplItem.content.children[1].cloneNode(true); // <div class="desc">
-  const txt=node.querySelector('.txt'), points=node.querySelector('.points'),
-        note=node.querySelector('.note'), resp=node.querySelector('.resp'), due=node.querySelector('.due'),
-        info=node.querySelector('.info');
+  const descHost = tplItem.content.children[1].cloneNode(true);
+  const txt=node.querySelector('.txt'), info=node.querySelector('.info');
+  const note=node.querySelector('.note'), resp=node.querySelector('.resp'), due=node.querySelector('.due');
+  const dots=node.querySelectorAll('.points-dots .dot');
 
-  // Valori iniziali
-  txt.value=item.t||""; points.value=String([0,1,3,5].includes(+item.p)?item.p:0);
-  note.value=item.note||""; resp.value=item.resp||""; due.value=item.due||"";
+  // init
+  txt.value=item.t||""; note.value=item.note||""; resp.value=item.resp||""; due.value=item.due||"";
   descHost.innerHTML = item.d ? `<h4>${item.t}</h4><p>${item.d}</p>` : "";
+  const markDots = ()=>{
+    dots.forEach(d=> d.classList.toggle('active', +d.dataset.val === (+item.p||0)));
+  };
+  markDots();
 
-  // Evidenza ritardi
   const setLate=()=> node.classList.toggle('late', isOverdue(due.value)); setLate();
 
-  // Bind
-  txt.addEventListener('input', ()=>{ item.t = txt.value; save(); });
-  points.addEventListener('change', ()=>{ item.p = +points.value; save(); updateDashboard(); drawAreasChart(); });
-  note.addEventListener('input', ()=>{ item.note = note.value; save(); });
-  resp.addEventListener('input', ()=>{ item.resp = resp.value; save(); });
-  due.addEventListener('change', ()=>{ item.due = due.value; save(); setLate(); updateDashboard(); });
+  // bind
+  txt.addEventListener('input', ()=>{ item.t=txt.value; if(item.d) descHost.querySelector('h4')?.innerHTML=item.t; save(); });
+  note.addEventListener('input', ()=>{ item.note=note.value; save(); });
+  resp.addEventListener('input', ()=>{ item.resp=resp.value; save(); });
+  due.addEventListener('change', ()=>{ item.due=due.value; save(); setLate(); updateDashboard(); });
 
-  // Toggle descrizione (bottone “i” o clic sul titolo)
-  const toggle = ()=> descHost.classList.toggle('show');
-  info.addEventListener('click', toggle);
-  txt.addEventListener('focus', ()=>{}); // mantiene editabile
-  txt.addEventListener('dblclick', toggle); // doppio clic sul titolo apre/chiude descrizione
+  dots.forEach(d=>{
+    d.addEventListener('click', ()=>{
+      item.p = +d.dataset.val; markDots(); save(); updateDashboard(); drawAreasChart();
+    });
+  });
 
-  // Elimina item
+  info.addEventListener('click', ()=> descHost.classList.toggle('show'));
   node.querySelector('.del').addEventListener('click', ()=>{
     const arr = area.sectors[sector][sKey]; arr.splice(iIdx,1); save(); render();
   });
 
-  // wrapper: item + descrizione
-  const wrap = document.createDocumentFragment();
-  wrap.appendChild(node);
-  wrap.appendChild(descHost);
-  return wrap;
+  frag.appendChild(node); frag.appendChild(descHost);
+  return frag;
 }
 
-
-/* -------- Dashboard & Grafico -------- */
+/* ===== Dashboard & Grafico ===== */
 function updateDashboard(list){
   const arr=list||filteredAreas();
   elKpiAreas.textContent = arr.length;
@@ -296,36 +251,55 @@ function updateDashboard(list){
 function drawAreasChart(){
   const c=document.getElementById('chartAreas'); if(!c) return;
   const ctx=c.getContext('2d');
-  const Hpx=240, W=c.width=c.clientWidth*devicePixelRatio, H=c.height=Hpx*devicePixelRatio;
-  ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0); ctx.clearRect(0,0,W,H);
+  const DPR = devicePixelRatio||1;
+  const Hpx=260, W=c.width=c.clientWidth*DPR, H=c.height=Hpx*DPR;
+  ctx.setTransform(DPR,0,0,DPR,0,0); ctx.clearRect(0,0,W,H);
 
-  const areas = filteredAreas();
+  const style = getComputedStyle(document.documentElement);
+  const GRID = style.getPropertyValue('--chart-grid').trim()||'#d0d7e1';
+  const TXT  = style.getPropertyValue('--chart-text').trim()||'#003366';
+  const COLORS={ "TOT":'#9bb0d6',"1S":style.getPropertyValue('--c1').trim(),"2S":style.getPropertyValue('--c2').trim(),"3S":style.getPropertyValue('--c3').trim(),"4S":style.getPropertyValue('--c4').trim(),"5S":style.getPropertyValue('--c5').trim() };
+
+  const areas = filteredAreas(); if(!areas.length) return;
+
+  // build data
   const groups = areas.map(a=>{
-    const secs = ui.sector==="ALL"? ["Rettifica","Montaggio"] : [ui.sector];
     let totals = {"1S":{sum:0,max:0},"2S":{sum:0,max:0},"3S":{sum:0,max:0},"4S":{sum:0,max:0},"5S":{sum:0,max:0}};
-    secs.forEach(sec=>{
-      ["1S","2S","3S","4S","5S"].forEach(s=> (a.sectors[sec][s]||[]).forEach(it=>{ totals[s].sum+=(+it.p||0); totals[s].max+=5; }));
+    ["Rettifica","Montaggio"].forEach(sec=>{
+      ["1S","2S","3S","4S","5S"].forEach(s=>(a.sectors[sec][s]||[]).forEach(it=>{ totals[s].sum+=(+it.p||0); totals[s].max+=5; }));
     });
     const byS={}; for(const s in totals){ byS[s]= totals[s].max? totals[s].sum/totals[s].max : 0; }
     const sumAll=Object.values(totals).reduce((x,v)=>x+v.sum,0), maxAll=Object.values(totals).reduce((x,v)=>x+v.max,0);
     return { line:a.line||'—', vals:{ "TOT":(maxAll?sumAll/maxAll:0), ...byS } };
   }).sort((a,b)=> a.line.localeCompare(b.line));
 
-  const padL=60,padR=16,padT=18,padB=44;
-  const plotW=(W/devicePixelRatio)-padL-padR, plotH=(H/devicePixelRatio)-padT-padB;
-  ctx.strokeStyle='rgba(255,255,255,0.2)'; ctx.beginPath(); ctx.moveTo(padL,padT); ctx.lineTo(padL,padT+plotH); ctx.lineTo(padL+plotW,padT+plotH); ctx.stroke();
-  ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.font='12px system-ui';
-  for(let i=0;i<=4;i++){ const yv=i*25,y=padT+plotH-(yv/100)*plotH; ctx.fillText(yv+'%',8,y+4); ctx.strokeStyle='rgba(255,255,255,0.12)'; ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(padL+plotW,y); ctx.stroke(); }
-  if(!groups.length) return;
-  const gv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-  const COLORS={ "TOT":'#9bb0d6',"1S":gv('--c1')||'#7a56c6',"2S":gv('--c2')||'#e44f37',"3S":gv('--c3')||'#f3a11a',"4S":gv('--c4')||'#35b468',"5S":gv('--c5')||'#4b88ff' };
+  // layout
+  const padL=60,padR=16,padT=12,padB=48;
+  const plotW=(W/DPR)-padL-padR, plotH=(H/DPR)-padT-padB;
+
+  // grid
+  ctx.strokeStyle=GRID; ctx.fillStyle=TXT; ctx.font='12px system-ui';
+  ctx.beginPath(); ctx.moveTo(padL,padT); ctx.lineTo(padL,padT+plotH); ctx.lineTo(padL+plotW,padT+plotH); ctx.stroke();
+  for(let i=0;i<=4;i++){
+    const yv=i*25, y=padT+plotH-(yv/100)*plotH;
+    ctx.fillText(yv+'%',8,y+4);
+    ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(padL+plotW,y); ctx.stroke();
+  }
+
+  // bars
   const MET=["TOT","1S","2S","3S","4S","5S"]; const inner=4,bw=14,gw=MET.length*bw+(MET.length-1)*inner,gap=Math.max(18,gw*.9);
   const total=groups.length*gw+(groups.length-1)*gap, start=padL+Math.max(8,(plotW-total)/2);
   let x=start;
   groups.forEach(g=>{
     let bx=x;
-    MET.forEach(m=>{ const v=g.vals[m]||0,h=v*plotH,y=padT+plotH-h; ctx.fillStyle=COLORS[m]; ctx.fillRect(bx,y,bw,h); ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.fillText(Math.round(v*100)+'%', bx+bw/2, (h>16? y-4 : padT+plotH-2)); bx+=bw+inner; });
-    ctx.save(); ctx.translate(x+gw/2, padT+plotH+22); ctx.rotate(-Math.PI/12); ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.fillText(g.line,0,0); ctx.restore();
+    MET.forEach(m=>{
+      const v=g.vals[m]||0,h=v*plotH,y=padT+plotH-h;
+      ctx.fillStyle=COLORS[m]; ctx.fillRect(bx,y,bw,h);
+      ctx.fillStyle=TXT; ctx.textAlign='center';
+      ctx.fillText(Math.round(v*100)+'%', bx+bw/2, (h>16? y-4 : padT+plotH-2));
+      bx+=bw+inner;
+    });
+    ctx.save(); ctx.translate(x+gw/2, padT+plotH+22); ctx.rotate(-Math.PI/12); ctx.fillStyle=TXT; ctx.textAlign='center'; ctx.fillText(g.line,0,0); ctx.restore();
     x+=gw+gap;
   });
 }
@@ -343,10 +317,9 @@ function buildLineButtons(){
   });
 }
 
-/* -------- Controlli top -------- */
+/* ===== Top controls ===== */
 document.getElementById('btnNewArea').addEventListener('click', ()=>{
-  const line=(prompt("Linea nuova? (es. L3)","L3")||"Lx").trim();
-  state.areas.push(makeArea(line)); save(); render();
+  const line=(prompt("Linea nuova? (es. L3)","L3")||"Lx").trim(); state.areas.push(makeArea(line)); save(); render();
 });
 document.getElementById('btnExport').addEventListener('click', ()=>{
   const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
@@ -355,8 +328,7 @@ document.getElementById('btnExport').addEventListener('click', ()=>{
 });
 document.getElementById('fileImport').addEventListener('change', async (e)=>{
   const f=e.target.files[0]; if(!f) return;
-  try{ state=JSON.parse(await f.text()); save(); render(); }
-  catch(err){ alert('JSON non valido'); }
+  try{ state=JSON.parse(await f.text()); save(); render(); } catch{ alert('JSON non valido'); }
 });
 document.getElementById('btnPrint').addEventListener('click', ()=>window.print());
 
@@ -366,32 +338,20 @@ btnFgr.addEventListener('click', ()=>{ ui.sector='Rettifica'; btnFgr.classList.a
 btnAsm.addEventListener('click', ()=>{ ui.sector='Montaggio'; btnAsm.classList.add('active'); btnFgr.classList.remove('active'); btnAll.classList.remove('active'); render(); });
 btnAll.addEventListener('click', ()=>{ ui.sector='ALL'; btnAll.classList.add('active'); btnFgr.classList.remove('active'); btnAsm.classList.remove('active'); render(); });
 elOnlyLate.addEventListener('change', ()=>{ ui.onlyLate=elOnlyLate.checked; render(); });
-elBtnClear.addEventListener('click', ()=>{ 
-  ui={q:'',line:'ALL',sector:'ALL',onlyLate:false}; 
-  elQ.value=''; elLineFilter.value='ALL'; btnAll.click(); elOnlyLate.checked=false; 
-  render(); 
-});
+elBtnClear.addEventListener('click', ()=>{ ui={q:'',line:'ALL',sector:'ALL',onlyLate:false}; elQ.value=''; elLineFilter.value='ALL'; btnAll.click(); elOnlyLate.checked=false; render(); });
 
-// Ridisegna grafico al resize
-window.addEventListener('resize', ()=>{ drawAreasChart(); });
+window.addEventListener('resize', drawAreasChart);
 
-// =============================
-// TOGGLE TEMA (Chiaro/Scuro)
-// =============================
+/* ===== Toggle Tema ===== */
 const themeBtn = document.getElementById("btnTheme");
 const root = document.documentElement;
-
-// Al primo avvio: se c'è preferenza salvata in localStorage, la applico
-if(localStorage.getItem("theme") === "dark"){
-  root.classList.add("dark");
-  themeBtn.textContent = "🌙 Tema";
-}
-
-// Al click cambio tema
+if(localStorage.getItem("theme")==="dark"){ root.classList.add("dark"); themeBtn.textContent="🌙 Tema"; }
 themeBtn.addEventListener("click", ()=>{
   root.classList.toggle("dark");
   const isDark = root.classList.contains("dark");
   localStorage.setItem("theme", isDark ? "dark":"light");
   themeBtn.textContent = isDark ? "🌙 Tema" : "🌞 Tema";
 });
+/* init */
+render();
 
