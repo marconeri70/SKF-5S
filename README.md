@@ -1,19 +1,18 @@
-# SKF 5S – Versione 7
+# SKF 5S – v7.6.2
 
-- **+ Nuova area** crea un'area già **popolata** con tutte le voci dal template (`DEFAULTS.areas[0]`).
-- Pannelli 1S–5S: **mostra solo** la S attiva.
-- Punteggi e pill sempre aggiornati (render completo ad ogni modifica).
-- Filtri: ricerca, severità, **solo in ritardo**.
-- Cruscotto con **grafico a barre** per area.
-- **PWA**: installabile e **offline** (service worker).
+PWA per audit/checklist 5S (Rettifica & Montaggio, Linee multiple).
 
-## Deploy GitHub Pages
-1. Copia i file nella root del repo + cartella `assets/` con `skf-logo.png`, `skf-192.png`, `skf-512.png`.
-2. Settings → Pages → Deploy from a branch → `main` / root → Save.
-3. Apri l’URL e (Chrome) **Installa app**.
+## Struttura
+- `index.html` – UI e template
+- `style.css` – tema chiaro/scuro, 5S, chip e pallini 0/1/3/5
+- `app.js` – logica (storage localStorage), grafico canvas, filtri, export/import
+- `sw.js` – cache offline
+- `manifest.json` – PWA icons & colors
+- `assets/` – `skf-logo.png`, `skf-192.png`, `skf-512.png`
 
-## Note
-- Modifica il template iniziale in `DEFAULTS.areas[0]`.
-- Cambia pesi severità in `WEIGHTS` dentro `app.js`.
-- Forza aggiornamento PWA con **CTRL+F5** se non vedi la v7.
+## Aggiornare
+1. Cambia i file.
+2. Bump `CACHE_NAME` in `sw.js`.
+3. DevTools → Application → **Unregister** + **Clear site data** → ricarica (Ctrl+F5).
+
 
