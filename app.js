@@ -1,8 +1,8 @@
-/* SKF 5S – v7.8.0 */
-const storeKey = 'skf.fiveS.v7.8.0';
+/* SKF 5S – v7.9.0 */
+const storeKey = 'skf.fiveS.v7.9.0';
 const POINTS = [0,1,3,5];
 
-/* Voci 5S (sintesi Excel – puoi ampliare quando vuoi) */
+/* Voci 5S (sintesi Excel) */
 const VOC_1S = [
   {title:"Zona pedonale pavimento",desc:"Area pedonale libera da ostacoli e pericoli di inciampo"},
   {title:"Zona di lavoro (pavimento, macchina)",desc:"Solo ciò che serve all’ordine in corso; resto rimosso/contrassegnato"},
@@ -77,7 +77,7 @@ function isOverdue(iso){ if(!iso) return false; return new Date(iso+'T23:59:59')
 /* Storage */
 let state = load();
 if(!state.areas?.length){ state = { areas:[ makeArea("L2") ] }; save(); }
-function load(){ try{ const raw=localStorage.getItem(storeKey) || localStorage.getItem('skf.fiveS.v7.8.0'); return raw? JSON.parse(raw) : {areas:[]}; }catch(e){ return {areas:[]}; } }
+function load(){ try{ const raw=localStorage.getItem(storeKey) || localStorage.getItem('skf.fiveS.v7.9.0'); return raw? JSON.parse(raw) : {areas:[]}; }catch(e){ return {areas:[]}; } }
 function save(){ localStorage.setItem(storeKey, JSON.stringify(state)); }
 
 /* Scores */
@@ -171,14 +171,20 @@ function renderArea(area){
     area.sectors[localSector][localS].push({t:"", d:"", p:0, note:"", resp:"", due:""});
     save(); refillPanels(); updateScore();
   });
-  node.querySelector('.collapse').addEventListener('click', (e)=>{
-    node.classList.toggle('collapsed'); e.target.textContent = node.classList.contains('collapsed') ? "Espandi" : "Comprimi";
+
+  // FIX: Comprimi/Espandi funziona davvero
+  const btnCollapse = node.querySelector('.collapse');
+  const updateCollapseLabel = () => { btnCollapse.textContent = node.classList.contains('collapsed') ? "Espandi" : "Comprimi"; };
+  btnCollapse.addEventListener('click', ()=>{
+    node.classList.toggle('collapsed'); updateCollapseLabel();
   });
+  updateCollapseLabel();
+
   node.querySelector('.delete-area').addEventListener('click', ()=>{
     if(confirm('Eliminare la linea?')){ state.areas.splice(state.areas.indexOf(area),1); save(); render(); }
   });
 
-  // Stampa linea singola (nuova finestra con stile mini)
+  // Stampa linea singola
   node.querySelector('.print-area').addEventListener('click', ()=>{
     const { byS, areaScore } = computeScores(area, localSector);
     const win = window.open('', '_blank');
@@ -210,9 +216,7 @@ function renderArea(area){
         </table>
       </body></html>
     `);
-    win.document.close();
-    win.focus();
-    win.print();
+    win.document.close(); win.focus(); win.print();
   });
 
   function refillPanels(){
@@ -337,37 +341,29 @@ function drawAreasChart(){
   });
 }
 
-/* Bottoni Linee con badge % per S */
+/* Bottoni Linee compatti + tooltip % per S */
 function buildLineButtons(){
   const host=document.getElementById('lineBtns'); if(!host) return;
   host.innerHTML='';
-  const bAll=document.createElement('button'); bAll.className='line-btn'+(ui.line==='ALL'?' active':''); bAll.innerHTML='<span>Tutte</span>';
-  bAll.addEventListener('click', ()=>{ ui.line='ALL'; const sel=document.getElementById('lineFilter'); if(sel) sel.value='ALL'; render(); window.scrollTo({top:host.offsetTop,behavior:'smooth'}); });
-  host.appendChild(bAll);
-
-  const secs = ui.sector==="ALL"? ["Rettifica","Montaggio"] : [ui.sector];
-
-  const lines=Array.from(new Set(state.areas.map(a=>(a.line||'').trim()).filter(Boolean))).sort();
-  lines.forEach(line=>{
-    // calcolo % per S in base al filtro settore
-    const a = state.areas.find(x=>(x.line||'').trim()===line);
+  const mkTitle=(a)=>{
+    const secs = ui.sector==="ALL"? ["Rettifica","Montaggio"] : [ui.sector];
     let totals = {"1S":{sum:0,max:0},"2S":{sum:0,max:0},"3S":{sum:0,max:0},"4S":{sum:0,max:0},"5S":{sum:0,max:0}};
     secs.forEach(sec=>{
       ["1S","2S","3S","4S","5S"].forEach(s=>(a.sectors[sec][s]||[]).forEach(it=>{ totals[s].sum+=(+it.p||0); totals[s].max+=5; }));
     });
     const pct = s => totals[s].max? Math.round(100*totals[s].sum/totals[s].max) : 0;
+    return `1S: ${pct("1S")}% • 2S: ${pct("2S")}% • 3S: ${pct("3S")}% • 4S: ${pct("4S")}% • 5S: ${pct("5S")}%`;
+  };
 
-    const b=document.createElement('button');
-    b.className='line-btn'+(ui.line===line?' active':'');
-    b.innerHTML = `<span>${line}</span>
-      <span class="badges">
-        <span class="badgeS s1">${pct("1S")}%</span>
-        <span class="badgeS s2">${pct("2S")}%</span>
-        <span class="badgeS s3">${pct("3S")}%</span>
-        <span class="badgeS s4">${pct("4S")}%</span>
-        <span class="badgeS s5">${pct("5S")}%</span>
-      </span>`;
-    b.addEventListener('click', ()=>{ ui.line=line; const sel=document.getElementById('lineFilter'); if(sel) sel.value=line; render(); setTimeout(()=>{ const card=[...document.querySelectorAll('.area .area-line')].find(i=>i.value.trim()===line)?.closest('.area'); card?.scrollIntoView({behavior:'smooth',block:'start'}); },0); });
+  const bAll=document.createElement('button'); bAll.className='line-btn'+(ui.line==='ALL'?' active':''); bAll.textContent='Tutte';
+  bAll.addEventListener('click', ()=>{ ui.line='ALL'; elLineFilter.value='ALL'; render(); window.scrollTo({top:host.offsetTop,behavior:'smooth'}); });
+  host.appendChild(bAll);
+
+  const lines=Array.from(new Set(state.areas.map(a=>(a.line||'').trim()).filter(Boolean))).sort();
+  lines.forEach(line=>{
+    const a = state.areas.find(x=>(x.line||'').trim()===line);
+    const b=document.createElement('button'); b.className='line-btn'+(ui.line===line?' active':''); b.textContent=line; b.title=mkTitle(a);
+    b.addEventListener('click', ()=>{ ui.line=line; elLineFilter.value=line; render(); setTimeout(()=>{ const card=[...document.querySelectorAll('.area .area-line')].find(i=>i.value.trim()===line)?.closest('.area'); card?.scrollIntoView({behavior:'smooth',block:'start'}); },0); });
     host.appendChild(b);
   });
 }
@@ -381,7 +377,6 @@ document.getElementById('btnExport').addEventListener('click', ()=>{
   const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:`SKF_5S_${new Date().toISOString().slice(0,10)}.json`});
   document.body.appendChild(a); a.click(); a.remove();
 });
-/* Nuovo: export CSV (Excel-friendly) */
 document.getElementById('btnExportCSV').addEventListener('click', ()=>{
   const secs = ["Rettifica","Montaggio"];
   const rows = [['Linea','Settore','S','Voce','Punti','Responsabile','Scadenza','Note']];
@@ -390,13 +385,9 @@ document.getElementById('btnExportCSV').addEventListener('click', ()=>{
       ["1S","2S","3S","4S","5S"].forEach(s=>{
         (a.sectors[sec][s]||[]).forEach(it=>{
           rows.push([
-            a.line||'',
-            sec,
-            s,
-            (it.t||'').replace(/"/g,'""'),
-            it.p||0,
-            (it.resp||'').replace(/"/g,'""'),
-            it.due||'',
+            a.line||'', sec, s,
+            (it.t||'').replace(/"/g,'""'), it.p||0,
+            (it.resp||'').replace(/"/g,'""'), it.due||'',
             (it.note||'').replace(/"/g,'""')
           ]);
         });
@@ -408,7 +399,6 @@ document.getElementById('btnExportCSV').addEventListener('click', ()=>{
   const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:`SKF_5S_${new Date().toISOString().slice(0,10)}.csv`});
   document.body.appendChild(a); a.click(); a.remove();
 });
-
 document.getElementById('fileImport').addEventListener('change', async (e)=>{
   const f=e.target.files[0]; if(!f) return;
   try{ state=JSON.parse(await f.text()); save(); render(); } catch{ alert('JSON non valido'); }
