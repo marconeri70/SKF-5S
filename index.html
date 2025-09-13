@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>SKF 5S v7.6.3</title>
-  <link rel="manifest" href="manifest.json?v=7.6.3"/>
-  <link rel="stylesheet" href="style.css?v=7.6.3"/>
+  <title>SKF 5S v7.7.0</title>
+  <link rel="manifest" href="manifest.json?v=7.7.0"/>
+  <link rel="stylesheet" href="style.css?v=7.7.0"/>
   <link rel="icon" href="assets/skf-192.png"/>
   <meta name="theme-color" content="#0095d9"/>
 </head>
@@ -13,7 +13,7 @@
 <header class="app-header">
   <div class="brand">
     <img src="assets/skf-logo.png" alt="SKF" class="logo"/>
-    <h1>SKF 5S <span class="ver">v7.6.3</span></h1>
+    <h1>SKF 5S <span class="ver">v7.7.0</span></h1>
   </div>
   <div class="actions">
     <button id="btnNewArea" class="btn">+ Nuova linea</button>
@@ -25,20 +25,54 @@
   </div>
 </header>
 
+<!-- INTRO 5S -->
 <section class="intro5s card">
   <div class="intro-grid">
-    <svg class="pie5s" viewBox="0 0 220 220" role="img" aria-label="Cosa è 5S">
+    <!-- Donut 5S “3D” -->
+    <svg class="pie5s pie3d" viewBox="0 0 220 220" role="img" aria-label="Cosa è 5S">
       <defs>
-        <mask id="ring"><rect x="0" y="0" width="220" height="220" fill="white"/><circle cx="110" cy="110" r="55" fill="black"/></mask>
+        <!-- anello interno -->
+        <mask id="ring">
+          <rect x="0" y="0" width="220" height="220" fill="white"/>
+          <circle cx="110" cy="110" r="55" fill="black"/>
+        </mask>
+
+        <!-- Ombra morbida -->
+        <filter id="ds" x="-30%" y="-30%" width="160%" height="160%">
+          <feDropShadow dx="0" dy="6" stdDeviation="6" flood-opacity="0.25"/>
+        </filter>
+
+        <!-- Gradienti per effetto 3D -->
+        <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%"  stop-color="var(--c1l)"/><stop offset="100%" stop-color="var(--c1)"/>
+        </linearGradient>
+        <linearGradient id="g2" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%"  stop-color="var(--c2l)"/><stop offset="100%" stop-color="var(--c2)"/>
+        </linearGradient>
+        <linearGradient id="g3" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%"  stop-color="var(--c3l)"/><stop offset="100%" stop-color="var(--c3)"/>
+        </linearGradient>
+        <linearGradient id="g4" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%"  stop-color="var(--c4l)"/><stop offset="100%" stop-color="var(--c4)"/>
+        </linearGradient>
+        <linearGradient id="g5" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%"  stop-color="var(--c5l)"/><stop offset="100%" stop-color="var(--c5)"/>
+        </linearGradient>
       </defs>
-      <circle cx="110" cy="110" r="100" fill="var(--card)"/>
-      <path d="M110,10 A100,100 0 0,1 210,110 L110,110 Z" fill="var(--c5)" mask="url(#ring)"/>
-      <path d="M210,110 A100,100 0 0,1 110,210 L110,110 Z" fill="var(--c4)" mask="url(#ring)"/>
-      <path d="M110,210 A100,100 0 0,1 10,110 L110,110 Z" fill="var(--c3)" mask="url(#ring)"/>
-      <path d="M10,110 A100,100 0 0,1 110,10 L110,110 Z" fill="var(--c2)" mask="url(#ring)"/>
-      <path d="M110,10 A100,100 0 0,1 140,40 L110,110 Z" fill="var(--c1)" mask="url(#ring)"/>
-      <circle cx="110" cy="110" r="55" fill="var(--card)"/>
-      <text x="170" y="75" class="pie-label">5S</text>
+
+      <!-- sfondo e spicchi -->
+      <g filter="url(#ds)">
+        <circle cx="110" cy="110" r="100" fill="var(--card)"/>
+        <path d="M110,10 A100,100 0 0,1 210,110 L110,110 Z" fill="url(#g5)" mask="url(#ring)"/>
+        <path d="M210,110 A100,100 0 0,1 110,210 L110,110 Z" fill="url(#g4)" mask="url(#ring)"/>
+        <path d="M110,210 A100,100 0 0,1 10,110 L110,110 Z" fill="url(#g3)" mask="url(#ring)"/>
+        <path d="M10,110 A100,100 0 0,1 110,10 L110,110 Z" fill="url(#g2)" mask="url(#ring)"/>
+        <path d="M110,10 A100,100 0 0,1 140,40 L110,110 Z" fill="url(#g1)" mask="url(#ring)"/>
+        <circle cx="110" cy="110" r="55" fill="var(--card)"/>
+      </g>
+
+      <!-- etichette -->
+      <text x="170" y="75"  class="pie-label">5S</text>
       <text x="155" y="165" class="pie-label">4S</text>
       <text x="75"  y="190" class="pie-label">3S</text>
       <text x="30"  y="120" class="pie-label">2S</text>
@@ -59,6 +93,7 @@
   </div>
 </section>
 
+<!-- FILTRI -->
 <section class="controls card">
   <div class="filters">
     <input id="q" placeholder="🔎 Cerca in descrizione / note / responsabile…">
@@ -73,6 +108,7 @@
   </div>
 </section>
 
+<!-- CRUSCOTTO -->
 <section id="dashboard" class="card dash">
   <div class="dash-head">
     <h2>Cruscotto</h2>
@@ -82,7 +118,7 @@
       <div class="kpi"><div>Azioni in ritardo</div><div id="kpiLate">0</div></div>
     </div>
   </div>
-  <canvas id="chartAreas" height="260"></canvas>
+  <canvas id="chartAreas" height="260" aria-label="Punteggi per linea e per S"></canvas>
 
   <div class="score-legend">
     <span class="dot0">0</span> Non conforme
@@ -96,6 +132,7 @@
 
 <section id="areas"></section>
 
+<!-- TEMPLATE AREA -->
 <template id="tplArea">
   <div class="area card">
     <div class="area-head">
@@ -134,6 +171,7 @@
   </div>
 </template>
 
+<!-- TEMPLATE ITEM -->
 <template id="tplItem">
   <div class="item">
     <button class="btn tiny info" title="Dettaglio">i</button>
@@ -154,7 +192,7 @@
 
 <footer><p>© SKF – PWA offline</p></footer>
 
-<script src="app.js?v=7.6.3"></script>
+<script src="app.js?v=7.7.0"></script>
 <script>
   if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
 </script>
