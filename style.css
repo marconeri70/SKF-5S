@@ -152,3 +152,34 @@ footer{color:var(--muted); text-align:center; padding:18px}
   .controls .filters{grid-template-columns: 1fr 1fr 1fr; gap:8px}
 }
 
+/* --- Pill dei tab 1S..5S colorate ---------------------------------------- */
+.tab.s[data-s="1S"] .pill{ border-color:var(--c1); color:var(--c1); background:#fff }
+.tab.s[data-s="2S"] .pill{ border-color:var(--c2); color:var(--c2); background:#fff }
+.tab.s[data-s="3S"] .pill{ border-color:var(--c3); color:var(--c3); background:#fff }
+.tab.s[data-s="4S"] .pill{ border-color:var(--c4); color:var(--c4); background:#fff }
+.tab.s[data-s="5S"] .pill{ border-color:var(--c5); color:var(--c5); background:#fff }
+
+/* Comprimi: lascia visibili i tab con le percentuali */
+.area.collapsed .s-panels{ display:none }          /* <-- nascondo SOLO i contenuti */
+.area.collapsed .s-tabs{ display:flex }            /* tab sempre visibili */
+
+/* Legenda punteggi colorata */
+.score-legend .dot0{ background:#eee; border-color:#cfcfcf; color:#555 }
+.score-legend .dot1{ background:#e9f0ff; border-color:#9bb0d6; color:#2f5392 }
+.score-legend .dot3{ background:#fff3da; border-color:#f3a11a; color:#8a5a00 }
+.score-legend .dot5{ background:#e9fff3; border-color:#35b468; color:#1a6b40 }
+
+/* Elenco Azioni in ritardo sotto il grafico */
+.late-list{ display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 0 }
+.late-chip{
+  border:1px solid #ff7a7a; background:#fff0f0; color:#9c2222;
+  border-radius:999px; padding:4px 10px; cursor:pointer; font-weight:700;
+}
+.late-chip .meta{ font-weight:600; opacity:.8 }
+
+/* Evidenziazione quando apro la voce in ritardo */
+@keyframes flash {
+  0%,100%{ box-shadow:0 0 0 0 rgba(255,120,120,0) }
+  30%    { box-shadow:0 0 0 4px rgba(255,120,120,.6) }
+}
+.item.flash{ animation:flash 1.2s ease-out 1 }
