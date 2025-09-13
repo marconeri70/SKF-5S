@@ -124,3 +124,34 @@ footer{color:var(--muted);text-align:center;padding:18px}
   .hero-img{max-width:260px;max-height:260px}
   .controls .filters{grid-template-columns:1fr 1fr 1fr;gap:8px}
 }
+
+/* --- S tab: stato ATTIVO super-evidente ----------------------------------- */
+.tab.s {
+  transition: transform .08s ease, box-shadow .08s ease, background .08s ease, color .08s ease;
+}
+
+.tab.s.active {
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 3px rgba(0,0,0,.06);
+}
+
+/* colore pieno per ciascuna S */
+.tab.s[data-s="1S"].active { background: var(--c1); color:#fff; border-color: var(--c1); }
+.tab.s[data-s="2S"].active { background: var(--c2); color:#fff; border-color: var(--c2); }
+.tab.s[data-s="3S"].active { background: var(--c3); color:#fff; border-color: var(--c3); }
+.tab.s[data-s="4S"].active { background: var(--c4); color:#fff; border-color: var(--c4); }
+.tab.s[data-s="5S"].active { background: var(--c5); color:#fff; border-color: var(--c5); }
+
+/* pill % dentro al tab attivo -> bianca con alone del colore della S */
+.tab.s.active .pill{
+  background: rgba(255,255,255,.18);
+  border-color: rgba(255,255,255,.35);
+  color:#fff;
+}
+
+/* alone colorato intorno al tab attivo */
+.tab.s[data-s="1S"].active { box-shadow: 0 0 0 3px rgba(122,86,198,.25); }
+.tab.s[data-s="2S"].active { box-shadow: 0 0 0 3px rgba(230,82,58,.25); }
+.tab.s[data-s="3S"].active { box-shadow: 0 0 0 3px rgba(243,161,26,.25); }
+.tab.s[data-s="4S"].active { box-shadow: 0 0 0 3px rgba(53,180,104,.25); }
+.tab.s[data-s="5S"].active { box-shadow: 0 0 0 3px rgba(75,136,255,.25); }
