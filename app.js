@@ -1,49 +1,49 @@
-/* SKF 5S – v7.7.0 */
-const storeKey = 'skf.fiveS.v7.7.0';
+/* SKF 5S – v7.8.0 */
+const storeKey = 'skf.fiveS.v7.8.0';
 const POINTS = [0,1,3,5];
 
-/* Voci 5S (sintesi Excel) */
+/* Voci 5S (sintesi Excel – puoi ampliare quando vuoi) */
 const VOC_1S = [
-  {title:"Zona pedonale pavimento",desc:"L'area pedonale è esente da congestione/ostacoli (area libera) e da pericoli di inciampo"},
-  {title:"Zona di lavoro (pavimento, macchina)",desc:"Presenti solo materiali/strumenti necessari al lavoro attuale; il resto rimosso o contrassegnato"},
-  {title:"Materiali",desc:"Solo materiale necessario per l’ordine in corso; obsoleti/non necessari rimossi"},
-  {title:"Informazioni",desc:"Solo documenti/poster utili in buone condizioni"},
-  {title:"Processo di etichettatura",desc:"Definiti area etichetta rossa, processo e team"},
-  {title:"Piano per sostenere il risultato",desc:"Lavagna 5S con azioni, foto Prima/Dopo, punteggi, SPL aggiornati"}
+  {title:"Zona pedonale pavimento",desc:"Area pedonale libera da ostacoli e pericoli di inciampo"},
+  {title:"Zona di lavoro (pavimento, macchina)",desc:"Solo ciò che serve all’ordine in corso; resto rimosso/contrassegnato"},
+  {title:"Materiali",desc:"Materiale non necessario eliminato o segregato"},
+  {title:"Informazioni",desc:"Solo documenti utili e in buono stato"},
+  {title:"Processo di etichettatura",desc:"Area etichetta rossa / processo / team definiti"},
+  {title:"Piano per sostenere il risultato",desc:"Lavagna 5S con azioni, foto prima/dopo, punteggi, SPL aggiornati"}
 ];
 const VOC_2S = [
   {title:"1-S Stato",desc:"Team e area definiti, 1S compresa e mantenuta"},
-  {title:"Sicurezza",desc:"Articoli/attrezzature sicurezza segnati e accessibili"},
+  {title:"Sicurezza",desc:"Dispositivi e attrezzature sicurezza segnalati e accessibili"},
   {title:"Qualità",desc:"Postazioni qualità definite e ordinate"},
   {title:"Documenti",desc:"File/documenti identificati e al punto d’uso"},
-  {title:"Concetti",desc:"Miglioramenti: punto d’uso, ergonomia, no sprechi/confusione"},
+  {title:"Concetti",desc:"Punto d’uso, ergonomia, zero sprechi/confusione"},
   {title:"Posizioni prefissate",desc:"Posti fissi/sagome per attrezzi/materiali"},
   {title:"Visual Management di base",desc:"Linee, etichette, colori standard attivi"}
 ];
 const VOC_3S = [
   {title:"1-S Stato",desc:"Stato di 1S mantenuto"},
   {title:"2-S Stato",desc:"Stato di 2S mantenuto"},
-  {title:"Pulizia",desc:"Aree pulite, anche punti difficili; niente perdite/ruggine/polvere"},
+  {title:"Pulizia",desc:"Aree pulite; no perdite/ruggine/polvere (anche punti difficili)"},
   {title:"Misure preventive",desc:"Rimosse cause di sporco/perdite; prevenute ricadute"},
-  {title:"Pulire è routine",desc:"Routine di pulizia con responsabilità e frequenze"},
+  {title:"Pulire è routine",desc:"Routine con responsabilità e frequenze"},
   {title:"Standard di pulizia",desc:"Standard e checklist visibili e seguiti"}
 ];
 const VOC_4S = [
   {title:"Aree di passaggio",desc:"Nessun deposito o ostacolo; pavimento libero"},
   {title:"Area di lavoro",desc:"Solo il necessario; resto in attesa rimozione"},
   {title:"Materiali",desc:"Solo i materiali per il lavoro attuale"},
-  {title:"Informazione",desc:"Solo informazioni necessarie e in buono stato"},
+  {title:"Informazione",desc:"Informazioni necessarie e in buono stato"},
   {title:"Visual Management",desc:"Indicatori visivi efficaci nella routine"},
   {title:"Posizioni prefissate",desc:"Facile capire cosa manca e dove va rimesso"},
   {title:"Standard lavoro & check",desc:"SPL/istruzioni/check-list visibili e usate"},
   {title:"Etichette e colori",desc:"Etichette chiare, codici colore coerenti"},
-  {title:"Marcature tubi/valvole",desc:"Tubi/valvole/strumenti marcati con colori standard"},
+  {title:"Marcature tubi/valvole",desc:"Tubi/valvole/strumenti marcati (colori standard)"},
   {title:"Segnaletica a terra",desc:"Linee/campiture presenti e mantenute"},
   {title:"Punti di ispezione",desc:"Chiari i punti e cosa verificare"},
   {title:"Single Point Lessons",desc:"SPL aggiornate e usate"},
   {title:"Standard & documentazione",desc:"Documentazione aggiornata e disponibile"},
-  {title:"Management visivo avanzato",desc:"Kanban, scorte, allarmi visivi attivi"},
-  {title:"Misure preventive",desc:"Anomalie registrate/risolte alla radice"}
+  {title:"Management visivo avanzato",desc:"Kanban, scorte, allarmi visivi"},
+  {title:"Misure preventive",desc:"Anomalie risolte alla radice"}
 ];
 const VOC_5S = [
   {title:"Ognuno & ogni giorno",desc:"Tutti formati sugli standard e coinvolti"},
@@ -77,7 +77,7 @@ function isOverdue(iso){ if(!iso) return false; return new Date(iso+'T23:59:59')
 /* Storage */
 let state = load();
 if(!state.areas?.length){ state = { areas:[ makeArea("L2") ] }; save(); }
-function load(){ try{ const raw=localStorage.getItem(storeKey) || localStorage.getItem('skf.fiveS.v7.7.0'); return raw? JSON.parse(raw) : {areas:[]}; }catch(e){ return {areas:[]}; } }
+function load(){ try{ const raw=localStorage.getItem(storeKey) || localStorage.getItem('skf.fiveS.v7.8.0'); return raw? JSON.parse(raw) : {areas:[]}; }catch(e){ return {areas:[]}; } }
 function save(){ localStorage.setItem(storeKey, JSON.stringify(state)); }
 
 /* Scores */
@@ -87,14 +87,13 @@ function computeScores(area, sector){
   const byS={}; let sum=0,max=0;
   ["1S","2S","3S","4S","5S"].forEach(s=>{
     let arr=[]; secs.forEach(sec=> arr=arr.concat(area.sectors[sec][s]||[]));
-    byS[s]=scoreList(arr);
-    sum+=arr.reduce((a,it)=>a+(+it.p||0),0); max+=5*arr.length;
+    byS[s]=scoreList(arr); sum+=arr.reduce((a,it)=>a+(+it.p||0),0); max+=5*arr.length;
   });
   return { areaScore: max? (sum/max):0, byS };
 }
 function overallStats(list){
   const arr=list||filteredAreas(); let sum=0,max=0,late=0;
-  const secs = ui.sector==="ALL"? ["Rettifica","Montaggio"] : [ui.sector]; // <-- rispetta filtro
+  const secs = ui.sector==="ALL"? ["Rettifica","Montaggio"] : [ui.sector];
   arr.forEach(a=>{
     secs.forEach(sec=>{
       ["1S","2S","3S","4S","5S"].forEach(s=>
@@ -108,7 +107,6 @@ function overallStats(list){
 /* Filtri */
 let ui = { q:"", line:"ALL", sector:"ALL", onlyLate:false };
 function matchFilters(a){
-  // la scelta settore qui non esclude aree; è applicata a KPI/grafico e alle card
   if(ui.line!=="ALL" && (a.line||"").trim()!==ui.line) return false;
   if(ui.q.trim()==='' && !ui.onlyLate) return true;
   const q=ui.q.trim().toLowerCase();
@@ -180,6 +178,43 @@ function renderArea(area){
     if(confirm('Eliminare la linea?')){ state.areas.splice(state.areas.indexOf(area),1); save(); render(); }
   });
 
+  // Stampa linea singola (nuova finestra con stile mini)
+  node.querySelector('.print-area').addEventListener('click', ()=>{
+    const { byS, areaScore } = computeScores(area, localSector);
+    const win = window.open('', '_blank');
+    const css = `
+      body{font:14px/1.4 system-ui; padding:16px}
+      h1{margin:0 0 8px}
+      .k{margin:8px 0 12px}
+      table{border-collapse:collapse;width:100%;margin-top:10px}
+      th,td{border:1px solid #999;padding:6px}
+      th{background:#eef4f8;text-align:left}
+    `;
+    let rows = '';
+    (["1S","2S","3S","4S","5S"]).forEach(s=>{
+      ["Rettifica","Montaggio"].forEach(sec=>{
+        (area.sectors[sec][s]||[]).forEach(it=>{
+          rows += `<tr><td>${sec}</td><td>${s}</td><td>${it.t||''}</td><td>${it.p||0}</td><td>${it.resp||''}</td><td>${it.due||''}</td><td>${(it.note||'').replace(/</g,'&lt;')}</td></tr>`;
+        });
+      });
+    });
+    win.document.write(`
+      <html><head><title>Stampa ${area.line||''}</title><style>${css}</style></head>
+      <body>
+        <h1>Linea ${area.line||''}</h1>
+        <div class="k"><b>Settore:</b> ${localSector} — <b>Punteggio:</b> ${fmtPct(areaScore)} — 
+        ${["1S","2S","3S","4S","5S"].map(s=>`${s}: ${fmtPct(byS[s])}`).join(' • ')}</div>
+        <table>
+          <thead><tr><th>Settore</th><th>S</th><th>Voce</th><th>Punti</th><th>Responsabile</th><th>Scadenza</th><th>Note</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </body></html>
+    `);
+    win.document.close();
+    win.focus();
+    win.print();
+  });
+
   function refillPanels(){
     panels.forEach(panel=>{
       const s=panel.dataset.s; panel.innerHTML='';
@@ -228,7 +263,7 @@ function renderItem(area, sector, sKey, iIdx, item){
 
   dots.forEach(d=>{
     d.addEventListener('click', ()=>{
-      item.p = +d.dataset.val; markDots(); save(); updateDashboard(); drawAreasChart();
+      item.p = +d.dataset.val; markDots(); save(); updateDashboard(); drawAreasChart(); buildLineButtons();
     });
   });
 
@@ -245,7 +280,7 @@ function renderItem(area, sector, sKey, iIdx, item){
 function updateDashboard(list){
   const arr=list||filteredAreas();
   elKpiAreas.textContent = arr.length;
-  const { score, late } = overallStats(arr); // ora considera ui.sector
+  const { score, late } = overallStats(arr);
   elKpiScore.textContent = fmtPct(score);
   elKpiLate.textContent = late;
 }
@@ -262,8 +297,7 @@ function drawAreasChart(){
   const COLORS={ "TOT":'#9bb0d6',"1S":style.getPropertyValue('--c1').trim(),"2S":style.getPropertyValue('--c2').trim(),"3S":style.getPropertyValue('--c3').trim(),"4S":style.getPropertyValue('--c4').trim(),"5S":style.getPropertyValue('--c5').trim() };
 
   const areas = filteredAreas(); if(!areas.length){ return; }
-
-  const secs = ui.sector==="ALL"? ["Rettifica","Montaggio"] : [ui.sector]; // <-- rispetta filtro
+  const secs = ui.sector==="ALL"? ["Rettifica","Montaggio"] : [ui.sector];
 
   const groups = areas.map(a=>{
     let totals = {"1S":{sum:0,max:0},"2S":{sum:0,max:0},"3S":{sum:0,max:0},"4S":{sum:0,max:0},"5S":{sum:0,max:0}};
@@ -302,15 +336,37 @@ function drawAreasChart(){
     x+=gw+gap;
   });
 }
+
+/* Bottoni Linee con badge % per S */
 function buildLineButtons(){
   const host=document.getElementById('lineBtns'); if(!host) return;
   host.innerHTML='';
-  const bAll=document.createElement('button'); bAll.className='btn'+(ui.line==='ALL'?' active':''); bAll.textContent='Tutte';
+  const bAll=document.createElement('button'); bAll.className='line-btn'+(ui.line==='ALL'?' active':''); bAll.innerHTML='<span>Tutte</span>';
   bAll.addEventListener('click', ()=>{ ui.line='ALL'; const sel=document.getElementById('lineFilter'); if(sel) sel.value='ALL'; render(); window.scrollTo({top:host.offsetTop,behavior:'smooth'}); });
   host.appendChild(bAll);
+
+  const secs = ui.sector==="ALL"? ["Rettifica","Montaggio"] : [ui.sector];
+
   const lines=Array.from(new Set(state.areas.map(a=>(a.line||'').trim()).filter(Boolean))).sort();
   lines.forEach(line=>{
-    const b=document.createElement('button'); b.className='btn'+(ui.line===line?' active':''); b.textContent=line;
+    // calcolo % per S in base al filtro settore
+    const a = state.areas.find(x=>(x.line||'').trim()===line);
+    let totals = {"1S":{sum:0,max:0},"2S":{sum:0,max:0},"3S":{sum:0,max:0},"4S":{sum:0,max:0},"5S":{sum:0,max:0}};
+    secs.forEach(sec=>{
+      ["1S","2S","3S","4S","5S"].forEach(s=>(a.sectors[sec][s]||[]).forEach(it=>{ totals[s].sum+=(+it.p||0); totals[s].max+=5; }));
+    });
+    const pct = s => totals[s].max? Math.round(100*totals[s].sum/totals[s].max) : 0;
+
+    const b=document.createElement('button');
+    b.className='line-btn'+(ui.line===line?' active':'');
+    b.innerHTML = `<span>${line}</span>
+      <span class="badges">
+        <span class="badgeS s1">${pct("1S")}%</span>
+        <span class="badgeS s2">${pct("2S")}%</span>
+        <span class="badgeS s3">${pct("3S")}%</span>
+        <span class="badgeS s4">${pct("4S")}%</span>
+        <span class="badgeS s5">${pct("5S")}%</span>
+      </span>`;
     b.addEventListener('click', ()=>{ ui.line=line; const sel=document.getElementById('lineFilter'); if(sel) sel.value=line; render(); setTimeout(()=>{ const card=[...document.querySelectorAll('.area .area-line')].find(i=>i.value.trim()===line)?.closest('.area'); card?.scrollIntoView({behavior:'smooth',block:'start'}); },0); });
     host.appendChild(b);
   });
@@ -325,6 +381,34 @@ document.getElementById('btnExport').addEventListener('click', ()=>{
   const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:`SKF_5S_${new Date().toISOString().slice(0,10)}.json`});
   document.body.appendChild(a); a.click(); a.remove();
 });
+/* Nuovo: export CSV (Excel-friendly) */
+document.getElementById('btnExportCSV').addEventListener('click', ()=>{
+  const secs = ["Rettifica","Montaggio"];
+  const rows = [['Linea','Settore','S','Voce','Punti','Responsabile','Scadenza','Note']];
+  state.areas.forEach(a=>{
+    secs.forEach(sec=>{
+      ["1S","2S","3S","4S","5S"].forEach(s=>{
+        (a.sectors[sec][s]||[]).forEach(it=>{
+          rows.push([
+            a.line||'',
+            sec,
+            s,
+            (it.t||'').replace(/"/g,'""'),
+            it.p||0,
+            (it.resp||'').replace(/"/g,'""'),
+            it.due||'',
+            (it.note||'').replace(/"/g,'""')
+          ]);
+        });
+      });
+    });
+  });
+  const csv = rows.map(r => r.map(v => `"${String(v)}"`).join(',')).join('\r\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:`SKF_5S_${new Date().toISOString().slice(0,10)}.csv`});
+  document.body.appendChild(a); a.click(); a.remove();
+});
+
 document.getElementById('fileImport').addEventListener('change', async (e)=>{
   const f=e.target.files[0]; if(!f) return;
   try{ state=JSON.parse(await f.text()); save(); render(); } catch{ alert('JSON non valido'); }
