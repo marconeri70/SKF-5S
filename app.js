@@ -1,8 +1,8 @@
-/* SKF 5S – app.js v7.9.3 *****************************************************/
-const STORE = 'skf.5s.v7.9.3';
+/* SKF 5S – app.js v7.9.4 *****************************************************/
+const STORE = 'skf.5s.v7.9.4';
 const POINTS = [0,1,3,5];
 
-/* Voci (sintesi Excel) */
+/* Voci base (riassunto) – puoi estendere liberamente */
 const VOC_1S=[{title:"Zona pedonale pavimento",desc:"Area pedonale libera da congestione/ostacoli e pericoli di inciampo"},
 {title:"Zona di lavoro (pavimento, macchina)",desc:"Solo il necessario per l’ordine in corso"},
 {title:"Materiali",desc:"Materiale non necessario rimosso/segregato"},
@@ -40,7 +40,7 @@ const VOC_4S=[{title:"Aree di passaggio",desc:"Nessun deposito/ostacolo; pavimen
 const VOC_5S=[{title:"Ognuno & ogni giorno",desc:"Tutti formati e coinvolti sugli standard"},
 {title:"Miglioramento continuo",desc:"Evidenza prima/dopo; standard aggiornati"}];
 
-/* Utils */
+/* Helpers */
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const todayISO=()=>new Date().toISOString().slice(0,10);
 const isOverdue=d=>d && new Date(d+'T23:59:59')<new Date();
@@ -62,30 +62,31 @@ const elLineFilter=$('#lineFilter'), elQ=$('#q'), elOnlyLate=$('#onlyLate');
 const btnAll=$('#btnAll'), btnFgr=$('#btnFgr'), btnAsm=$('#btnAsm');
 const tplArea=$('#tplArea'), tplItem=$('#tplItem');
 
-/* Top binding (protetti) */
+/* Guard – templates mancanti */
+if(!tplArea || !tplItem){
+  console.error('Template mancante: assicurati che #tplArea e #tplItem siano in index.html');
+}
+
+/* Top bar */
 const btnTheme=$('#btnTheme');
 if(btnTheme){
   const root=document.documentElement;
   if(localStorage.getItem('theme')==='dark') root.classList.add('dark');
   btnTheme.addEventListener('click',()=>{root.classList.toggle('dark');localStorage.setItem('theme',root.classList.contains('dark')?'dark':'light');});
 }
-const btnNewArea=$('#btnNewArea');
-btnNewArea&&btnNewArea.addEventListener('click',()=>{const line=(prompt('Linea nuova? (es. L3)','L3')||'Lx').trim();state.areas.push(makeArea(line));save();render();});
-const btnExport=$('#btnExport');
-btnExport&&btnExport.addEventListener('click',()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:`SKF_5S_${todayISO()}.json`});document.body.appendChild(a);a.click();a.remove();});
-const fileImport=$('#fileImport');
-fileImport&&fileImport.addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{state=JSON.parse(await f.text());save();render();}catch{alert('File non valido')}})
-const btnPrint=$('#btnPrint'); btnPrint&&btnPrint.addEventListener('click',()=>window.print());
+$('#btnNewArea')?.addEventListener('click',()=>{const line=(prompt('Linea nuova? (es. L3)','L3')||'Lx').trim();state.areas.push(makeArea(line));save();render();});
+$('#btnExport')?.addEventListener('click',()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:`SKF_5S_${todayISO()}.json`});document.body.appendChild(a);a.click();a.remove();});
+$('#fileImport')?.addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{state=JSON.parse(await f.text());save();render();}catch{alert('File non valido')}});
+$('#btnPrint')?.addEventListener('click',()=>window.print());
 
 /* Filtri */
-elQ&&elQ.addEventListener('input',()=>{ui.q=elQ.value;render();});
-elLineFilter&&elLineFilter.addEventListener('change',()=>{ui.line=elLineFilter.value;render();});
-btnAll&&btnAll.addEventListener('click',()=>{ui.sector='ALL';setSegActive(btnAll);render();});
-btnFgr&&btnFgr.addEventListener('click',()=>{ui.sector='Rettifica';setSegActive(btnFgr);render();});
-btnAsm&&btnAsm.addEventListener('click',()=>{ui.sector='Montaggio';setSegActive(btnAsm);render();});
-elOnlyLate&&elOnlyLate.addEventListener('change',()=>{ui.onlyLate=elOnlyLate.checked;render();});
-const btnClear=$('#btnClearFilters');
-btnClear&&btnClear.addEventListener('click',()=>{ui={q:'',line:'ALL',sector:'ALL',onlyLate:false};elQ&&(elQ.value='');elLineFilter&&(elLineFilter.value='ALL');elOnlyLate&&(elOnlyLate.checked=false);setSegActive(btnAll);render();});
+elQ?.addEventListener('input',()=>{ui.q=elQ.value;render();});
+elLineFilter?.addEventListener('change',()=>{ui.line=elLineFilter.value;render();});
+btnAll?.addEventListener('click',()=>{ui.sector='ALL';setSegActive(btnAll);render();});
+btnFgr?.addEventListener('click',()=>{ui.sector='Rettifica';setSegActive(btnFgr);render();});
+btnAsm?.addEventListener('click',()=>{ui.sector='Montaggio';setSegActive(btnAsm);render();});
+elOnlyLate?.addEventListener('change',()=>{ui.onlyLate=elOnlyLate.checked;render();});
+$('#btnClearFilters')?.addEventListener('click',()=>{ui={q:'',line:'ALL',sector:'ALL',onlyLate:false};elQ&&(elQ.value='');elLineFilter&&(elLineFilter.value='ALL');elOnlyLate&&(elOnlyLate.checked=false);setSegActive(btnAll);render();});
 function setSegActive(btn){[btnAll,btnFgr,btnAsm].forEach(b=>b&&b.classList.remove('active'));btn&&btn.classList.add('active');}
 
 /* Calcoli */
@@ -185,7 +186,7 @@ function renderItem(area,sector,S,idx,it){
   const frag=document.createDocumentFragment();
   const node=tplItem.content.firstElementChild.cloneNode(true);
   const desc=tplItem.content.children[1].cloneNode(true);
-  // tag per focus da cruscotto
+
   node.dataset.line=(area.line||'').trim(); node.dataset.sector=sector; node.dataset.s=S; node.dataset.idx=String(idx);
 
   const txt=$('.txt',node), resp=$('.resp',node), due=$('.due',node),
@@ -199,16 +200,23 @@ function renderItem(area,sector,S,idx,it){
   txt.addEventListener('input',()=>{it.t=txt.value;if(it.d){const h=desc.querySelector('h4');h&&(h.textContent=it.t);}save();});
   resp.addEventListener('input',()=>{it.resp=resp.value;save();});
   note.addEventListener('input',()=>{it.note=note.value;save();});
-  due.addEventListener('change',()=>{it.due=due.value;save();node.classList.toggle('late',isOverdue(it.due));updateDashboard();});
+  due.addEventListener('change',()=>{
+    it.due=due.value; save();
+    node.classList.toggle('late',isOverdue(it.due));
+    updateDashboard();
+  });
 
-  dots.forEach(d=>d.addEventListener('click',()=>{it.p=+d.dataset.val;markDots();save();updateDashboard();drawAreasChart();buildLineButtons();}));
+  dots.forEach(d=>d.addEventListener('click',()=>{
+    it.p=+d.dataset.val; markDots(); save();
+    updateDashboard(); drawAreasChart(); buildLineButtons();
+  }));
   info.addEventListener('click',()=>desc.classList.toggle('show'));
   $('.del',node).addEventListener('click',()=>{const arr=area.sectors[sector][S];arr.splice(idx,1);save();render();});
 
   frag.appendChild(node); frag.appendChild(desc); return frag;
 }
 
-/* Dashboard + elenco late */
+/* ===== Dashboard + late list ===== */
 function updateDashboard(list){
   const {score,late}=overallStats(list);
   elKpiAreas&&(elKpiAreas.textContent=(list||filteredAreas()).length);
@@ -217,7 +225,7 @@ function updateDashboard(list){
   renderLateList(list);
 }
 function renderLateList(list){
-  const host=document.getElementById('lateList'); if(!host) return;
+  const host=$('#lateList'); if(!host) return;
   host.innerHTML='';
   const secs=ui.sector==='ALL'?['Rettifica','Montaggio']:[ui.sector];
   const arr=[];
@@ -240,7 +248,7 @@ function focusLate(x){
   if(item){item.classList.remove('flash');void item.offsetWidth;item.classList.add('flash');}
 }
 
-/* Grafico */
+/* ===== Grafico ===== */
 function drawAreasChart(list){
   const canvas=$('#chartAreas'); if(!canvas) return;
   const ctx=canvas.getContext('2d'); const DPR=devicePixelRatio||1, Hcss=260;
@@ -275,7 +283,7 @@ function drawAreasChart(list){
   });
 }
 
-/* Line buttons */
+/* ===== Line buttons ===== */
 function buildLineButtons(){
   const host=$('#lineBtns'); if(!host)return; host.innerHTML='';
   const bAll=document.createElement('button'); bAll.className='line-btn'+(ui.line==='ALL'?' active':''); bAll.textContent='Tutte';
@@ -297,4 +305,5 @@ function buildLineButtons(){
 
 /* Init */
 render(); window.addEventListener('resize',()=>drawAreasChart());
+
 
