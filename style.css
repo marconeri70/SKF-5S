@@ -1,13 +1,15 @@
 /* ================
-   SKF 5S – Light & Dark
+   SKF 5S – Light & Dark (v7.6.2)
    ================ */
 
-/* tema chiaro (default) */
+/* tema chiaro */
 :root{
   --bg:#ffffff; --text:#003366; --muted:#5c6f82;
   --card:#f3f7fa; --panel:#ffffff; --panel-alt:#eef4f8; --outline:#d0d7e1;
   --accent:#0095d9; --ink:#ffffff;
+
   --kpi-bg:#eaf3fa; --chart-bg:#ffffff; --chart-grid:#d0d7e1; --chart-text:#003366;
+
   --c1:#7a56c6; --c2:#e44f37; --c3:#f3a11a; --c4:#35b468; --c5:#4b88ff;
   --desc-bg:#0095d9; --desc-border:#78c9ed;
 }
@@ -16,7 +18,9 @@
   --bg:#0f1a36; --text:#eaf0ff; --muted:#9bb0c5;
   --card:#182544; --panel:#1e2d4f; --panel-alt:#22345c; --outline:#3a4a6b;
   --accent:#4b88ff; --ink:#ffffff;
+
   --kpi-bg:#1b2e50; --chart-bg:#0b1530; --chart-grid:rgba(255,255,255,.2); --chart-text:#eaf0ff;
+
   --desc-bg:#27407e; --desc-border:#4b88ff;
 }
 
@@ -63,7 +67,7 @@ body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 system-ui,Se
 .kpi div:first-child{color:var(--muted)}.kpi div:last-child{font-size:1.6rem;font-weight:800}
 #chartAreas{width:100%;display:block;background:var(--chart-bg);border:1px solid var(--outline);border-radius:12px}
 
-/* legenda punteggi sotto grafico */
+/* legenda punteggi */
 .score-legend{display:flex;gap:18px;align-items:center;margin-top:10px;color:var(--muted);flex-wrap:wrap}
 .score-legend .dot0,.dot1,.dot3,.dot5{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;color:#fff;font-weight:700}
 .dot0{background:#8e9bb0}.dot1{background:#6c8ad6}.dot3{background:#35b468}.dot5{background:#0095d9}
@@ -131,4 +135,5 @@ body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 system-ui,Se
   body{background:white;color:black}
   .card{box-shadow:none;border-color:#999}
 }
+
 
