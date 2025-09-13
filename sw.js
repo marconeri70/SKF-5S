@@ -1,10 +1,10 @@
-// sw.js – Service Worker SKF 5S v7.9.1
-const CACHE_NAME = "skf5s-cache-v15";
+// sw.js – SKF 5S v7.9.2 (cache senza query)
+const CACHE_NAME = "skf5s-cache-v16";
 const URLS_TO_CACHE = [
   "./",
   "index.html",
-  "style.css?v=7.9.1",
-  "app.js?v=7.9.1",
+  "style.css",
+  "app.js",
   "manifest.json",
   "assets/skf-192.png",
   "assets/skf-512.png",
@@ -12,45 +12,30 @@ const URLS_TO_CACHE = [
   "assets/5s-hero.png"
 ];
 
-// Install
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(URLS_TO_CACHE);
-    })
-  );
+  event.waitUntil(caches.open(CACHE_NAME).then((c) => c.addAll(URLS_TO_CACHE)));
+  self.skipWaiting();
 });
 
-// Activate (elimina cache vecchie)
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
-        })
-      )
+      Promise.all(keys.map((k) => (k !== CACHE_NAME ? caches.delete(k) : undefined)))
     )
   );
+  self.clients.claim();
 });
 
-// Fetch
 self.addEventListener("fetch", (event) => {
   event.respondWith(
-    caches.match(event.request).then((resp) => {
-      return (
-        resp ||
-        fetch(event.request).then((response) => {
-          return caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, response.clone());
-            return response;
-          });
-        })
-      );
+    caches.match(event.request).then((cached) => {
+      if (cached) return cached;
+      return fetch(event.request).then((resp) => {
+        const copy = resp.clone();
+        caches.open(CACHE_NAME).then((c) => c.put(event.request, copy));
+        return resp;
+      }).catch(() => cached || Response.error());
     })
   );
 });
-
 
