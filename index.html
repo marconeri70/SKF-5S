@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>SKF 5S v7.9.1</title>
-  <link rel="manifest" href="manifest.json?v=7.9.1"/>
-  <link rel="stylesheet" href="style.css?v=7.9.1"/>
+  <title>SKF 5S v7.9.2</title>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="stylesheet" href="style.css"/>
   <link rel="icon" href="assets/skf-192.png"/>
   <meta name="theme-color" content="#0095d9"/>
 </head>
@@ -13,7 +13,7 @@
 <header class="app-header">
   <div class="brand">
     <img src="assets/skf-logo.png" alt="SKF" class="logo"/>
-    <h1>SKF 5S <span class="ver">v7.9.1</span></h1>
+    <h1>SKF 5S <span class="ver">v7.9.2</span></h1>
   </div>
   <div class="actions">
     <button id="btnNewArea" class="btn">+ Nuova linea</button>
@@ -27,14 +27,7 @@
 
 <section class="intro5s card">
   <div class="intro-grid">
-    <!-- Immagine 3D -->
-    <img src="assets/5s-hero.png"
-         alt="Diagramma 5S"
-         class="hero-img"
-         loading="lazy"
-         decoding="async"
-         width="768" height="768"/>
-
+    <img src="assets/5s-hero.png" alt="Diagramma 5S" class="hero-img" loading="lazy" decoding="async" width="768" height="768"/>
     <div class="intro-copy">
       <h2>Cosa è 5S</h2>
       <p>5S è un metodo per fornire un posto di lavoro <b>sicuro</b>, <b>ben organizzato</b> e <b>pulito</b>, per fare il nostro lavoro facilmente e correttamente la prima volta.</p>
@@ -144,13 +137,11 @@
 
 <footer><p>© SKF – PWA offline</p></footer>
 
-<script src="app.js?v=7.9.1"></script>
+<script src="app.js"></script>
 <script>
   if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
 </script>
 </body>
 </html>
-
-
 
 
