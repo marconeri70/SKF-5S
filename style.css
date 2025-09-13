@@ -1,5 +1,5 @@
 /* ================
-   SKF 5S – Light & Dark (v7.7.0)
+   SKF 5S – Light & Dark (v7.8.0)
    ================ */
 
 /* tema chiaro */
@@ -9,7 +9,7 @@
   --accent:#0095d9; --ink:#ffffff;
   --kpi-bg:#eaf3fa; --chart-bg:#ffffff; --chart-grid:#d0d7e1; --chart-text:#003366;
 
-  /* colori 5S + versione “light” per gradiente */
+  /* colori 5S + tono chiaro per gradiente 3D */
   --c1:#7a56c6; --c1l:#9b7ee0;
   --c2:#e44f37; --c2l:#ff7a66;
   --c3:#f3a11a; --c3l:#ffc14f;
@@ -26,7 +26,6 @@
   --accent:#4b88ff; --ink:#ffffff;
   --kpi-bg:#1b2e50; --chart-bg:#0b1530; --chart-grid:rgba(255,255,255,.2); --chart-text:#eaf0ff;
 
-  /* in scuro i “light” restano più brillanti */
   --c1:#7a56c6; --c1l:#b49af0;
   --c2:#e44f37; --c2l:#ff9a86;
   --c3:#f3a11a; --c3l:#ffd27a;
@@ -85,10 +84,13 @@ body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 system-ui,Se
 .score-legend .dot0,.dot1,.dot3,.dot5{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;color:#fff;font-weight:700}
 .dot0{background:#8e9bb0}.dot1{background:#6c8ad6}.dot3{background:#35b468}.dot5{background:#0095d9}
 
-/* bottoni linee */
+/* bottoni linee + badge per S */
 .line-buttons{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-.line-buttons .btn{background:#fff;color:var(--accent);border:1px solid var(--accent)}
-.line-buttons .btn.active{background:var(--accent);color:#fff}
+.line-btn{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--accent);color:var(--accent);border-radius:12px;padding:6px 10px;cursor:pointer}
+.line-btn.active{background:var(--accent);color:#fff}
+.badges{display:flex;gap:4px}
+.badgeS{min-width:28px;text-align:center;padding:2px 6px;border-radius:999px;color:#fff;font-weight:700;font-size:.78rem}
+.badgeS.s1{background:var(--c1)} .badgeS.s2{background:var(--c2)} .badgeS.s3{background:var(--c3)} .badgeS.s4{background:var(--c4)} .badgeS.s5{background:var(--c5)}
 
 /* area */
 .area-head{display:grid;grid-template-columns:220px auto auto;gap:12px;align-items:end}
@@ -142,11 +144,10 @@ body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 system-ui,Se
 .desc h4{margin:0 0 6px;font-size:.95rem;color:#fff}
 .desc p{margin:0}
 
-/* print */
+/* PRINT */
 @media print{
-  header,.btn,footer,.controls{display:none!important}
-  body{background:white;color:black}
+  header,.controls,.btn,footer{display:none!important}
+  body{background:#fff;color:#000}
   .card{box-shadow:none;border-color:#999}
+  .area{break-inside:avoid-page}
 }
-
-
