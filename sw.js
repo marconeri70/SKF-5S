@@ -1,11 +1,11 @@
-// SKF 5S PWA SW – v7.6.2
-CACHE_NAME = "skf5s-cache-v7"; // aumenta quando cambi file
-FILES_TO_CACHE = [
+// SKF 5S PWA SW – v7.6.3
+const CACHE_NAME = "skf5s-cache-v8";
+const FILES_TO_CACHE = [
   "./",
   "./index.html",
-  "./style.css?v=7.6.2",
-  "./app.js?v=7.6.2",
-  "./manifest.json",
+  "./style.css?v=7.6.3",
+  "./app.js?v=7.6.3",
+  "./manifest.json?v=7.6.3",
   "./assets/skf-logo.png",
   "./assets/skf-192.png",
   "./assets/skf-512.png"
@@ -24,4 +24,5 @@ self.addEventListener("activate", (e) => {
 self.addEventListener("fetch", (e) => {
   e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
 });
+
 
