@@ -1,5 +1,5 @@
-/* SKF 5S – v7.6.3 */
-const storeKey = 'skf.fiveS.v7.6.3';
+/* SKF 5S – v7.7.0 */
+const storeKey = 'skf.fiveS.v7.7.0';
 const POINTS = [0,1,3,5];
 
 /* Voci 5S (sintesi Excel) */
@@ -77,7 +77,7 @@ function isOverdue(iso){ if(!iso) return false; return new Date(iso+'T23:59:59')
 /* Storage */
 let state = load();
 if(!state.areas?.length){ state = { areas:[ makeArea("L2") ] }; save(); }
-function load(){ try{ const raw=localStorage.getItem(storeKey) || localStorage.getItem('skf.fiveS.v7.6.2'); return raw? JSON.parse(raw) : {areas:[]}; }catch(e){ return {areas:[]}; } }
+function load(){ try{ const raw=localStorage.getItem(storeKey) || localStorage.getItem('skf.fiveS.v7.7.0'); return raw? JSON.parse(raw) : {areas:[]}; }catch(e){ return {areas:[]}; } }
 function save(){ localStorage.setItem(storeKey, JSON.stringify(state)); }
 
 /* Scores */
@@ -94,8 +94,9 @@ function computeScores(area, sector){
 }
 function overallStats(list){
   const arr=list||filteredAreas(); let sum=0,max=0,late=0;
+  const secs = ui.sector==="ALL"? ["Rettifica","Montaggio"] : [ui.sector]; // <-- rispetta filtro
   arr.forEach(a=>{
-    (["Rettifica","Montaggio"]).forEach(sec=>{
+    secs.forEach(sec=>{
       ["1S","2S","3S","4S","5S"].forEach(s=>
         (a.sectors[sec][s]||[]).forEach(it=>{ sum+=(+it.p||0); max+=5; if(isOverdue(it.due)) late++; })
       );
@@ -107,6 +108,7 @@ function overallStats(list){
 /* Filtri */
 let ui = { q:"", line:"ALL", sector:"ALL", onlyLate:false };
 function matchFilters(a){
+  // la scelta settore qui non esclude aree; è applicata a KPI/grafico e alle card
   if(ui.line!=="ALL" && (a.line||"").trim()!==ui.line) return false;
   if(ui.q.trim()==='' && !ui.onlyLate) return true;
   const q=ui.q.trim().toLowerCase();
@@ -219,10 +221,7 @@ function renderItem(area, sector, sKey, iIdx, item){
   const setLate=()=> node.classList.toggle('late', isOverdue(due.value)); setLate();
 
   // bind
-  txt.addEventListener('input', ()=>{ item.t=txt.value;
-    if(item.d){ const h = descHost.querySelector('h4'); if(h) h.innerHTML = item.t; }  // <-- FIX qui
-    save();
-  });
+  txt.addEventListener('input', ()=>{ item.t=txt.value; if(item.d){ const h=descHost.querySelector('h4'); if(h) h.innerHTML=item.t; } save(); });
   note.addEventListener('input', ()=>{ item.note=note.value; save(); });
   resp.addEventListener('input', ()=>{ item.resp=resp.value; save(); });
   due.addEventListener('change', ()=>{ item.due=due.value; save(); setLate(); updateDashboard(); });
@@ -246,7 +245,7 @@ function renderItem(area, sector, sKey, iIdx, item){
 function updateDashboard(list){
   const arr=list||filteredAreas();
   elKpiAreas.textContent = arr.length;
-  const { score, late } = overallStats(arr);
+  const { score, late } = overallStats(arr); // ora considera ui.sector
   elKpiScore.textContent = fmtPct(score);
   elKpiLate.textContent = late;
 }
@@ -264,9 +263,11 @@ function drawAreasChart(){
 
   const areas = filteredAreas(); if(!areas.length){ return; }
 
+  const secs = ui.sector==="ALL"? ["Rettifica","Montaggio"] : [ui.sector]; // <-- rispetta filtro
+
   const groups = areas.map(a=>{
     let totals = {"1S":{sum:0,max:0},"2S":{sum:0,max:0},"3S":{sum:0,max:0},"4S":{sum:0,max:0},"5S":{sum:0,max:0}};
-    ["Rettifica","Montaggio"].forEach(sec=>{
+    secs.forEach(sec=>{
       ["1S","2S","3S","4S","5S"].forEach(s=>(a.sectors[sec][s]||[]).forEach(it=>{ totals[s].sum+=(+it.p||0); totals[s].max+=5; }));
     });
     const byS={}; for(const s in totals){ byS[s]= totals[s].max? totals[s].sum/totals[s].max : 0; }
