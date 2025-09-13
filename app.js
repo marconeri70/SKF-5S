@@ -1,5 +1,5 @@
-/* SKF 5S – v7.6.2 */
-const storeKey = 'skf.fiveS.v7.6.2';
+/* SKF 5S – v7.6.3 */
+const storeKey = 'skf.fiveS.v7.6.3';
 const POINTS = [0,1,3,5];
 
 /* Voci 5S (sintesi Excel) */
@@ -77,7 +77,7 @@ function isOverdue(iso){ if(!iso) return false; return new Date(iso+'T23:59:59')
 /* Storage */
 let state = load();
 if(!state.areas?.length){ state = { areas:[ makeArea("L2") ] }; save(); }
-function load(){ try{ const raw=localStorage.getItem(storeKey) || localStorage.getItem('skf.fiveS.v7.6'); return raw? JSON.parse(raw) : {areas:[]}; }catch(e){ return {areas:[]}; } }
+function load(){ try{ const raw=localStorage.getItem(storeKey) || localStorage.getItem('skf.fiveS.v7.6.2'); return raw? JSON.parse(raw) : {areas:[]}; }catch(e){ return {areas:[]}; } }
 function save(){ localStorage.setItem(storeKey, JSON.stringify(state)); }
 
 /* Scores */
@@ -219,7 +219,10 @@ function renderItem(area, sector, sKey, iIdx, item){
   const setLate=()=> node.classList.toggle('late', isOverdue(due.value)); setLate();
 
   // bind
-  txt.addEventListener('input', ()=>{ item.t=txt.value; if(item.d) descHost.querySelector('h4')?.innerHTML=item.t; save(); });
+  txt.addEventListener('input', ()=>{ item.t=txt.value;
+    if(item.d){ const h = descHost.querySelector('h4'); if(h) h.innerHTML = item.t; }  // <-- FIX qui
+    save();
+  });
   note.addEventListener('input', ()=>{ item.note=note.value; save(); });
   resp.addEventListener('input', ()=>{ item.resp=resp.value; save(); });
   due.addEventListener('change', ()=>{ item.due=due.value; save(); setLate(); updateDashboard(); });
@@ -350,4 +353,5 @@ themeBtn.addEventListener("click", ()=>{
 
 /* Init */
 render();
+
 
