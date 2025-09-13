@@ -1,8 +1,8 @@
-/* SKF 5S – v7.6 */
-const storeKey = 'skf.fiveS.v7.6';
+/* SKF 5S – v7.6.2 */
+const storeKey = 'skf.fiveS.v7.6.2';
 const POINTS = [0,1,3,5];
 
-/* ===== Voci 5S (titolo+descrizione) – sintesi dal tuo Excel ===== */
+/* Voci 5S (sintesi Excel) */
 const VOC_1S = [
   {title:"Zona pedonale pavimento",desc:"L'area pedonale è esente da congestione/ostacoli (area libera) e da pericoli di inciampo"},
   {title:"Zona di lavoro (pavimento, macchina)",desc:"Presenti solo materiali/strumenti necessari al lavoro attuale; il resto rimosso o contrassegnato"},
@@ -50,7 +50,7 @@ const VOC_5S = [
   {title:"Miglioramento continuo",desc:"Evidenza prima/dopo; miglioramenti mantenuti"}
 ];
 
-/* ===== Riferimenti DOM ===== */
+/* DOM */
 const elAreas = document.getElementById('areas');
 const elKpiAreas = document.getElementById('kpiAreas');
 const elKpiScore = document.getElementById('kpiScore');
@@ -65,7 +65,7 @@ const btnAll = document.getElementById('btnAll');
 const tplArea = document.getElementById('tplArea');
 const tplItem = document.getElementById('tplItem');
 
-/* ===== Helpers ===== */
+/* Helpers */
 function makeSectorSet(){
   const map = l => l.map(o => ({t:o.title, d:o.desc, p:0, note:"", resp:"", due:""}));
   return { "1S":map(VOC_1S), "2S":map(VOC_2S), "3S":map(VOC_3S), "4S":map(VOC_4S), "5S":map(VOC_5S) };
@@ -74,13 +74,13 @@ function makeArea(line){ return { line, sectors:{ "Rettifica":makeSectorSet(), "
 function fmtPct(x){ return Math.round(x*100)+'%'; }
 function isOverdue(iso){ if(!iso) return false; return new Date(iso+'T23:59:59') < new Date(); }
 
-/* ===== Storage + Migrazioni ===== */
+/* Storage */
 let state = load();
 if(!state.areas?.length){ state = { areas:[ makeArea("L2") ] }; save(); }
-function load(){ try{ const raw=localStorage.getItem(storeKey) || localStorage.getItem('skf.fiveS.v7.5'); return raw? JSON.parse(raw) : {areas:[]}; }catch(e){ return {areas:[]}; } }
+function load(){ try{ const raw=localStorage.getItem(storeKey) || localStorage.getItem('skf.fiveS.v7.6'); return raw? JSON.parse(raw) : {areas:[]}; }catch(e){ return {areas:[]}; } }
 function save(){ localStorage.setItem(storeKey, JSON.stringify(state)); }
 
-/* ===== Calcoli ===== */
+/* Scores */
 function scoreList(list){ if(!list?.length) return 0; const s=list.reduce((a,it)=>a+(+it.p||0),0); return s/(5*list.length); }
 function computeScores(area, sector){
   const secs = sector==="ALL"? ["Rettifica","Montaggio"] : [sector];
@@ -104,7 +104,7 @@ function overallStats(list){
   return { score:max?(sum/max):0, late };
 }
 
-/* ===== Filtri ===== */
+/* Filtri */
 let ui = { q:"", line:"ALL", sector:"ALL", onlyLate:false };
 function matchFilters(a){
   if(ui.line!=="ALL" && (a.line||"").trim()!==ui.line) return false;
@@ -129,14 +129,15 @@ function refreshLineOptions(){
   if(!lines.includes(ui.line)) ui.line='ALL'; elLineFilter.value=ui.line;
 }
 
-/* ===== Rendering ===== */
+/* Render */
 function render(){
   refreshLineOptions();
   const list = filteredAreas();
   elAreas.innerHTML='';
   list.forEach(area=> elAreas.appendChild(renderArea(area)));
   updateDashboard(list);
-  drawAreasChart(); buildLineButtons();
+  drawAreasChart();
+  buildLineButtons();
 }
 function renderArea(area){
   const node = tplArea.content.firstElementChild.cloneNode(true);
@@ -212,9 +213,7 @@ function renderItem(area, sector, sKey, iIdx, item){
   // init
   txt.value=item.t||""; note.value=item.note||""; resp.value=item.resp||""; due.value=item.due||"";
   descHost.innerHTML = item.d ? `<h4>${item.t}</h4><p>${item.d}</p>` : "";
-  const markDots = ()=>{
-    dots.forEach(d=> d.classList.toggle('active', +d.dataset.val === (+item.p||0)));
-  };
+  const markDots = ()=>{ dots.forEach(d=> d.classList.toggle('active', +d.dataset.val === (+item.p||0))); };
   markDots();
 
   const setLate=()=> node.classList.toggle('late', isOverdue(due.value)); setLate();
@@ -240,7 +239,7 @@ function renderItem(area, sector, sKey, iIdx, item){
   return frag;
 }
 
-/* ===== Dashboard & Grafico ===== */
+/* Dashboard & Chart */
 function updateDashboard(list){
   const arr=list||filteredAreas();
   elKpiAreas.textContent = arr.length;
@@ -260,9 +259,8 @@ function drawAreasChart(){
   const TXT  = style.getPropertyValue('--chart-text').trim()||'#003366';
   const COLORS={ "TOT":'#9bb0d6',"1S":style.getPropertyValue('--c1').trim(),"2S":style.getPropertyValue('--c2').trim(),"3S":style.getPropertyValue('--c3').trim(),"4S":style.getPropertyValue('--c4').trim(),"5S":style.getPropertyValue('--c5').trim() };
 
-  const areas = filteredAreas(); if(!areas.length) return;
+  const areas = filteredAreas(); if(!areas.length){ return; }
 
-  // build data
   const groups = areas.map(a=>{
     let totals = {"1S":{sum:0,max:0},"2S":{sum:0,max:0},"3S":{sum:0,max:0},"4S":{sum:0,max:0},"5S":{sum:0,max:0}};
     ["Rettifica","Montaggio"].forEach(sec=>{
@@ -273,11 +271,9 @@ function drawAreasChart(){
     return { line:a.line||'—', vals:{ "TOT":(maxAll?sumAll/maxAll:0), ...byS } };
   }).sort((a,b)=> a.line.localeCompare(b.line));
 
-  // layout
   const padL=60,padR=16,padT=12,padB=48;
   const plotW=(W/DPR)-padL-padR, plotH=(H/DPR)-padT-padB;
 
-  // grid
   ctx.strokeStyle=GRID; ctx.fillStyle=TXT; ctx.font='12px system-ui';
   ctx.beginPath(); ctx.moveTo(padL,padT); ctx.lineTo(padL,padT+plotH); ctx.lineTo(padL+plotW,padT+plotH); ctx.stroke();
   for(let i=0;i<=4;i++){
@@ -286,7 +282,6 @@ function drawAreasChart(){
     ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(padL+plotW,y); ctx.stroke();
   }
 
-  // bars
   const MET=["TOT","1S","2S","3S","4S","5S"]; const inner=4,bw=14,gw=MET.length*bw+(MET.length-1)*inner,gap=Math.max(18,gw*.9);
   const total=groups.length*gw+(groups.length-1)*gap, start=padL+Math.max(8,(plotW-total)/2);
   let x=start;
@@ -317,7 +312,7 @@ function buildLineButtons(){
   });
 }
 
-/* ===== Top controls ===== */
+/* Top controls */
 document.getElementById('btnNewArea').addEventListener('click', ()=>{
   const line=(prompt("Linea nuova? (es. L3)","L3")||"Lx").trim(); state.areas.push(makeArea(line)); save(); render();
 });
@@ -342,7 +337,7 @@ elBtnClear.addEventListener('click', ()=>{ ui={q:'',line:'ALL',sector:'ALL',only
 
 window.addEventListener('resize', drawAreasChart);
 
-/* ===== Toggle Tema ===== */
+/* Toggle Tema */
 const themeBtn = document.getElementById("btnTheme");
 const root = document.documentElement;
 if(localStorage.getItem("theme")==="dark"){ root.classList.add("dark"); themeBtn.textContent="🌙 Tema"; }
@@ -352,5 +347,7 @@ themeBtn.addEventListener("click", ()=>{
   localStorage.setItem("theme", isDark ? "dark":"light");
   themeBtn.textContent = isDark ? "🌙 Tema" : "🌞 Tema";
 });
-/* init */
+
+/* Init */
 render();
+
