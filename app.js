@@ -1,119 +1,174 @@
-/* SKF 5S – v7.9.0 */
-const storeKey = 'skf.fiveS.v7.9.0';
+/* SKF 5S – app.js v7.9.2  ****************************************************/
+/* Storage key *****************************************************************/
+const STORE = 'skf.5s.v7.9.2';
+
+/* Punteggi consentiti */
 const POINTS = [0,1,3,5];
 
-/* Voci 5S (sintesi Excel) */
+/* Voci per ogni S (sintesi dal tuo Excel) *************************************/
 const VOC_1S = [
-  {title:"Zona pedonale pavimento",desc:"Area pedonale libera da ostacoli e pericoli di inciampo"},
-  {title:"Zona di lavoro (pavimento, macchina)",desc:"Solo ciò che serve all’ordine in corso; resto rimosso/contrassegnato"},
-  {title:"Materiali",desc:"Materiale non necessario eliminato o segregato"},
-  {title:"Informazioni",desc:"Solo documenti utili e in buono stato"},
-  {title:"Processo di etichettatura",desc:"Area etichetta rossa / processo / team definiti"},
-  {title:"Piano per sostenere il risultato",desc:"Lavagna 5S con azioni, foto prima/dopo, punteggi, SPL aggiornati"}
+  {title:"Zona pedonale pavimento",desc:"Area pedonale libera da congestione/ostacoli e pericoli di inciampo"},
+  {title:"Zona di lavoro (pavimento, macchina)",desc:"Presente solo ciò che serve per l’ordine in corso"},
+  {title:"Materiali",desc:"Materiale non necessario rimosso/segregato"},
+  {title:"Informazioni",desc:"Documenti necessari e in buono stato"},
+  {title:"Processo di etichettatura",desc:"Etichette rosse/flussso gestione scarti definito"},
+  {title:"Piano per sostenere il risultato",desc:"Lavagna 5S, foto prima/dopo, azioni, punteggi, SPL"}
 ];
 const VOC_2S = [
-  {title:"1-S Stato",desc:"Team e area definiti, 1S compresa e mantenuta"},
-  {title:"Sicurezza",desc:"Dispositivi e attrezzature sicurezza segnalati e accessibili"},
-  {title:"Qualità",desc:"Postazioni qualità definite e ordinate"},
-  {title:"Documenti",desc:"File/documenti identificati e al punto d’uso"},
-  {title:"Concetti",desc:"Punto d’uso, ergonomia, zero sprechi/confusione"},
-  {title:"Posizioni prefissate",desc:"Posti fissi/sagome per attrezzi/materiali"},
-  {title:"Visual Management di base",desc:"Linee, etichette, colori standard attivi"}
+  {title:"1-S Stato",desc:"Team e area definiti, 1S mantenuta"},
+  {title:"Sicurezza",desc:"Dispositivi e attrezzature identificati e accessibili"},
+  {title:"Qualità",desc:"Postazioni qualità ordinate e chiare"},
+  {title:"Documenti",desc:"Documenti al punto d’uso e aggiornati"},
+  {title:"Concetti",desc:"Ergonomia, punto d’uso, riduzione sprechi/confusione"},
+  {title:"Posizioni prefissate",desc:"Sagome/posti fissi: facile capire cosa manca"},
+  {title:"Visual Management di base",desc:"Linee/etichette/colori minimi attivi"}
 ];
 const VOC_3S = [
-  {title:"1-S Stato",desc:"Stato di 1S mantenuto"},
-  {title:"2-S Stato",desc:"Stato di 2S mantenuto"},
-  {title:"Pulizia",desc:"Aree pulite; no perdite/ruggine/polvere (anche punti difficili)"},
-  {title:"Misure preventive",desc:"Rimosse cause di sporco/perdite; prevenute ricadute"},
+  {title:"1-S Stato",desc:"1S mantenuta"},
+  {title:"2-S Stato",desc:"2S mantenuta"},
+  {title:"Pulizia",desc:"Aree e macchine pulite (anche punti difficili)"},
+  {title:"Misure preventive",desc:"Cause di sporco/perdite rimosse alla radice"},
   {title:"Pulire è routine",desc:"Routine con responsabilità e frequenze"},
   {title:"Standard di pulizia",desc:"Standard e checklist visibili e seguiti"}
 ];
 const VOC_4S = [
-  {title:"Aree di passaggio",desc:"Nessun deposito o ostacolo; pavimento libero"},
-  {title:"Area di lavoro",desc:"Solo il necessario; resto in attesa rimozione"},
-  {title:"Materiali",desc:"Solo i materiali per il lavoro attuale"},
-  {title:"Informazione",desc:"Informazioni necessarie e in buono stato"},
+  {title:"Aree di passaggio",desc:"Nessun deposito/ostacolo; pavimento libero"},
+  {title:"Area di lavoro",desc:"Solo il necessario per l’ordine corrente"},
+  {title:"Materiali",desc:"Materiali corretti e identificati"},
+  {title:"Informazione",desc:"Info necessarie e in buono stato"},
   {title:"Visual Management",desc:"Indicatori visivi efficaci nella routine"},
-  {title:"Posizioni prefissate",desc:"Facile capire cosa manca e dove va rimesso"},
-  {title:"Standard lavoro & check",desc:"SPL/istruzioni/check-list visibili e usate"},
+  {title:"Posizioni prefissate",desc:"Prelievo/rimessa facili e immediati"},
+  {title:"Standard lavoro & check",desc:"SPL/istruzioni/checklist visibili e usate"},
   {title:"Etichette e colori",desc:"Etichette chiare, codici colore coerenti"},
   {title:"Marcature tubi/valvole",desc:"Tubi/valvole/strumenti marcati (colori standard)"},
   {title:"Segnaletica a terra",desc:"Linee/campiture presenti e mantenute"},
-  {title:"Punti di ispezione",desc:"Chiari i punti e cosa verificare"},
+  {title:"Punti di ispezione",desc:"Chiari i punti e cosa controllare"},
   {title:"Single Point Lessons",desc:"SPL aggiornate e usate"},
-  {title:"Standard & documentazione",desc:"Documentazione aggiornata e disponibile"},
-  {title:"Management visivo avanzato",desc:"Kanban, scorte, allarmi visivi"},
+  {title:"Standard & documentazione",desc:"Documentazione aggiornata/disponibile"},
+  {title:"Kanban & scorte",desc:"Gestione consumabili visiva (min/max)"},
   {title:"Misure preventive",desc:"Anomalie risolte alla radice"}
 ];
 const VOC_5S = [
-  {title:"Ognuno & ogni giorno",desc:"Tutti formati sugli standard e coinvolti"},
-  {title:"Miglioramento continuo",desc:"Evidenza prima/dopo; miglioramenti mantenuti"}
+  {title:"Ognuno & ogni giorno",desc:"Tutti formati e coinvolti sugli standard"},
+  {title:"Miglioramento continuo",desc:"Evidenza prima/dopo; standard aggiornati"}
 ];
 
-/* DOM */
-const elAreas = document.getElementById('areas');
-const elKpiAreas = document.getElementById('kpiAreas');
-const elKpiScore = document.getElementById('kpiScore');
-const elKpiLate = document.getElementById('kpiLate');
-const elQ = document.getElementById('q');
-const elLineFilter = document.getElementById('lineFilter');
-const elOnlyLate = document.getElementById('onlyLate');
-const elBtnClear = document.getElementById('btnClearFilters');
-const btnFgr = document.getElementById('btnFgr');
-const btnAsm = document.getElementById('btnAsm');
-const btnAll = document.getElementById('btnAll');
-const tplArea = document.getElementById('tplArea');
-const tplItem = document.getElementById('tplItem');
+/* Helpers *********************************************************************/
+const $ = (sel,root=document)=>root.querySelector(sel);
+const $$ = (sel,root=document)=>Array.from(root.querySelectorAll(sel));
+const todayISO = ()=> new Date().toISOString().slice(0,10);
+const isOverdue = d => d && new Date(d+'T23:59:59') < new Date();
+const pct = n => Math.round(n*100)+'%';
 
-/* Helpers */
-function makeSectorSet(){
-  const map = l => l.map(o => ({t:o.title, d:o.desc, p:0, note:"", resp:"", due:""}));
-  return { "1S":map(VOC_1S), "2S":map(VOC_2S), "3S":map(VOC_3S), "4S":map(VOC_4S), "5S":map(VOC_5S) };
+function makeS(list){
+  const map = l => l.map(o=>({t:o.title,d:o.desc,p:0,resp:"",due:"",note:""}));
+  return {"1S":map(list[0]),"2S":map(list[1]),"3S":map(list[2]),"4S":map(list[3]),"5S":map(list[4])};
 }
+function makeSectorSet(){ return makeS([VOC_1S,VOC_2S,VOC_3S,VOC_4S,VOC_5S]); }
 function makeArea(line){ return { line, sectors:{ "Rettifica":makeSectorSet(), "Montaggio":makeSectorSet() } }; }
-function fmtPct(x){ return Math.round(x*100)+'%'; }
-function isOverdue(iso){ if(!iso) return false; return new Date(iso+'T23:59:59') < new Date(); }
 
-/* Storage */
+function load(){
+  try{ const raw=localStorage.getItem(STORE); return raw? JSON.parse(raw) : {areas:[]}; }
+  catch{ return {areas:[]}; }
+}
+function save(){ localStorage.setItem(STORE, JSON.stringify(state)); }
+
+/* Stato UI ********************************************************************/
 let state = load();
-if(!state.areas?.length){ state = { areas:[ makeArea("L2") ] }; save(); }
-function load(){ try{ const raw=localStorage.getItem(storeKey) || localStorage.getItem('skf.fiveS.v7.9.0'); return raw? JSON.parse(raw) : {areas:[]}; }catch(e){ return {areas:[]}; } }
-function save(){ localStorage.setItem(storeKey, JSON.stringify(state)); }
+if(!state.areas?.length){ state.areas=[ makeArea('L2') ]; save(); }
 
-/* Scores */
+let ui = { q:'', line:'ALL', sector:'ALL', onlyLate:false };
+
+/* DOM refs ********************************************************************/
+const elAreas     = $('#areas');
+const elKpiAreas  = $('#kpiAreas');
+const elKpiScore  = $('#kpiScore');
+const elKpiLate   = $('#kpiLate');
+const elLineFilter= $('#lineFilter');
+const elQ         = $('#q');
+const elOnlyLate  = $('#onlyLate');
+const btnAll      = $('#btnAll');
+const btnFgr      = $('#btnFgr');
+const btnAsm      = $('#btnAsm');
+const tplArea     = $('#tplArea');
+const tplItem     = $('#tplItem');
+
+/* Binding TOP – protetti ******************************************************/
+const btnTheme   = $('#btnTheme');
+if(btnTheme){
+  const root = document.documentElement;
+  if(localStorage.getItem('theme')==='dark') root.classList.add('dark');
+  btnTheme.addEventListener('click', ()=>{
+    root.classList.toggle('dark');
+    localStorage.setItem('theme', root.classList.contains('dark') ? 'dark':'light');
+  });
+}
+const btnNewArea = $('#btnNewArea');
+if(btnNewArea){
+  btnNewArea.addEventListener('click', ()=>{
+    const line = (prompt('Linea nuova? (es. L3)','L3')||'Lx').trim();
+    state.areas.push(makeArea(line)); save(); render();
+  });
+}
+const btnExport = $('#btnExport');
+if(btnExport){
+  btnExport.addEventListener('click', ()=>{
+    const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+    const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:`SKF_5S_${todayISO()}.json`});
+    document.body.appendChild(a); a.click(); a.remove();
+  });
+}
+const fileImport = $('#fileImport');
+if(fileImport){
+  fileImport.addEventListener('change', async (e)=>{
+    const f=e.target.files[0]; if(!f) return;
+    try{ state=JSON.parse(await f.text()); save(); render(); }
+    catch{ alert('File non valido'); }
+  });
+}
+const btnPrint = $('#btnPrint');
+if(btnPrint){ btnPrint.addEventListener('click', ()=>window.print()); }
+
+/* Filtri – binding protetti ***************************************************/
+if(elQ){ elQ.addEventListener('input', ()=>{ ui.q=elQ.value; render(); }); }
+if(elLineFilter){ elLineFilter.addEventListener('change', ()=>{ ui.line=elLineFilter.value; render(); }); }
+if(btnAll){ btnAll.addEventListener('click', ()=>{ ui.sector='ALL'; setSegActive(btnAll); render(); }); }
+if(btnFgr){ btnFgr.addEventListener('click', ()=>{ ui.sector='Rettifica'; setSegActive(btnFgr); render(); }); }
+if(btnAsm){ btnAsm.addEventListener('click', ()=>{ ui.sector='Montaggio'; setSegActive(btnAsm); render(); }); }
+if(elOnlyLate){ elOnlyLate.addEventListener('change', ()=>{ ui.onlyLate=elOnlyLate.checked; render(); }); }
+const btnClear = $('#btnClearFilters');
+if(btnClear){
+  btnClear.addEventListener('click', ()=>{
+    ui={q:'',line:'ALL',sector:'ALL',onlyLate:false};
+    if(elQ) elQ.value=''; if(elLineFilter) elLineFilter.value='ALL'; if(elOnlyLate) elOnlyLate.checked=false;
+    setSegActive(btnAll); render();
+  });
+}
+function setSegActive(btn){
+  [btnAll,btnFgr,btnAsm].forEach(b=>b&&b.classList.remove('active'));
+  btn && btn.classList.add('active');
+}
+
+/* Punteggi/Calcoli ************************************************************/
 function scoreList(list){ if(!list?.length) return 0; const s=list.reduce((a,it)=>a+(+it.p||0),0); return s/(5*list.length); }
-function computeScores(area, sector){
-  const secs = sector==="ALL"? ["Rettifica","Montaggio"] : [sector];
-  const byS={}; let sum=0,max=0;
-  ["1S","2S","3S","4S","5S"].forEach(s=>{
-    let arr=[]; secs.forEach(sec=> arr=arr.concat(area.sectors[sec][s]||[]));
-    byS[s]=scoreList(arr); sum+=arr.reduce((a,it)=>a+(+it.p||0),0); max+=5*arr.length;
+function computeByS(area, sector){
+  const secs = sector==='ALL'? ['Rettifica','Montaggio'] : [sector];
+  const res={}, sum={sum:0,max:0};
+  ['1S','2S','3S','4S','5S'].forEach(S=>{
+    let arr=[]; secs.forEach(sec=> arr=arr.concat(area.sectors[sec][S]||[]));
+    res[S]=scoreList(arr);
+    arr.forEach(it=>{ sum.sum+=(+it.p||0); sum.max+=5; });
   });
-  return { areaScore: max? (sum/max):0, byS };
+  return { byS:res, areaScore: sum.max? sum.sum/sum.max : 0 };
 }
-function overallStats(list){
-  const arr=list||filteredAreas(); let sum=0,max=0,late=0;
-  const secs = ui.sector==="ALL"? ["Rettifica","Montaggio"] : [ui.sector];
-  arr.forEach(a=>{
-    secs.forEach(sec=>{
-      ["1S","2S","3S","4S","5S"].forEach(s=>
-        (a.sectors[sec][s]||[]).forEach(it=>{ sum+=(+it.p||0); max+=5; if(isOverdue(it.due)) late++; })
-      );
-    });
-  });
-  return { score:max?(sum/max):0, late };
-}
-
-/* Filtri */
-let ui = { q:"", line:"ALL", sector:"ALL", onlyLate:false };
-function matchFilters(a){
-  if(ui.line!=="ALL" && (a.line||"").trim()!==ui.line) return false;
-  if(ui.q.trim()==='' && !ui.onlyLate) return true;
-  const q=ui.q.trim().toLowerCase();
-  const secs = ui.sector==="ALL"? ["Rettifica","Montaggio"] : [ui.sector];
+function matchFilters(area){
+  if(ui.line!=='ALL' && (area.line||'').trim()!==ui.line) return false;
+  if(!ui.q && !ui.onlyLate) return true;
+  const secs = ui.sector==='ALL'? ['Rettifica','Montaggio'] : [ui.sector];
+  const q = (ui.q||'').toLowerCase();
   for(const sec of secs){
-    for(const s of ["1S","2S","3S","4S","5S"]){
-      for(const it of (a.sectors[sec][s]||[])){
+    for(const S of ['1S','2S','3S','4S','5S']){
+      for(const it of (area.sectors[sec][S]||[])){
         if(ui.onlyLate && !isOverdue(it.due)) continue;
         const bag = `${it.t||''} ${it.note||''} ${it.resp||''}`.toLowerCase();
         if(bag.includes(q)) return true;
@@ -123,310 +178,237 @@ function matchFilters(a){
   return false;
 }
 function filteredAreas(){ return state.areas.filter(matchFilters); }
-function refreshLineOptions(){
-  const lines = Array.from(new Set(state.areas.map(a=>(a.line||'').trim()).filter(Boolean))).sort();
-  elLineFilter.innerHTML = ['<option value="ALL">Linea: Tutte</option>', ...lines.map(l=>`<option value="${l}">${l}</option>`)].join('');
-  if(!lines.includes(ui.line)) ui.line='ALL'; elLineFilter.value=ui.line;
+function overallStats(list){
+  const secs = ui.sector==='ALL'? ['Rettifica','Montaggio'] : [ui.sector];
+  let sum=0,max=0,late=0;
+  (list||filteredAreas()).forEach(a=>{
+    secs.forEach(sec=>{
+      ['1S','2S','3S','4S','5S'].forEach(S=>{
+        (a.sectors[sec][S]||[]).forEach(it=>{
+          sum+=(+it.p||0); max+=5; if(isOverdue(it.due)) late++;
+        });
+      });
+    });
+  });
+  return {score: max? sum/max : 0, late};
 }
 
-/* Render */
+/* Render **********************************************************************/
 function render(){
-  refreshLineOptions();
+  refreshLineFilter();
   const list = filteredAreas();
   elAreas.innerHTML='';
-  list.forEach(area=> elAreas.appendChild(renderArea(area)));
+  list.forEach(a=> elAreas.appendChild(renderArea(a)));
   updateDashboard(list);
-  drawAreasChart();
+  drawAreasChart(list);
   buildLineButtons();
 }
+function refreshLineFilter(){
+  if(!elLineFilter) return;
+  const lines = Array.from(new Set(state.areas.map(a=>(a.line||'').trim()).filter(Boolean))).sort();
+  elLineFilter.innerHTML = `<option value="ALL">Linea: Tutte</option>` + lines.map(l=>`<option value="${l}">${l}</option>`).join('');
+  if(!lines.includes(ui.line)) ui.line='ALL';
+  elLineFilter.value = ui.line;
+}
+
 function renderArea(area){
   const node = tplArea.content.firstElementChild.cloneNode(true);
-  const lineEl = node.querySelector('.area-line');
-  const scoreEl = node.querySelector('.score-val');
-  const sTabs = node.querySelector('.s-tabs');
-  const sectorTabs = node.querySelectorAll('.tab.sec');
-  const panels = node.querySelectorAll('.panel');
+  const lineEl = $('.area-line', node);
+  const scoreEl= $('.score-val', node);
+  const secTabs= $$('.tab.sec', node);
+  const sTabs  = $$('.tab.s', node);
+  const panels = $$('.panel', node);
 
-  let localSector = (ui.sector==="ALL"? "Rettifica" : ui.sector);
-  let localS = "1S";
+  // Stato locale della card
+  let localSector = (ui.sector==='ALL' ? 'Rettifica' : ui.sector);
+  let localS = '1S';
 
-  lineEl.value = area.line||"";
-  lineEl.addEventListener('input', ()=>{ area.line=lineEl.value.trim(); save(); render(); });
+  // Linea
+  lineEl.value = area.line||'';
+  lineEl.addEventListener('input', ()=>{ area.line=lineEl.value.trim(); save(); refreshLineFilter(); buildLineButtons(); });
 
-  sectorTabs.forEach(btn=>btn.addEventListener('click', ()=>{
-    sectorTabs.forEach(b=>b.classList.remove('active')); btn.classList.add('active');
-    localSector = btn.dataset.sector; refillPanels(); updateScore();
-  }));
-  sectorTabs.forEach(b=>b.classList.toggle('active', b.dataset.sector===localSector));
+  // Settori
+  secTabs.forEach(b=>{
+    if(b.dataset.sector===localSector) b.classList.add('active');
+    b.addEventListener('click', ()=>{
+      secTabs.forEach(x=>x.classList.remove('active'));
+      b.classList.add('active'); localSector=b.dataset.sector;
+      refillPanels(); updateScore();
+    });
+  });
 
-  sTabs.querySelectorAll('.tab.s').forEach(tab=>{
+  // Tab 5S
+  sTabs.forEach(tab=>{
     tab.addEventListener('click', ()=>{
-      sTabs.querySelectorAll('.tab.s').forEach(t=>t.classList.remove('active'));
-      tab.classList.add('active'); localS = tab.dataset.s;
+      sTabs.forEach(t=>t.classList.remove('active'));
+      tab.classList.add('active'); localS=tab.dataset.s;
       panels.forEach(p=>p.classList.toggle('active', p.dataset.s===localS));
     });
   });
 
-  node.querySelector('.add-item').addEventListener('click', ()=>{
-    area.sectors[localSector][localS].push({t:"", d:"", p:0, note:"", resp:"", due:""});
+  // Azioni card
+  $('.add-item', node).addEventListener('click', ()=>{
+    area.sectors[localSector][localS].push({t:"",d:"",p:0,resp:"",due:"",note:""});
     save(); refillPanels(); updateScore();
   });
 
-  // FIX: Comprimi/Espandi funziona davvero
-  const btnCollapse = node.querySelector('.collapse');
-  const updateCollapseLabel = () => { btnCollapse.textContent = node.classList.contains('collapsed') ? "Espandi" : "Comprimi"; };
-  btnCollapse.addEventListener('click', ()=>{
-    node.classList.toggle('collapsed'); updateCollapseLabel();
-  });
-  updateCollapseLabel();
+  const btnCollapse = $('.collapse', node);
+  const updateCollapse = ()=> btnCollapse.textContent = node.classList.contains('collapsed') ? 'Espandi':'Comprimi';
+  btnCollapse.addEventListener('click', ()=>{ node.classList.toggle('collapsed'); updateCollapse(); });
+  updateCollapse();
 
-  node.querySelector('.delete-area').addEventListener('click', ()=>{
+  $('.delete-area', node).addEventListener('click', ()=>{
     if(confirm('Eliminare la linea?')){ state.areas.splice(state.areas.indexOf(area),1); save(); render(); }
   });
 
-  // Stampa linea singola
-  node.querySelector('.print-area').addEventListener('click', ()=>{
-    const { byS, areaScore } = computeScores(area, localSector);
-    const win = window.open('', '_blank');
-    const css = `
-      body{font:14px/1.4 system-ui; padding:16px}
-      h1{margin:0 0 8px}
-      .k{margin:8px 0 12px}
-      table{border-collapse:collapse;width:100%;margin-top:10px}
-      th,td{border:1px solid #999;padding:6px}
-      th{background:#eef4f8;text-align:left}
-    `;
-    let rows = '';
-    (["1S","2S","3S","4S","5S"]).forEach(s=>{
-      ["Rettifica","Montaggio"].forEach(sec=>{
-        (area.sectors[sec][s]||[]).forEach(it=>{
-          rows += `<tr><td>${sec}</td><td>${s}</td><td>${it.t||''}</td><td>${it.p||0}</td><td>${it.resp||''}</td><td>${it.due||''}</td><td>${(it.note||'').replace(/</g,'&lt;')}</td></tr>`;
-        });
-      });
-    });
-    win.document.write(`
-      <html><head><title>Stampa ${area.line||''}</title><style>${css}</style></head>
-      <body>
-        <h1>Linea ${area.line||''}</h1>
-        <div class="k"><b>Settore:</b> ${localSector} — <b>Punteggio:</b> ${fmtPct(areaScore)} — 
-        ${["1S","2S","3S","4S","5S"].map(s=>`${s}: ${fmtPct(byS[s])}`).join(' • ')}</div>
-        <table>
-          <thead><tr><th>Settore</th><th>S</th><th>Voce</th><th>Punti</th><th>Responsabile</th><th>Scadenza</th><th>Note</th></tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </body></html>
-    `);
-    win.document.close(); win.focus(); win.print();
-  });
-
   function refillPanels(){
-    panels.forEach(panel=>{
-      const s=panel.dataset.s; panel.innerHTML='';
-      (area.sectors[localSector][s]||[]).forEach((it,i)=> panel.appendChild(renderItem(area, localSector, s, i, it)));
-      panel.classList.toggle('active', s===localS);
+    panels.forEach(p=>{
+      const S=p.dataset.s; p.innerHTML='';
+      (area.sectors[localSector][S]||[]).forEach((it,i)=> p.appendChild(renderItem(area,localSector,S,i,it)));
+      p.classList.toggle('active', S===localS);
     });
     const pills = {
-      "1S": node.querySelector('.score-1S'),
-      "2S": node.querySelector('.score-2S'),
-      "3S": node.querySelector('.score-3S'),
-      "4S": node.querySelector('.score-4S'),
-      "5S": node.querySelector('.score-5S'),
+      "1S": $('.score-1S', node), "2S": $('.score-2S', node), "3S": $('.score-3S', node),
+      "4S": $('.score-4S', node), "5S": $('.score-5S', node)
     };
-    const { byS } = computeScores(area, localSector);
-    Object.entries(byS).forEach(([k,v])=> pills[k].textContent = fmtPct(v));
+    const {byS} = computeByS(area, localSector);
+    Object.entries(byS).forEach(([k,v])=> pills[k].textContent=pct(v));
   }
   function updateScore(){
-    scoreEl.textContent = fmtPct( computeScores(area, localSector).areaScore );
+    scoreEl.textContent = pct( computeByS(area, localSector).areaScore );
   }
 
   refillPanels(); updateScore();
   return node;
 }
 
-function renderItem(area, sector, sKey, iIdx, item){
+function renderItem(area, sector, S, idx, it){
   const frag = document.createDocumentFragment();
   const node = tplItem.content.firstElementChild.cloneNode(true);
-  const descHost = tplItem.content.children[1].cloneNode(true);
-  const txt=node.querySelector('.txt'), info=node.querySelector('.info');
-  const note=node.querySelector('.note'), resp=node.querySelector('.resp'), due=node.querySelector('.due');
-  const dots=node.querySelectorAll('.points-dots .dot');
+  const desc = tplItem.content.children[1].cloneNode(true);
+
+  const txt = $('.txt',node), resp=$('.resp',node), due=$('.due',node),
+        note=$('.note',node), info=$('.info',node), dots=$$('.points-dots .dot',node);
 
   // init
-  txt.value=item.t||""; note.value=item.note||""; resp.value=item.resp||""; due.value=item.due||"";
-  descHost.innerHTML = item.d ? `<h4>${item.t}</h4><p>${item.d}</p>` : "";
-  const markDots = ()=>{ dots.forEach(d=> d.classList.toggle('active', +d.dataset.val === (+item.p||0))); };
-  markDots();
-
-  const setLate=()=> node.classList.toggle('late', isOverdue(due.value)); setLate();
+  txt.value=it.t||''; resp.value=it.resp||''; due.value=it.due||''; note.value=it.note||'';
+  if(it.d) desc.innerHTML = `<h4>${it.t||''}</h4><p>${it.d}</p>`;
+  const markDots=()=> dots.forEach(d=> d.classList.toggle('active', +d.dataset.val === (+it.p||0)));
+  markDots(); node.classList.toggle('late', isOverdue(it.due));
 
   // bind
-  txt.addEventListener('input', ()=>{ item.t=txt.value; if(item.d){ const h=descHost.querySelector('h4'); if(h) h.innerHTML=item.t; } save(); });
-  note.addEventListener('input', ()=>{ item.note=note.value; save(); });
-  resp.addEventListener('input', ()=>{ item.resp=resp.value; save(); });
-  due.addEventListener('change', ()=>{ item.due=due.value; save(); setLate(); updateDashboard(); });
+  txt.addEventListener('input', ()=>{ it.t=txt.value; if(it.d){ const h=desc.querySelector('h4'); if(h) h.textContent=it.t; } save(); });
+  resp.addEventListener('input', ()=>{ it.resp=resp.value; save(); });
+  note.addEventListener('input', ()=>{ it.note=note.value; save(); });
+  due.addEventListener('change', ()=>{ it.due=due.value; save(); node.classList.toggle('late', isOverdue(it.due)); updateDashboard(); });
 
   dots.forEach(d=>{
     d.addEventListener('click', ()=>{
-      item.p = +d.dataset.val; markDots(); save(); updateDashboard(); drawAreasChart(); buildLineButtons();
+      it.p = +d.dataset.val; markDots(); save(); updateDashboard(); drawAreasChart(); buildLineButtons();
     });
   });
 
-  info.addEventListener('click', ()=> descHost.classList.toggle('show'));
-  node.querySelector('.del').addEventListener('click', ()=>{
-    const arr = area.sectors[sector][sKey]; arr.splice(iIdx,1); save(); render();
+  info.addEventListener('click', ()=> desc.classList.toggle('show'));
+
+  $('.del',node).addEventListener('click', ()=>{
+    const arr=area.sectors[sector][S]; arr.splice(idx,1); save(); render();
   });
 
-  frag.appendChild(node); frag.appendChild(descHost);
+  frag.appendChild(node); frag.appendChild(desc);
   return frag;
 }
 
-/* Dashboard & Chart */
+/* Dashboard & Chart ***********************************************************/
 function updateDashboard(list){
-  const arr=list||filteredAreas();
-  elKpiAreas.textContent = arr.length;
-  const { score, late } = overallStats(arr);
-  elKpiScore.textContent = fmtPct(score);
-  elKpiLate.textContent = late;
+  const {score,late} = overallStats(list);
+  if(elKpiAreas) elKpiAreas.textContent = (list||filteredAreas()).length;
+  if(elKpiScore) elKpiScore.textContent = pct(score);
+  if(elKpiLate)  elKpiLate.textContent  = late;
 }
-function drawAreasChart(){
-  const c=document.getElementById('chartAreas'); if(!c) return;
-  const ctx=c.getContext('2d');
-  const DPR = devicePixelRatio||1;
-  const Hpx=260, W=c.width=c.clientWidth*DPR, H=c.height=Hpx*DPR;
-  ctx.setTransform(DPR,0,0,DPR,0,0); ctx.clearRect(0,0,W,H);
+
+function drawAreasChart(list){
+  const canvas = $('#chartAreas'); if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const DPR = devicePixelRatio||1, Hcss=260;
+  canvas.width = canvas.clientWidth * DPR;
+  canvas.height = Hcss * DPR;
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
 
   const style = getComputedStyle(document.documentElement);
-  const GRID = style.getPropertyValue('--chart-grid').trim()||'#d0d7e1';
-  const TXT  = style.getPropertyValue('--chart-text').trim()||'#003366';
-  const COLORS={ "TOT":'#9bb0d6',"1S":style.getPropertyValue('--c1').trim(),"2S":style.getPropertyValue('--c2').trim(),"3S":style.getPropertyValue('--c3').trim(),"4S":style.getPropertyValue('--c4').trim(),"5S":style.getPropertyValue('--c5').trim() };
+  const GRID = style.getPropertyValue('--chart-grid')||'#d0d7e1';
+  const TXT  = style.getPropertyValue('--chart-text')||'#003366';
+  const C = { "TOT":'#9bb0d6',"1S":style.getPropertyValue('--c1'),"2S":style.getPropertyValue('--c2'),"3S":style.getPropertyValue('--c3'),"4S":style.getPropertyValue('--c4'),"5S":style.getPropertyValue('--c5') };
 
-  const areas = filteredAreas(); if(!areas.length){ return; }
-  const secs = ui.sector==="ALL"? ["Rettifica","Montaggio"] : [ui.sector];
+  const areas = (list||filteredAreas()); if(!areas.length) return;
+  const secs = ui.sector==='ALL'? ['Rettifica','Montaggio'] : [ui.sector];
 
-  const groups = areas.map(a=>{
-    let totals = {"1S":{sum:0,max:0},"2S":{sum:0,max:0},"3S":{sum:0,max:0},"4S":{sum:0,max:0},"5S":{sum:0,max:0}};
+  // dati
+  const rows = areas.map(a=>{
+    let t={sum:0,max:0}, perS={"1S":{s:0,m:0},"2S":{s:0,m:0},"3S":{s:0,m:0},"4S":{s:0,m:0},"5S":{s:0,m:0}};
     secs.forEach(sec=>{
-      ["1S","2S","3S","4S","5S"].forEach(s=>(a.sectors[sec][s]||[]).forEach(it=>{ totals[s].sum+=(+it.p||0); totals[s].max+=5; }));
+      ['1S','2S','3S','4S','5S'].forEach(S=>{
+        (a.sectors[sec][S]||[]).forEach(it=>{
+          perS[S].s+=(+it.p||0); perS[S].m+=5; t.sum+=(+it.p||0); t.max+=5;
+        });
+      });
     });
-    const byS={}; for(const s in totals){ byS[s]= totals[s].max? totals[s].sum/totals[s].max : 0; }
-    const sumAll=Object.values(totals).reduce((x,v)=>x+v.sum,0), maxAll=Object.values(totals).reduce((x,v)=>x+v.max,0);
-    return { line:a.line||'—', vals:{ "TOT":(maxAll?sumAll/maxAll:0), ...byS } };
-  }).sort((a,b)=> a.line.localeCompare(b.line));
+    const byS={}; Object.keys(perS).forEach(S=> byS[S] = perS[S].m? perS[S].s/perS[S].m : 0);
+    return {line:a.line||'—', vals:{ "TOT":(t.max?t.sum/t.max:0), ...byS }};
+  });
 
-  const padL=60,padR=16,padT=12,padB=48;
-  const plotW=(W/DPR)-padL-padR, plotH=(H/DPR)-padT-padB;
-
+  // assi
+  const padL=56,padR=16,padT=12,padB=46;
+  const W=canvas.clientWidth, H=Hcss;
+  const plotW=W-padL-padR, plotH=H-padT-padB;
   ctx.strokeStyle=GRID; ctx.fillStyle=TXT; ctx.font='12px system-ui';
   ctx.beginPath(); ctx.moveTo(padL,padT); ctx.lineTo(padL,padT+plotH); ctx.lineTo(padL+plotW,padT+plotH); ctx.stroke();
-  for(let i=0;i<=4;i++){
-    const yv=i*25, y=padT+plotH-(yv/100)*plotH;
-    ctx.fillText(yv+'%',8,y+4);
-    ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(padL+plotW,y); ctx.stroke();
-  }
+  for(let i=0;i<=4;i++){ const y=padT+plotH-(i*0.25)*plotH; ctx.fillText((i*25)+'%',8,y+4); ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(padL+plotW,y); ctx.stroke(); }
 
-  const MET=["TOT","1S","2S","3S","4S","5S"]; const inner=4,bw=14,gw=MET.length*bw+(MET.length-1)*inner,gap=Math.max(18,gw*.9);
-  const total=groups.length*gw+(groups.length-1)*gap, start=padL+Math.max(8,(plotW-total)/2);
+  // barre
+  const MET=["TOT","1S","2S","3S","4S","5S"], bw=14, inner=4, groupW=MET.length*bw+(MET.length-1)*inner, gap=Math.max(18, groupW*.9);
+  const total=rows.length*groupW+(rows.length-1)*gap, start=padL+Math.max(0, (plotW-total)/2);
   let x=start;
-  groups.forEach(g=>{
+  rows.sort((a,b)=> (a.line||'').localeCompare(b.line||''));
+  rows.forEach(g=>{
     let bx=x;
     MET.forEach(m=>{
-      const v=g.vals[m]||0,h=v*plotH,y=padT+plotH-h;
-      ctx.fillStyle=COLORS[m]; ctx.fillRect(bx,y,bw,h);
-      ctx.fillStyle=TXT; ctx.textAlign='center';
-      ctx.fillText(Math.round(v*100)+'%', bx+bw/2, (h>16? y-4 : padT+plotH-2));
+      const v=g.vals[m]||0, h=v*plotH, y=padT+plotH-h;
+      ctx.fillStyle=C[m].trim()||'#999'; ctx.fillRect(bx,y,bw,h);
+      ctx.fillStyle=TXT; ctx.textAlign='center'; ctx.fillText(Math.round(v*100)+'%', bx+bw/2, (h>16? y-4 : padT+plotH-2));
       bx+=bw+inner;
     });
-    ctx.save(); ctx.translate(x+gw/2, padT+plotH+22); ctx.rotate(-Math.PI/12); ctx.fillStyle=TXT; ctx.textAlign='center'; ctx.fillText(g.line,0,0); ctx.restore();
-    x+=gw+gap;
+    ctx.save(); ctx.translate(x+groupW/2, padT+plotH+20); ctx.rotate(-Math.PI/12); ctx.fillStyle=TXT; ctx.textAlign='center'; ctx.fillText(g.line,0,0); ctx.restore();
+    x+=groupW+gap;
   });
 }
 
-/* Bottoni Linee compatti + tooltip % per S */
+/* Bottoni linea (compatti con tooltip %) **************************************/
 function buildLineButtons(){
-  const host=document.getElementById('lineBtns'); if(!host) return;
-  host.innerHTML='';
-  const mkTitle=(a)=>{
-    const secs = ui.sector==="ALL"? ["Rettifica","Montaggio"] : [ui.sector];
-    let totals = {"1S":{sum:0,max:0},"2S":{sum:0,max:0},"3S":{sum:0,max:0},"4S":{sum:0,max:0},"5S":{sum:0,max:0}};
-    secs.forEach(sec=>{
-      ["1S","2S","3S","4S","5S"].forEach(s=>(a.sectors[sec][s]||[]).forEach(it=>{ totals[s].sum+=(+it.p||0); totals[s].max+=5; }));
-    });
-    const pct = s => totals[s].max? Math.round(100*totals[s].sum/totals[s].max) : 0;
-    return `1S: ${pct("1S")}% • 2S: ${pct("2S")}% • 3S: ${pct("3S")}% • 4S: ${pct("4S")}% • 5S: ${pct("5S")}%`;
+  const host = $('#lineBtns'); if(!host) return; host.innerHTML='';
+  const mkTip = (a)=>{
+    const secs = ui.sector==='ALL'? ['Rettifica','Montaggio'] : [ui.sector];
+    let t={"1S":{s:0,m:0},"2S":{s:0,m:0},"3S":{s:0,m:0},"4S":{s:0,m:0},"5S":{s:0,m:0}};
+    secs.forEach(sec=> ['1S','2S','3S','4S','5S'].forEach(S=> (a.sectors[sec][S]||[]).forEach(it=>{ t[S].s+=(+it.p||0); t[S].m+=5; })));
+    const p = S => t[S].m? Math.round(100*t[S].s/t[S].m) : 0;
+    return `1S ${p('1S')}% • 2S ${p('2S')}% • 3S ${p('3S')}% • 4S ${p('4S')}% • 5S ${p('5S')}%`;
   };
 
   const bAll=document.createElement('button'); bAll.className='line-btn'+(ui.line==='ALL'?' active':''); bAll.textContent='Tutte';
-  bAll.addEventListener('click', ()=>{ ui.line='ALL'; elLineFilter.value='ALL'; render(); window.scrollTo({top:host.offsetTop,behavior:'smooth'}); });
+  bAll.addEventListener('click', ()=>{ ui.line='ALL'; if(elLineFilter) elLineFilter.value='ALL'; render(); window.scrollTo({top:host.offsetTop,behavior:'smooth'}); });
   host.appendChild(bAll);
 
-  const lines=Array.from(new Set(state.areas.map(a=>(a.line||'').trim()).filter(Boolean))).sort();
-  lines.forEach(line=>{
+  Array.from(new Set(state.areas.map(a=>(a.line||'').trim()).filter(Boolean))).sort().forEach(line=>{
     const a = state.areas.find(x=>(x.line||'').trim()===line);
-    const b=document.createElement('button'); b.className='line-btn'+(ui.line===line?' active':''); b.textContent=line; b.title=mkTitle(a);
-    b.addEventListener('click', ()=>{ ui.line=line; elLineFilter.value=line; render(); setTimeout(()=>{ const card=[...document.querySelectorAll('.area .area-line')].find(i=>i.value.trim()===line)?.closest('.area'); card?.scrollIntoView({behavior:'smooth',block:'start'}); },0); });
+    const b=document.createElement('button'); b.className='line-btn'+(ui.line===line?' active':''); b.textContent=line; b.title=mkTip(a);
+    b.addEventListener('click', ()=>{ ui.line=line; if(elLineFilter) elLineFilter.value=line; render(); setTimeout(()=>{ const card=[...$$('.area .area-line')].find(i=>i.value.trim()===line)?.closest('.area'); card?.scrollIntoView({behavior:'smooth',block:'start'}); },0); });
     host.appendChild(b);
   });
 }
 
-/* Top controls */
-document.getElementById('btnNewArea').addEventListener('click', ()=>{
-  const line=(prompt("Linea nuova? (es. L3)","L3")||"Lx").trim(); state.areas.push(makeArea(line)); save(); render();
-});
-document.getElementById('btnExport').addEventListener('click', ()=>{
-  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
-  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:`SKF_5S_${new Date().toISOString().slice(0,10)}.json`});
-  document.body.appendChild(a); a.click(); a.remove();
-});
-document.getElementById('btnExportCSV').addEventListener('click', ()=>{
-  const secs = ["Rettifica","Montaggio"];
-  const rows = [['Linea','Settore','S','Voce','Punti','Responsabile','Scadenza','Note']];
-  state.areas.forEach(a=>{
-    secs.forEach(sec=>{
-      ["1S","2S","3S","4S","5S"].forEach(s=>{
-        (a.sectors[sec][s]||[]).forEach(it=>{
-          rows.push([
-            a.line||'', sec, s,
-            (it.t||'').replace(/"/g,'""'), it.p||0,
-            (it.resp||'').replace(/"/g,'""'), it.due||'',
-            (it.note||'').replace(/"/g,'""')
-          ]);
-        });
-      });
-    });
-  });
-  const csv = rows.map(r => r.map(v => `"${String(v)}"`).join(',')).join('\r\n');
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:`SKF_5S_${new Date().toISOString().slice(0,10)}.csv`});
-  document.body.appendChild(a); a.click(); a.remove();
-});
-document.getElementById('fileImport').addEventListener('change', async (e)=>{
-  const f=e.target.files[0]; if(!f) return;
-  try{ state=JSON.parse(await f.text()); save(); render(); } catch{ alert('JSON non valido'); }
-});
-document.getElementById('btnPrint').addEventListener('click', ()=>window.print());
-
-elQ.addEventListener('input', ()=>{ ui.q=elQ.value; render(); });
-elLineFilter.addEventListener('change', ()=>{ ui.line=elLineFilter.value; render(); });
-btnFgr.addEventListener('click', ()=>{ ui.sector='Rettifica'; btnFgr.classList.add('active'); btnAsm.classList.remove('active'); btnAll.classList.remove('active'); render(); });
-btnAsm.addEventListener('click', ()=>{ ui.sector='Montaggio'; btnAsm.classList.add('active'); btnFgr.classList.remove('active'); btnAll.classList.remove('active'); render(); });
-btnAll.addEventListener('click', ()=>{ ui.sector='ALL'; btnAll.classList.add('active'); btnFgr.classList.remove('active'); btnAsm.classList.remove('active'); render(); });
-elOnlyLate.addEventListener('change', ()=>{ ui.onlyLate=elOnlyLate.checked; render(); });
-elBtnClear.addEventListener('click', ()=>{ ui={q:'',line:'ALL',sector:'ALL',onlyLate:false}; elQ.value=''; elLineFilter.value='ALL'; btnAll.click(); elOnlyLate.checked=false; render(); });
-
-window.addEventListener('resize', drawAreasChart);
-
-/* Toggle Tema */
-const themeBtn = document.getElementById("btnTheme");
-const root = document.documentElement;
-if(localStorage.getItem("theme")==="dark"){ root.classList.add("dark"); themeBtn.textContent="🌙 Tema"; }
-themeBtn.addEventListener("click", ()=>{
-  root.classList.toggle("dark");
-  const isDark = root.classList.contains("dark");
-  localStorage.setItem("theme", isDark ? "dark":"light");
-  themeBtn.textContent = isDark ? "🌙 Tema" : "🌞 Tema";
-});
-
-/* Init */
+/* Init ***********************************************************************/
 render();
+window.addEventListener('resize', ()=>drawAreasChart());
+/* ***************************************************************************/
 
 
