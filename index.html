@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>SKF 5S v7.9.0</title>
-  <link rel="manifest" href="manifest.json?v=7.9.0"/>
-  <link rel="stylesheet" href="style.css?v=7.9.0"/>
+  <title>SKF 5S v7.7.0</title>
+  <link rel="manifest" href="manifest.json?v=7.7.0"/>
+  <link rel="stylesheet" href="style.css?v=7.7.0"/>
   <link rel="icon" href="assets/skf-192.png"/>
   <meta name="theme-color" content="#0095d9"/>
 </head>
@@ -13,12 +13,11 @@
 <header class="app-header">
   <div class="brand">
     <img src="assets/skf-logo.png" alt="SKF" class="logo"/>
-    <h1>SKF 5S <span class="ver">v7.9.0</span></h1>
+    <h1>SKF 5S <span class="ver">v7.7.0</span></h1>
   </div>
   <div class="actions">
     <button id="btnNewArea" class="btn">+ Nuova linea</button>
-    <button id="btnExport" class="btn ghost">Esporta JSON</button>
-    <button id="btnExportCSV" class="btn ghost">Esporta CSV</button>
+    <button id="btnExport" class="btn ghost">Esporta</button>
     <label for="fileImport" class="btn ghost">Importa</label>
     <input id="fileImport" type="file" accept="application/json" hidden>
     <button id="btnPrint" class="btn ghost">Stampa</button>
@@ -26,25 +25,25 @@
   </div>
 </header>
 
-<!-- INTRO 5S con immagine tipo foto -->
 <section class="intro5s card">
   <div class="intro-grid">
-    <img src="assets/5s-hero.png" alt="Diagramma 5S" class="hero-img">
+    <!-- Nuova immagine 3D 5S -->
+    <img src="assets/5s-hero.png" alt="Diagramma 5S" class="hero-img"/>
+
     <div class="intro-copy">
       <h2>Cosa è 5S</h2>
       <p>5S è un metodo per fornire un posto di lavoro <b>sicuro</b>, <b>ben organizzato</b> e <b>pulito</b>, per fare il nostro lavoro facilmente e correttamente la prima volta.</p>
       <ul class="legend5s">
-        <li><span class="dot" style="background:#7a56c6"></span><b class="tag s1">1S Selezionare</b> – Avere solo ciò che serve, eliminare il superfluo.</li>
-        <li><span class="dot" style="background:#e44f37"></span><b class="tag s2">2S Sistemare</b> – Un posto per tutto e tutto al suo posto.</li>
-        <li><span class="dot" style="background:#f3a11a"></span><b class="tag s3">3S Splendere</b> – Pulire e rimuovere le cause dello sporco.</li>
-        <li><span class="dot" style="background:#35b468"></span><b class="tag s4">4S Standardizzare</b> – Regole e segnali visivi chiari.</li>
-        <li><span class="dot" style="background:#4b88ff"></span><b class="tag s5">5S Sostenere</b> – Disciplina, abitudine e miglioramento continuo.</li>
+        <li><span class="dot" style="background:var(--c1)"></span><b class="tag s1">1S Selezionare</b> – Avere solo ciò che serve, eliminare il superfluo.</li>
+        <li><span class="dot" style="background:var(--c2)"></span><b class="tag s2">2S Sistemare</b> – Un posto per tutto e tutto al suo posto.</li>
+        <li><span class="dot" style="background:var(--c3)"></span><b class="tag s3">3S Splendere</b> – Pulire e rimuovere le cause dello sporco.</li>
+        <li><span class="dot" style="background:var(--c4)"></span><b class="tag s4">4S Standardizzare</b> – Regole e segnali visivi chiari.</li>
+        <li><span class="dot" style="background:var(--c5)"></span><b class="tag s5">5S Sostenere</b> – Disciplina, abitudine e miglioramento continuo.</li>
       </ul>
     </div>
   </div>
 </section>
 
-<!-- FILTRI -->
 <section class="controls card">
   <div class="filters">
     <input id="q" placeholder="🔎 Cerca in descrizione / note / responsabile…">
@@ -59,7 +58,6 @@
   </div>
 </section>
 
-<!-- CRUSCOTTO -->
 <section id="dashboard" class="card dash">
   <div class="dash-head">
     <h2>Cruscotto</h2>
@@ -69,7 +67,7 @@
       <div class="kpi"><div>Azioni in ritardo</div><div id="kpiLate">0</div></div>
     </div>
   </div>
-  <canvas id="chartAreas" height="260" aria-label="Punteggi per linea e per S"></canvas>
+  <canvas id="chartAreas" height="260"></canvas>
 
   <div class="score-legend">
     <span class="dot0">0</span> Non conforme
@@ -78,13 +76,11 @@
     <span class="dot5">5</span> Conforme
   </div>
 
-  <!-- Bottoni linea (compatti, con tooltip % per S) -->
   <div id="lineBtns" class="line-buttons"></div>
 </section>
 
 <section id="areas"></section>
 
-<!-- TEMPLATE AREA -->
 <template id="tplArea">
   <div class="area card">
     <div class="area-head">
@@ -96,7 +92,6 @@
       <div class="area-actions">
         <button class="btn ghost add-item">+ Voce</button>
         <button class="btn ghost collapse">Comprimi</button>
-        <button class="btn ghost print-area">Stampa linea</button>
         <button class="btn danger delete-area">Elimina</button>
       </div>
     </div>
@@ -124,7 +119,6 @@
   </div>
 </template>
 
-<!-- TEMPLATE ITEM -->
 <template id="tplItem">
   <div class="item">
     <button class="btn tiny info" title="Dettaglio">i</button>
@@ -145,11 +139,12 @@
 
 <footer><p>© SKF – PWA offline</p></footer>
 
-<script src="app.js?v=7.9.0"></script>
+<script src="app.js?v=7.7.0"></script>
 <script>
   if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
 </script>
 </body>
 </html>
+
 
 
