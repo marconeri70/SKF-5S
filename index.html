@@ -3,16 +3,16 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>SKF 5S v7.6</title>
-  <link rel="manifest" href="manifest.json"/>
-  <link rel="stylesheet" href="style.css"/>
+  <title>SKF 5S v7.6.2</title>
+  <link rel="manifest" href="manifest.json?v=7.6.2"/>
+  <link rel="stylesheet" href="style.css?v=7.6.2"/>
   <meta name="theme-color" content="#0095d9"/>
 </head>
 <body>
 <header class="app-header">
   <div class="brand">
-    <img src="skf-logo.png" alt="SKF" class="logo"/>
-    <h1>SKF 5S <span class="ver">v7.6</span></h1>
+    <img src="assets/skf-logo.png" alt="SKF" class="logo"/>
+    <h1>SKF 5S <span class="ver">v7.6.2</span></h1>
   </div>
   <div class="actions">
     <button id="btnNewArea" class="btn">+ Nuova linea</button>
@@ -27,7 +27,7 @@
 <!-- INTRO 5S -->
 <section class="intro5s card">
   <div class="intro-grid">
-    <!-- Donut -->
+    <!-- Donut 5S (senza buco nero) -->
     <svg class="pie5s" viewBox="0 0 220 220" role="img" aria-label="Cosa è 5S">
       <defs>
         <mask id="ring">
@@ -160,12 +160,10 @@
 
 <footer><p>© SKF – PWA offline</p></footer>
 
-<script src="app.js"></script>
+<script src="app.js?v=7.6.2"></script>
 <script>
   if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
 </script>
 </body>
 </html>
-
-
 
