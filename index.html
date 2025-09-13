@@ -3,16 +3,17 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>SKF 5S v7.6.2</title>
-  <link rel="manifest" href="manifest.json?v=7.6.2"/>
-  <link rel="stylesheet" href="style.css?v=7.6.2"/>
+  <title>SKF 5S v7.6.3</title>
+  <link rel="manifest" href="manifest.json?v=7.6.3"/>
+  <link rel="stylesheet" href="style.css?v=7.6.3"/>
+  <link rel="icon" href="assets/skf-192.png"/>
   <meta name="theme-color" content="#0095d9"/>
 </head>
 <body>
 <header class="app-header">
   <div class="brand">
     <img src="assets/skf-logo.png" alt="SKF" class="logo"/>
-    <h1>SKF 5S <span class="ver">v7.6.2</span></h1>
+    <h1>SKF 5S <span class="ver">v7.6.3</span></h1>
   </div>
   <div class="actions">
     <button id="btnNewArea" class="btn">+ Nuova linea</button>
@@ -24,16 +25,11 @@
   </div>
 </header>
 
-<!-- INTRO 5S -->
 <section class="intro5s card">
   <div class="intro-grid">
-    <!-- Donut 5S (senza buco nero) -->
     <svg class="pie5s" viewBox="0 0 220 220" role="img" aria-label="Cosa è 5S">
       <defs>
-        <mask id="ring">
-          <rect x="0" y="0" width="220" height="220" fill="white"/>
-          <circle cx="110" cy="110" r="55" fill="black"/>
-        </mask>
+        <mask id="ring"><rect x="0" y="0" width="220" height="220" fill="white"/><circle cx="110" cy="110" r="55" fill="black"/></mask>
       </defs>
       <circle cx="110" cy="110" r="100" fill="var(--card)"/>
       <path d="M110,10 A100,100 0 0,1 210,110 L110,110 Z" fill="var(--c5)" mask="url(#ring)"/>
@@ -100,7 +96,6 @@
 
 <section id="areas"></section>
 
-<!-- TEMPLATE AREA -->
 <template id="tplArea">
   <div class="area card">
     <div class="area-head">
@@ -139,7 +134,6 @@
   </div>
 </template>
 
-<!-- TEMPLATE ITEM -->
 <template id="tplItem">
   <div class="item">
     <button class="btn tiny info" title="Dettaglio">i</button>
@@ -160,7 +154,7 @@
 
 <footer><p>© SKF – PWA offline</p></footer>
 
-<script src="app.js?v=7.6.2"></script>
+<script src="app.js?v=7.6.3"></script>
 <script>
   if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
 </script>
