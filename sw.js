@@ -1,6 +1,6 @@
 // SKF 5S PWA SW – v7.6.2
-const CACHE_NAME = "skf5s-cache-v6"; // aumenta quando cambi file
-const FILES_TO_CACHE = [
+CACHE_NAME = "skf5s-cache-v7"; // aumenta quando cambi file
+FILES_TO_CACHE = [
   "./",
   "./index.html",
   "./style.css?v=7.6.2",
