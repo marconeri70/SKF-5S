@@ -1,163 +1,135 @@
-<!doctype html>
-<html lang="it">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>SKF 5S v7.6.3</title>
-  <link rel="manifest" href="manifest.json?v=7.6.3"/>
-  <link rel="stylesheet" href="style.css?v=7.6.3"/>
-  <link rel="icon" href="assets/skf-192.png"/>
-  <meta name="theme-color" content="#0095d9"/>
-</head>
-<body>
-<header class="app-header">
-  <div class="brand">
-    <img src="assets/skf-logo.png" alt="SKF" class="logo"/>
-    <h1>SKF 5S <span class="ver">v7.6.3</span></h1>
-  </div>
-  <div class="actions">
-    <button id="btnNewArea" class="btn">+ Nuova linea</button>
-    <button id="btnExport" class="btn ghost">Esporta</button>
-    <label for="fileImport" class="btn ghost">Importa</label>
-    <input id="fileImport" type="file" accept="application/json" hidden>
-    <button id="btnPrint" class="btn ghost">Stampa</button>
-    <button id="btnTheme" class="btn ghost">🌞 Tema</button>
-  </div>
-</header>
+/* ================
+   SKF 5S – Light & Dark (v7.6.3)
+   ================ */
 
-<section class="intro5s card">
-  <div class="intro-grid">
-    <svg class="pie5s" viewBox="0 0 220 220" role="img" aria-label="Cosa è 5S">
-      <defs>
-        <mask id="ring"><rect x="0" y="0" width="220" height="220" fill="white"/><circle cx="110" cy="110" r="55" fill="black"/></mask>
-      </defs>
-      <circle cx="110" cy="110" r="100" fill="var(--card)"/>
-      <path d="M110,10 A100,100 0 0,1 210,110 L110,110 Z" fill="var(--c5)" mask="url(#ring)"/>
-      <path d="M210,110 A100,100 0 0,1 110,210 L110,110 Z" fill="var(--c4)" mask="url(#ring)"/>
-      <path d="M110,210 A100,100 0 0,1 10,110 L110,110 Z" fill="var(--c3)" mask="url(#ring)"/>
-      <path d="M10,110 A100,100 0 0,1 110,10 L110,110 Z" fill="var(--c2)" mask="url(#ring)"/>
-      <path d="M110,10 A100,100 0 0,1 140,40 L110,110 Z" fill="var(--c1)" mask="url(#ring)"/>
-      <circle cx="110" cy="110" r="55" fill="var(--card)"/>
-      <text x="170" y="75" class="pie-label">5S</text>
-      <text x="155" y="165" class="pie-label">4S</text>
-      <text x="75"  y="190" class="pie-label">3S</text>
-      <text x="30"  y="120" class="pie-label">2S</text>
-      <text x="105" y="115" class="pie-label">1S</text>
-    </svg>
+/* tema chiaro */
+:root{
+  --bg:#ffffff; --text:#003366; --muted:#5c6f82;
+  --card:#f3f7fa; --panel:#ffffff; --panel-alt:#eef4f8; --outline:#d0d7e1;
+  --accent:#0095d9; --ink:#ffffff;
+  --kpi-bg:#eaf3fa; --chart-bg:#ffffff; --chart-grid:#d0d7e1; --chart-text:#003366;
+  --c1:#7a56c6; --c2:#e44f37; --c3:#f3a11a; --c4:#35b468; --c5:#4b88ff;
+  --desc-bg:#0095d9; --desc-border:#78c9ed;
+}
+/* tema scuro */
+:root.dark{
+  --bg:#0f1a36; --text:#eaf0ff; --muted:#9bb0c5;
+  --card:#182544; --panel:#1e2d4f; --panel-alt:#22345c; --outline:#3a4a6b;
+  --accent:#4b88ff; --ink:#ffffff;
+  --kpi-bg:#1b2e50; --chart-bg:#0b1530; --chart-grid:rgba(255,255,255,.2); --chart-text:#eaf0ff;
+  --desc-bg:#27407e; --desc-border:#4b88ff;
+}
 
-    <div class="intro-copy">
-      <h2>Cosa è 5S</h2>
-      <p>5S è un metodo per fornire un posto di lavoro <b>sicuro</b>, <b>ben organizzato</b> e <b>pulito</b>, per fare il nostro lavoro facilmente e correttamente la prima volta.</p>
-      <ul class="legend5s">
-        <li><span class="dot" style="background:var(--c1)"></span><b class="tag s1">1S Selezionare</b> – Avere solo ciò che serve, eliminare il superfluo.</li>
-        <li><span class="dot" style="background:var(--c2)"></span><b class="tag s2">2S Sistemare</b> – Un posto per tutto e tutto al suo posto.</li>
-        <li><span class="dot" style="background:var(--c3)"></span><b class="tag s3">3S Splendere</b> – Pulire e rimuovere le cause dello sporco.</li>
-        <li><span class="dot" style="background:var(--c4)"></span><b class="tag s4">4S Standardizzare</b> – Regole e segnali visivi chiari.</li>
-        <li><span class="dot" style="background:var(--c5)"></span><b class="tag s5">5S Sostenere</b> – Disciplina, abitudine e miglioramento continuo.</li>
-      </ul>
-    </div>
-  </div>
-</section>
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 system-ui,Segoe UI,Roboto,Arial}
 
-<section class="controls card">
-  <div class="filters">
-    <input id="q" placeholder="🔎 Cerca in descrizione / note / responsabile…">
-    <select id="lineFilter" title="Filtra per linea"></select>
-    <div class="sector-toggles">
-      <button id="btnAll" class="btn seg active">Tutti</button>
-      <button id="btnFgr" class="btn seg">Rettifica</button>
-      <button id="btnAsm" class="btn seg">Montaggio</button>
-    </div>
-    <label class="onlylate"><input type="checkbox" id="onlyLate"> Solo in ritardo</label>
-    <button id="btnClearFilters" class="btn ghost">Pulisci</button>
-  </div>
-</section>
+/* header */
+.app-header{position:sticky;top:0;z-index:5;background:var(--panel);border-bottom:2px solid var(--accent);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.brand{display:flex;gap:10px;align-items:center}.logo{height:40px}.ver{font-size:.85rem;color:var(--muted);margin-left:.4rem}
+.actions .btn{margin-left:6px}
 
-<section id="dashboard" class="card dash">
-  <div class="dash-head">
-    <h2>Cruscotto</h2>
-    <div class="kpis">
-      <div class="kpi"><div>Linee</div><div id="kpiAreas">0</div></div>
-      <div class="kpi"><div>Punteggio medio</div><div id="kpiScore">0%</div></div>
-      <div class="kpi"><div>Azioni in ritardo</div><div id="kpiLate">0</div></div>
-    </div>
-  </div>
-  <canvas id="chartAreas" height="260"></canvas>
+/* card & btn */
+.card{background:var(--card);border:1px solid var(--outline);border-radius:16px;padding:16px;margin:12px 16px;box-shadow:0 4px 12px rgba(0,0,0,.08)}
+.btn{background:var(--accent);border:1px solid var(--accent);color:var(--ink);padding:8px 12px;border-radius:12px;cursor:pointer;font-weight:600}
+.btn.ghost{background:#fff;color:var(--accent);border:1px solid var(--accent)}
+.btn.danger{background:#ef476f;border:0;color:#fff}
+.btn.tiny{padding:4px 8px;border-radius:8px}
+.btn.seg{padding:6px 10px;border-radius:10px}
+.btn.seg.active{outline:2px solid var(--accent)}
 
-  <div class="score-legend">
-    <span class="dot0">0</span> Non conforme
-    <span class="dot1">1</span> Parziale
-    <span class="dot3">3</span> Quasi ok
-    <span class="dot5">5</span> Conforme
-  </div>
+/* intro 5s */
+.intro5s{margin-top:16px}
+.intro-grid{display:grid;grid-template-columns:260px 1fr;gap:18px;align-items:center}
+.pie5s{width:100%;display:block}
+.pie5s .pie-label{font:700 16px/1 system-ui,Segoe UI,Roboto;fill:var(--text);opacity:.9}
+.intro-copy h2{margin:.2rem 0 6px}
+.intro-copy p{margin:.2rem 0 10px;color:var(--muted)}
+.legend5s{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.legend5s .dot{display:inline-block;width:14px;height:14px;border-radius:50%;margin-right:8px;vertical-align:middle}
+.legend5s .tag{padding:2px 8px;border-radius:999px;color:var(--text);background:var(--panel);margin-right:6px;border:2px solid transparent}
+.tag.s1{border-color:var(--c1)} .tag.s2{border-color:var(--c2)} .tag.s3{border-color:var(--c3)} .tag.s4{border-color:var(--c4)} .tag.s5{border-color:var(--c5)}
+@media (max-width:900px){.intro-grid{grid-template-columns:1fr}.pie5s{max-width:360px;margin:0 auto}}
 
-  <div id="lineBtns" class="line-buttons"></div>
-</section>
+/* filtri */
+.controls .filters{display:grid;grid-template-columns:1.2fr 180px auto 140px 120px;gap:10px;align-items:end}
+.controls input,.controls select{padding:10px;border-radius:10px;border:1px solid var(--outline);background:var(--panel-alt);color:var(--text)}
+.controls .sector-toggles{display:flex;gap:8px;align-items:center}
+.controls .onlylate{display:flex;align-items:center;gap:8px}
 
-<section id="areas"></section>
+/* dashboard + chart */
+.dash-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(160px,1fr));gap:12px}
+.kpi{background:var(--kpi-bg);border:1px solid var(--outline);border-radius:14px;padding:12px;text-align:center}
+.kpi div:first-child{color:var(--muted)}.kpi div:last-child{font-size:1.6rem;font-weight:800}
+#chartAreas{width:100%;display:block;background:var(--chart-bg);border:1px solid var(--outline);border-radius:12px}
 
-<template id="tplArea">
-  <div class="area card">
-    <div class="area-head">
-      <div>
-        <label class="lbl" for="lineInput">Linea</label>
-        <input id="lineInput" class="area-line" placeholder="es. L2">
-      </div>
-      <div class="score">Punteggio: <span class="score-badge score-val">0%</span></div>
-      <div class="area-actions">
-        <button class="btn ghost add-item">+ Voce</button>
-        <button class="btn ghost collapse">Comprimi</button>
-        <button class="btn danger delete-area">Elimina</button>
-      </div>
-    </div>
+/* legenda punteggi */
+.score-legend{display:flex;gap:18px;align-items:center;margin-top:10px;color:var(--muted);flex-wrap:wrap}
+.score-legend .dot0,.dot1,.dot3,.dot5{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;color:#fff;font-weight:700}
+.dot0{background:#8e9bb0}.dot1{background:#6c8ad6}.dot3{background:#35b468}.dot5{background:#0095d9}
 
-    <div class="sector-tabs">
-      <button data-sector="Rettifica" class="tab sec active">Rettifica</button>
-      <button data-sector="Montaggio" class="tab sec">Montaggio</button>
-    </div>
+/* bottoni linee */
+.line-buttons{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.line-buttons .btn{background:#fff;color:var(--accent);border:1px solid var(--accent)}
+.line-buttons .btn.active{background:var(--accent);color:#fff}
 
-    <div class="s-tabs">
-      <button data-s="1S" class="tab s active">1S <span class="pill score-1S">0%</span></button>
-      <button data-s="2S" class="tab s">2S <span class="pill score-2S">0%</span></button>
-      <button data-s="3S" class="tab s">3S <span class="pill score-3S">0%</span></button>
-      <button data-s="4S" class="tab s">4S <span class="pill score-4S">0%</span></button>
-      <button data-s="5S" class="tab s">5S <span class="pill score-5S">0%</span></button>
-    </div>
+/* area */
+.area-head{display:grid;grid-template-columns:220px auto auto;gap:12px;align-items:end}
+.lbl{display:block;color:var(--muted);font-size:.85rem;margin-bottom:4px}
+.area-line{padding:10px;border-radius:12px;border:1px solid var(--outline);background:var(--panel-alt);color:var(--text);font-weight:700}
+.score-badge{background:var(--accent);color:#fff;border-radius:999px;padding:4px 10px;font-weight:800}
 
-    <div class="s-panels">
-      <div class="panel active" data-s="1S"></div>
-      <div class="panel" data-s="2S"></div>
-      <div class="panel" data-s="3S"></div>
-      <div class="panel" data-s="4S"></div>
-      <div class="panel" data-s="5S"></div>
-    </div>
-  </div>
-</template>
+/* settori */
+.sector-tabs{display:flex;gap:8px;margin-top:10px}
+.tab.sec{background:#fff;color:var(--text);border:1px solid var(--outline)}
+.tab.sec.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 
-<template id="tplItem">
-  <div class="item">
-    <button class="btn tiny info" title="Dettaglio">i</button>
-    <input class="txt" placeholder="Titolo…">
-    <div class="points-dots" role="radiogroup" aria-label="Punteggio">
-      <button class="dot d0" data-val="0" title="0">0</button>
-      <button class="dot d1" data-val="1" title="1">1</button>
-      <button class="dot d3" data-val="3" title="3">3</button>
-      <button class="dot d5" data-val="5" title="5">5</button>
-    </div>
-    <input class="resp" placeholder="Responsabile">
-    <input type="date" class="due" title="Scadenza">
-    <input class="note" placeholder="Note…">
-    <button class="btn tiny del" title="Elimina">×</button>
-  </div>
-  <div class="desc"></div>
-</template>
+/* tabs 5s */
+.s-tabs{display:flex;gap:8px;margin:12px 0 6px;flex-wrap:wrap}
+.tab.s{border:2px solid transparent;background:#fff;color:var(--text);transition:all .15s}
+.tab.s[data-s="1S"]{border-color:var(--c1);color:var(--c1)}
+.tab.s[data-s="2S"]{border-color:var(--c2);color:var(--c2)}
+.tab.s[data-s="3S"]{border-color:var(--c3);color:var(--c3)}
+.tab.s[data-s="4S"]{border-color:var(--c4);color:var(--c4)}
+.tab.s[data-s="5S"]{border-color:var(--c5);color:var(--c5)}
+.tab.s.active{color:#fff;box-shadow:0 0 0 3px rgba(0,0,0,.04) inset}
+.tab.s.active[data-s="1S"]{background:var(--c1);border-color:var(--c1)}
+.tab.s.active[data-s="2S"]{background:var(--c2);border-color:var(--c2)}
+.tab.s.active[data-s="3S"]{background:var(--c3);border-color:var(--c3)}
+.tab.s.active[data-s="4S"]{background:var(--c4);border-color:var(--c4)}
+.tab.s.active[data-s="5S"]{background:var(--c5);border-color:var(--c5)}
+.tab.s .pill{background:#fff;color:inherit;border:1px solid currentColor}
+.tab.s.active .pill{background:rgba(255,255,255,.15);border-color:#fff;color:#fff}
 
-<footer><p>© SKF – PWA offline</p></footer>
+/* pannelli & item */
+.panel{display:none;border-top:1px dashed var(--outline);padding-top:8px}
+.panel.active{display:block}
+.item{display:grid;grid-template-columns:auto 1.4fr auto 1fr 150px 1.2fr auto;gap:8px;align-items:center;background:var(--panel);border:1px solid var(--outline);border-radius:12px;padding:8px;margin:8px 0}
+.item input{background:var(--panel-alt);color:var(--text);border:1px solid var(--outline);padding:8px;border-radius:10px}
+.item .info{background:#e6f4fb;color:#006fa4;border:1px solid var(--outline)}
+.item.late{outline:2px dashed #ef476f}
 
-<script src="app.js?v=7.6.3"></script>
-<script>
-  if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
-</script>
-</body>
-</html>
+/* pallini punteggio */
+.points-dots{display:flex;gap:6px;align-items:center}
+.points-dots .dot{width:30px;height:30px;border-radius:50%;border:2px solid #9fb5c8;background:#fff;color:#4c6a82;font-weight:800;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.points-dots .dot:focus{outline:2px solid var(--accent)}
+.points-dots .dot.active{color:#fff;border-color:transparent}
+.points-dots .d0.active{background:#8e9bb0}
+.points-dots .d1.active{background:#6c8ad6}
+.points-dots .d3.active{background:#35b468}
+.points-dots .d5.active{background:#0095d9}
+
+/* descrizione item */
+.desc{display:none;margin:6px 0 10px;padding:12px 14px;background:var(--desc-bg);color:#fff;border:1px dashed var(--desc-border);border-radius:10px;line-height:1.4}
+.desc.show{display:block}
+.desc h4{margin:0 0 6px;font-size:.95rem;color:#fff}
+.desc p{margin:0}
+
+/* print */
+@media print{
+  header,.btn,footer,.controls{display:none!important}
+  body{background:white;color:black}
+  .card{box-shadow:none;border-color:#999}
+}
+
 
