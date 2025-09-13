@@ -1,5 +1,5 @@
 // SKF 5S PWA SW – v7.6.3
-const CACHE_NAME = "skf5s-cache-v8";
+const CACHE_NAME = "skf5s-cache-v9";
 const FILES_TO_CACHE = [
   "./",
   "./index.html",
