@@ -1,14 +1,15 @@
-// SKF 5S PWA SW – v7.8.0
-const CACHE_NAME = "skf5s-cache-v12";
+// SKF 5S PWA SW – v7.9.0
+const CACHE_NAME = "skf5s-cache-v14";
 const FILES_TO_CACHE = [
   "./",
   "./index.html",
-  "./style.css?v=7.8.0",
-  "./app.js?v=7.8.0",
-  "./manifest.json?v=7.8.0",
+  "./style.css?v=7.9.0",
+  "./app.js?v=7.9.0",
+  "./manifest.json?v=7.9.0",
   "./assets/skf-logo.png",
   "./assets/skf-192.png",
-  "./assets/skf-512.png"
+  "./assets/skf-512.png",
+  "./assets/5s-hero.svg"
 ];
 
 self.addEventListener("install", (e) => {
@@ -16,14 +17,13 @@ self.addEventListener("install", (e) => {
   self.skipWaiting();
 });
 self.addEventListener("activate", (e) => {
-  e.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.map(k => k !== CACHE_NAME && caches.delete(k))))
-  );
+  e.waitUntil(caches.keys().then(keys => Promise.all(keys.map(k => k !== CACHE_NAME && caches.delete(k)))));
   self.clients.claim();
 });
 self.addEventListener("fetch", (e) => {
   e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
 });
+
 
 
 
