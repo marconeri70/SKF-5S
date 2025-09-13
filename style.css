@@ -1,5 +1,5 @@
 /* ================
-   SKF 5S – Light & Dark (v7.8.0)
+   SKF 5S – Light & Dark (v7.9.0)
    ================ */
 
 /* tema chiaro */
@@ -9,13 +9,7 @@
   --accent:#0095d9; --ink:#ffffff;
   --kpi-bg:#eaf3fa; --chart-bg:#ffffff; --chart-grid:#d0d7e1; --chart-text:#003366;
 
-  /* colori 5S + tono chiaro per gradiente 3D */
-  --c1:#7a56c6; --c1l:#9b7ee0;
-  --c2:#e44f37; --c2l:#ff7a66;
-  --c3:#f3a11a; --c3l:#ffc14f;
-  --c4:#35b468; --c4l:#6ed39a;
-  --c5:#4b88ff; --c5l:#7aa7ff;
-
+  --c1:#7a56c6; --c2:#e44f37; --c3:#f3a11a; --c4:#35b468; --c5:#4b88ff;
   --desc-bg:#0095d9; --desc-border:#78c9ed;
 }
 
@@ -26,12 +20,7 @@
   --accent:#4b88ff; --ink:#ffffff;
   --kpi-bg:#1b2e50; --chart-bg:#0b1530; --chart-grid:rgba(255,255,255,.2); --chart-text:#eaf0ff;
 
-  --c1:#7a56c6; --c1l:#b49af0;
-  --c2:#e44f37; --c2l:#ff9a86;
-  --c3:#f3a11a; --c3l:#ffd27a;
-  --c4:#35b468; --c4l:#78dfa8;
-  --c5:#4b88ff; --c5l:#a0beff;
-
+  --c1:#7a56c6; --c2:#e44f37; --c3:#f3a11a; --c4:#35b468; --c5:#4b88ff;
   --desc-bg:#27407e; --desc-border:#4b88ff;
 }
 
@@ -54,17 +43,15 @@ body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 system-ui,Se
 
 /* intro 5s */
 .intro5s{margin-top:16px}
-.intro-grid{display:grid;grid-template-columns:260px 1fr;gap:18px;align-items:center}
-.pie5s{width:100%;display:block}
-.pie3d{filter:drop-shadow(0 10px 24px rgba(0,0,0,.18));}
-.pie5s .pie-label{font:700 16px/1 system-ui,Segoe UI,Roboto;fill:var(--text);opacity:.9}
+.intro-grid{display:grid;grid-template-columns:280px 1fr;gap:18px;align-items:center}
+.hero5s{width:100%;display:block;filter:drop-shadow(0 10px 24px rgba(0,0,0,.12))}
 .intro-copy h2{margin:.2rem 0 6px}
 .intro-copy p{margin:.2rem 0 10px;color:var(--muted)}
 .legend5s{list-style:none;margin:0;padding:0;display:grid;gap:6px}
 .legend5s .dot{display:inline-block;width:14px;height:14px;border-radius:50%;margin-right:8px;vertical-align:middle}
-.legend5s .tag{padding:2px 8px;border-radius:999px;color:var(--text);background:var(--panel);margin-right:6px;border:2px solid transparent}
+.legend5s .tag{padding:2px 8px;border-radius:999px;background:var(--panel);border:2px solid transparent}
 .tag.s1{border-color:var(--c1)} .tag.s2{border-color:var(--c2)} .tag.s3{border-color:var(--c3)} .tag.s4{border-color:var(--c4)} .tag.s5{border-color:var(--c5)}
-@media (max-width:900px){.intro-grid{grid-template-columns:1fr}.pie5s{max-width:360px;margin:0 auto}}
+@media (max-width:900px){.intro-grid{grid-template-columns:1fr}.hero5s{max-width:420px;margin:0 auto}}
 
 /* filtri */
 .controls .filters{display:grid;grid-template-columns:1.2fr 180px auto 140px 120px;gap:10px;align-items:end}
@@ -84,19 +71,22 @@ body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 system-ui,Se
 .score-legend .dot0,.dot1,.dot3,.dot5{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;color:#fff;font-weight:700}
 .dot0{background:#8e9bb0}.dot1{background:#6c8ad6}.dot3{background:#35b468}.dot5{background:#0095d9}
 
-/* bottoni linee + badge per S */
+/* bottoni linee compatti */
 .line-buttons{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-.line-btn{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--accent);color:var(--accent);border-radius:12px;padding:6px 10px;cursor:pointer}
+.line-btn{background:#fff;border:1px solid var(--accent);color:var(--accent);border-radius:12px;padding:6px 12px;cursor:pointer}
 .line-btn.active{background:var(--accent);color:#fff}
-.badges{display:flex;gap:4px}
-.badgeS{min-width:28px;text-align:center;padding:2px 6px;border-radius:999px;color:#fff;font-weight:700;font-size:.78rem}
-.badgeS.s1{background:var(--c1)} .badgeS.s2{background:var(--c2)} .badgeS.s3{background:var(--c3)} .badgeS.s4{background:var(--c4)} .badgeS.s5{background:var(--c5)}
 
 /* area */
 .area-head{display:grid;grid-template-columns:220px auto auto;gap:12px;align-items:end}
 .lbl{display:block;color:var(--muted);font-size:.85rem;margin-bottom:4px}
 .area-line{padding:10px;border-radius:12px;border:1px solid var(--outline);background:var(--panel-alt);color:var(--text);font-weight:700}
 .score-badge{background:var(--accent);color:#fff;border-radius:999px;padding:4px 10px;font-weight:800}
+
+/* collapse (fix “Espandi”) */
+.area.collapsed .sector-tabs,
+.area.collapsed .s-tabs,
+.area.collapsed .s-panels{display:none}
+.area.collapsed .area-actions .collapse{background:#ffc14f;border-color:#ffc14f;color:#5b3f00}
 
 /* settori */
 .sector-tabs{display:flex;gap:8px;margin-top:10px}
@@ -151,3 +141,4 @@ body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 system-ui,Se
   .card{box-shadow:none;border-color:#999}
   .area{break-inside:avoid-page}
 }
+
