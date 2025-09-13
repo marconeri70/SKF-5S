@@ -1,5 +1,5 @@
 /* ================
-   SKF 5S – Light & Dark (v7.6.2)
+   SKF 5S – Light & Dark (v7.7.0)
    ================ */
 
 /* tema chiaro */
@@ -7,19 +7,31 @@
   --bg:#ffffff; --text:#003366; --muted:#5c6f82;
   --card:#f3f7fa; --panel:#ffffff; --panel-alt:#eef4f8; --outline:#d0d7e1;
   --accent:#0095d9; --ink:#ffffff;
-
   --kpi-bg:#eaf3fa; --chart-bg:#ffffff; --chart-grid:#d0d7e1; --chart-text:#003366;
 
-  --c1:#7a56c6; --c2:#e44f37; --c3:#f3a11a; --c4:#35b468; --c5:#4b88ff;
+  /* colori 5S + versione “light” per gradiente */
+  --c1:#7a56c6; --c1l:#9b7ee0;
+  --c2:#e44f37; --c2l:#ff7a66;
+  --c3:#f3a11a; --c3l:#ffc14f;
+  --c4:#35b468; --c4l:#6ed39a;
+  --c5:#4b88ff; --c5l:#7aa7ff;
+
   --desc-bg:#0095d9; --desc-border:#78c9ed;
 }
+
 /* tema scuro */
 :root.dark{
   --bg:#0f1a36; --text:#eaf0ff; --muted:#9bb0c5;
   --card:#182544; --panel:#1e2d4f; --panel-alt:#22345c; --outline:#3a4a6b;
   --accent:#4b88ff; --ink:#ffffff;
-
   --kpi-bg:#1b2e50; --chart-bg:#0b1530; --chart-grid:rgba(255,255,255,.2); --chart-text:#eaf0ff;
+
+  /* in scuro i “light” restano più brillanti */
+  --c1:#7a56c6; --c1l:#b49af0;
+  --c2:#e44f37; --c2l:#ff9a86;
+  --c3:#f3a11a; --c3l:#ffd27a;
+  --c4:#35b468; --c4l:#78dfa8;
+  --c5:#4b88ff; --c5l:#a0beff;
 
   --desc-bg:#27407e; --desc-border:#4b88ff;
 }
@@ -45,6 +57,7 @@ body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 system-ui,Se
 .intro5s{margin-top:16px}
 .intro-grid{display:grid;grid-template-columns:260px 1fr;gap:18px;align-items:center}
 .pie5s{width:100%;display:block}
+.pie3d{filter:drop-shadow(0 10px 24px rgba(0,0,0,.18));}
 .pie5s .pie-label{font:700 16px/1 system-ui,Segoe UI,Roboto;fill:var(--text);opacity:.9}
 .intro-copy h2{margin:.2rem 0 6px}
 .intro-copy p{margin:.2rem 0 10px;color:var(--muted)}
