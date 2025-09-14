@@ -1,496 +1,424 @@
-/* ===================== SKF 5S – app.js (v7.15.3) =========================
-   - Realtime update badge 1S..5S quando si cliccano i pallini 0/1/3/5
-   - Etichette S nel grafico sempre bianche, percentuali con contrasto
-   - CH spostato più in basso
-=========================================================================== */
-const VERSION='v7.15.3';
-const STORE='skf.5s.v7.10.3';
-const CHART_STORE=STORE+'.chart';
-const POINTS=[0,1,3,5];
+/* ================= SKF 5S – App logic (v7.9.5) ===================== */
+/* Modifiche:
+   - Etichette chart stacked/non-stacked leggibili (datalabels con padding/anchor/snap)
+   - Versione in footer
+   - KPI evidenti e pill predominate
+*/
 
-/* --- voci (come in tua base) --- */
-const VOC_1S=[{t:"Zona pedonale pavimento",d:"Area pedonale libera da ostacoli e pericoli di inciampo"},
-{t:"Zona di lavoro (pavimento, macchina)",d:"Solo il necessario per l’ordine in corso"},
-{t:"Materiali",d:"Materiale non necessario rimosso/segregato"},
-{t:"Informazioni",d:"Documenti necessari e in buono stato"},
-{t:"Processo di etichettatura",d:"Gestione etichette rosse / scarti definita"},
-{t:"Piano per sostenere il risultato",d:"Lavagna 5S, foto prima/dopo, azioni, punteggi, SPL"}];
-const VOC_2S=[{t:"1-S Stato",d:"Team e area definiti, 1S mantenuta"},
-{t:"Sicurezza",d:"Dispositivi/attrezzature identificati e accessibili"},
-{t:"Qualità",d:"Postazioni qualità ordinate e chiare"},
-{t:"Documenti",d:"Documenti al punto d’uso e aggiornati"},
-{t:"Concetti",d:"Ergonomia, punto d’uso, zero sprechi/confusione"},
-{t:"Posizioni prefissate",d:"Sagome/posti fissi: facile capire cosa manca"},
-{t:"Visual Management di base",d:"Linee/etichette/colori minimi attivi"}];
-const VOC_3S=[{t:"1-S Stato",d:"1S mantenuta"},
-{t:"2-S Stato",d:"2S mantenuta"},
-{t:"Pulizia",d:"Aree e macchine pulite (anche punti difficili)"},
-{t:"Misure preventive",d:"Cause di sporco/perdite rimosse alla radice"},
-{t:"Pulire è routine",d:"Routine con responsabilità e frequenze"},
-{t:"Standard di pulizia",d:"Standard e checklist visibili e seguiti"}];
-const VOC_4S=[{t:"Aree di passaggio",d:"Nessun deposito/ostacolo; pavimento libero"},
-{t:"Area di lavoro",d:"Solo il necessario per l’ordine corrente"},
-{t:"Materiali",d:"Materiali corretti e identificati"},
-{t:"Informazione",d:"Info necessarie e in buono stato"},
-{t:"Visual Management",d:"Indicatori visivi efficaci in routine"},
-{t:"Posizioni prefissate",d:"Prelievo/rimessa facili e immediati"},
-{t:"Standard lavoro & check",d:"SPL/istruzioni/checklist visibili e usate"},
-{t:"Etichette e colori",d:"Etichette chiare, codici colore coerenti"},
-{t:"Marcature tubi/valvole",d:"Tubi/valvole marcati (colori standard)"},
-{t:"Segnaletica a terra",d:"Linee/campiture presenti e mantenute"},
-{t:"Punti di ispezione",d:"Chiari i punti e cosa controllare"},
-{t:"Single Point Lessons",d:"SPL aggiornate e usate"},
-{t:"Standard & documentazione",d:"Documentazione aggiornata/disponibile"},
-{t:"Kanban & scorte",d:"Consumabili in visual management (min/max)"},
-{t:"Misure preventive",d:"Anomalie risolte alla radice"}];
-const VOC_5S=[{t:"Ognuno & ogni giorno",d:"Tutti formati e coinvolti sugli standard"},
-{t:"Miglioramento continuo",d:"Evidenza prima/dopo; standard aggiornati"}];
+const APP_VERSION = 'v7.9.5';
+document.getElementById('appVersion').textContent = APP_VERSION;
 
-const $=(s,r=document)=>r.querySelector(s);
-const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
-const todayISO=()=>new Date().toISOString().slice(0,10);
-const isOverdue=d=>d && new Date(d+'T23:59:59')<new Date();
-const pct=n=>Math.round((n||0)*100)+'%';
+Chart.register(ChartDataLabels);
 
-function makeS(v){return {"1S":v[0].map(c=>({...c,p:0,resp:"",due:"",note:""})),"2S":v[1].map(c=>({...c,p:0,resp:"",due:"",note:""})),"3S":v[2].map(c=>({...c,p:0,resp:"",due:"",note:""})),"4S":v[3].map(c=>({...c,p:0,resp:"",due:"",note:""})),"5S":v[4].map(c=>({...c,p:0,resp:"",due:"",note:""}))};}
-function makeSectorSet(){return makeS([VOC_1S,VOC_2S,VOC_3S,VOC_4S,VOC_5S]);}
-function makeArea(line){return{line,sectors:{Rettifica:makeSectorSet(),Montaggio:makeSectorSet()}};}
-function load(){try{const raw=localStorage.getItem(STORE);return raw?JSON.parse(raw):{areas:[]}}catch{return{areas:[]}}}
-function save(){localStorage.setItem(STORE,JSON.stringify(state))}
-function loadChartPref(){try{return JSON.parse(localStorage.getItem(CHART_STORE))||{zoom:1,stacked:false,scroll:0}}catch{return{zoom:1,stacked:false,scroll:0}}}
-function saveChartPref(){localStorage.setItem(CHART_STORE,JSON.stringify(chartPref))}
-const nextCH=()=>{
-  const nums=(state.areas||[]).map(a=>((a.line||'').match(/^CH\s*(\d+)/i)||[])[1]).filter(Boolean).map(n=>+n).sort((a,b)=>a-b);
-  const last=nums.length?nums[nums.length-1]:1; return `CH ${last+1}`;
+const COLORS = {
+  s1: getCss('--s1'),
+  s2: getCss('--s2'),
+  s3: getCss('--s3'),
+  s4: getCss('--s4'),
+  s5: getCss('--s5'),
+  text: getCss('--text')
 };
 
-let state=load(); if(!state.areas?.length){state.areas=[makeArea('CH 2')]; save();}
-let ui={q:'',line:'ALL',sector:'ALL',onlyLate:false};
-let chartPref=loadChartPref();
-const highlightKeys=new Set();
+function getCss(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
 
-const elAreas=$('#areas'), elLineFilter=$('#lineFilter'), elQ=$('#q'), elOnlyLate=$('#onlyLate');
-const tplArea=$('#tplArea'), tplItem=$('#tplItem');
-const elKpiAreas=$('#kpiAreas'), elKpiScore=$('#kpiScore'), elKpiLate=$('#kpiLate');
-const sectorSelect=$('#sectorFilter');
-const btnTheme=$('#btnTheme');
+// ------------------ Stato & Dati ------------------
+const LS_KEY = 'skf5s.v2';
+let state = load() || seed();
 
-if(localStorage.getItem('theme')==='dark') document.documentElement.classList.add('dark');
-btnTheme?.addEventListener('click',()=>{
-  const root=document.documentElement;
-  root.classList.toggle('dark');
-  localStorage.setItem('theme',root.classList.contains('dark')?'dark':'light');
-});
-
-$('#btnNewArea')?.addEventListener('click',()=>{
-  const proposal=nextCH();
-  const line=(prompt('Nuova linea? (es. CH 3)',proposal)||proposal).trim();
-  if(!line) return; state.areas.push(makeArea(line)); save(); render();
-});
-$('#btnExport')?.addEventListener('click',()=>{
-  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
-  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:`SKF_5S_${todayISO()}.json`});
-  document.body.appendChild(a); a.click(); a.remove();
-});
-$('#fileImport')?.addEventListener('change',async e=>{
-  const f=e.target.files[0]; if(!f) return;
-  try{ state=JSON.parse(await f.text()); save(); render(); }catch{ alert('File non valido'); }
-});
-$('#btnPrint')?.addEventListener('click',()=>window.print());
-
-function setSegBtn(sel){['#btnAll','#btnFgr','#btnAsm'].forEach(s=>$(s)?.classList.remove('active')); $(sel)?.classList.add('active');}
-$('#btnAll')?.addEventListener('click',()=>{ui.sector='ALL'; setSegBtn('#btnAll'); sectorSelect.value='ALL'; render();});
-$('#btnFgr')?.addEventListener('click',()=>{ui.sector='Rettifica'; setSegBtn('#btnFgr'); sectorSelect.value='Rettifica'; render();});
-$('#btnAsm')?.addEventListener('click',()=>{ui.sector='Montaggio'; setSegBtn('#btnAsm'); sectorSelect.value='Montaggio'; render();});
-sectorSelect?.addEventListener('change',()=>{
-  ui.sector=sectorSelect.value;
-  if(ui.sector==='ALL') setSegBtn('#btnAll');
-  if(ui.sector==='Rettifica') setSegBtn('#btnFgr');
-  if(ui.sector==='Montaggio') setSegBtn('#btnAsm');
-  render();
-});
-
-elQ?.addEventListener('input',()=>{ui.q=elQ.value; render();});
-elOnlyLate?.addEventListener('change',()=>{ui.onlyLate=elOnlyLate.checked; render();});
-$('#btnClearFilters')?.addEventListener('click',()=>{
-  ui={q:'',line:'ALL',sector:'ALL',onlyLate:false};
-  elQ.value=''; elOnlyLate.checked=false; elLineFilter.value='ALL'; setSegBtn('#btnAll'); sectorSelect.value='ALL'; render();
-});
-elLineFilter?.addEventListener('change',()=>{ui.line=elLineFilter.value; render();});
-
-$('#zoomIn')?.addEventListener('click',()=>{chartPref.zoom=Math.min(2.5, +(chartPref.zoom+0.1).toFixed(2)); saveChartPref(); drawChart();});
-$('#zoomOut')?.addEventListener('click',()=>{chartPref.zoom=Math.max(0.6, +(chartPref.zoom-0.1).toFixed(2)); saveChartPref(); drawChart();});
-$('#toggleStacked')?.addEventListener('change',e=>{chartPref.stacked=e.target.checked; saveChartPref(); drawChart();});
-
-$('#btnCollapseAll')?.addEventListener('click',()=>{$$('.area').forEach(a=>a.classList.add('collapsed'));});
-$('#btnExpandAll')?.addEventListener('click',()=>{$$('.area').forEach(a=>a.classList.remove('collapsed'));});
-
-function refreshLineFilter(){
-  const lines=Array.from(new Set(state.areas.map(a=>(a.line||'').trim()).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'it',{numeric:true}));
-  elLineFilter.innerHTML=`<option value="ALL">Linea: Tutte</option>` + lines.map(l=>`<option value="${l}">${l}</option>`).join('');
-  if(!lines.includes(ui.line)) ui.line='ALL'; elLineFilter.value=ui.line;
+function seed(){
+  // Dati di esempio: linea CH 2 e CH 3
+  return {
+    theme: 'light',
+    lines: [
+      mkArea('CH 2'),
+      mkArea('CH 3'),
+    ]
+  };
 }
-function filteredAreas(){
-  const q=(ui.q||'').toLowerCase();
-  const secs=ui.sector==='ALL'?['Rettifica','Montaggio']:[ui.sector];
-  return state.areas.filter(a=>{
-    if(ui.line!=='ALL' && (a.line||'').trim()!==ui.line) return false;
-    if(!q && !ui.onlyLate) return true;
-    let ok=false;
-    secs.forEach(sec=>['1S','2S','3S','4S','5S'].forEach(S=>(a.sectors[sec][S]||[]).forEach(it=>{
-      if(ui.onlyLate && !isOverdue(it.due)) return;
-      if(!q){ ok=true; return; }
-      const bag=`${it.t||''} ${it.note||''} ${it.resp||''}`.toLowerCase();
-      if(bag.includes(q)) ok=true;
-    })));
-    return ok;
+
+function mkArea(name){
+  return {
+    id: crypto.randomUUID(),
+    name,
+    sector: 'rettifica',
+    items: [
+      mkItem('1-S Stato'),
+      mkItem('Sicurezza'),
+      mkItem('Qualità'),
+      mkItem('Pulizia'),
+    ],
+    collapsed: false
+  };
+}
+function mkItem(title){
+  return {
+    id: crypto.randomUUID(),
+    title,
+    points: 0, // 0|1|3|5
+    responsible: '',
+    due: '',
+    note: '',
+    s: guessS(title) // 1..5
+  };
+}
+function guessS(title){
+  const map = [
+    {k:'stato', s:1}, {k:'selezion', s:1},
+    {k:'sistem', s:2}, {k:'posto', s:2},
+    {k:'puliz', s:3},  {k:'splend', s:3},
+    {k:'standard', s:4}, {k:'regole', s:4},
+    {k:'sosten', s:5}, {k:'discipl', s:5}
+  ];
+  const t = title.toLowerCase();
+  for (const m of map) if (t.includes(m.k)) return m.s;
+  return 1;
+}
+
+function save(){ localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+function load(){ try { return JSON.parse(localStorage.getItem(LS_KEY)); } catch { return null; } }
+
+// ------------------ Utilities punteggi ------------------
+function areaStats(area){
+  // percentuali per S (1..5) considerando i punti 0/1/3/5
+  const perS = {1:[],2:[],3:[],4:[],5:[]};
+  for (const it of area.items) perS[it.s].push(it.points);
+  const res = {byS:{}, avg:0, predom:{s:0,val:0}};
+  let all = [];
+  for(let s=1;s<=5;s++){
+    const arr = perS[s];
+    const sum = arr.reduce((a,b)=>a+b,0);
+    const max = arr.length * 5 || 1;
+    const perc = Math.round((sum/max)*100);
+    res.byS[s] = perc;
+    all = all.concat(arr);
+  }
+  const sumAll = all.reduce((a,b)=>a+b,0);
+  const maxAll = (area.items.length*5)||1;
+  res.avg = Math.round((sumAll/maxAll)*100);
+  // predominante
+  let bestS = 1, best = 0;
+  for(let s=1;s<=5;s++){
+    if (res.byS[s] > best){best = res.byS[s]; bestS = s;}
+  }
+  res.predom = {s:bestS, val:best};
+  // late actions
+  const now = new Date().toISOString().slice(0,10);
+  res.late = area.items.filter(i => i.due && i.due < now && i.points<5).length;
+  return res;
+}
+
+function globalStats(lines){
+  const k = {avg:0, late:0};
+  if (!lines.length) return {avg:0, late:0};
+  let sum = 0;
+  for (const a of lines){ const st = areaStats(a); sum += st.avg; k.late += st.late; }
+  k.avg = Math.round(sum/lines.length);
+  return k;
+}
+
+// ------------------ Rendering ------------------
+const elSelLinea = document.getElementById('selLinea');
+const elChkStacked = document.getElementById('chkStacked');
+const elChkLate = document.getElementById('chkLate');
+const elSearch = document.getElementById('txtSearch');
+const elAreas = document.getElementById('areas');
+const elBadgesRow = document.getElementById('badgesRow');
+
+let chart;
+renderAll();
+
+function renderAll(){
+  renderFilters();
+  renderDashboard();
+  renderAreaCards();
+}
+
+function renderFilters(){
+  // linee dropdown
+  elSelLinea.innerHTML = '<option value="all">Linea: Tutte</option>' +
+    state.lines.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+  // chips stato globali
+  elBadgesRow.innerHTML = '';
+  ['Tutte', ...state.lines.map(a=>a.name)].forEach((label, i) => {
+    const b = document.createElement('button');
+    b.className = 'badge' + (i===0?' active':'');
+    b.textContent = label;
+    b.dataset.filter = i===0 ? 'all' : label;
+    b.addEventListener('click', ()=>{
+      document.querySelectorAll('.badges-row .badge').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      const id = i===0 ? 'all' : state.lines.find(x=>x.name===label)?.id;
+      elSelLinea.value = id||'all';
+      renderDashboard();
+      renderAreaCards();
+    });
+    elBadgesRow.appendChild(b);
   });
 }
-function computeByS(area,sector){
-  const secs=sector==='ALL'?['Rettifica','Montaggio']:[sector];
-  const perS={"1S":{s:0,m:0},"2S":{s:0,m:0},"3S":{s:0,m:0},"4S":{s:0,m:0},"5S":{s:0,m:0}};
-  let sum=0,max=0;
-  secs.forEach(sec=>['1S','2S','3S','4S','5S'].forEach(S=>(area.sectors[sec][S]||[]).forEach(it=>{
-    perS[S].s+=(+it.p||0); perS[S].m+=5; sum+=(+it.p||0); max+=5;
-  })));
-  const byS={}; Object.keys(perS).forEach(S=>byS[S]=perS[S].m?perS[S].s/perS[S].m:0);
-  const domKey=Object.keys(byS).reduce((a,b)=> byS[a]>=byS[b]?a:b, '1S');
-  return {byS, total:max?sum/max:0, dom:{S:domKey, v:byS[domKey]||0}};
+
+function applyFilters(lines){
+  const term = elSearch.value.trim().toLowerCase();
+  const id = elSelLinea.value;
+  let res = [...lines];
+  if (id !== 'all') res = res.filter(a => a.id===id);
+  // search su titolo/note/responsabile
+  if (term){
+    res = res.filter(a => a.items.some(i =>
+      i.title.toLowerCase().includes(term) ||
+      i.note.toLowerCase().includes(term) ||
+      i.responsible.toLowerCase().includes(term)
+    ));
+  }
+  if (elChkLate.checked){
+    res = res.filter(a => areaStats(a).late>0);
+  }
+  // sector chip
+  const activeSector = document.querySelector('.filter-chips .chip.active')?.dataset?.sector || 'all';
+  if (activeSector!=='all') res = res.filter(a => a.sector===activeSector);
+  return res;
 }
 
-function render(){
-  $('#appVersion').textContent=VERSION;
-  $('#appVersionFoot').textContent=VERSION;
-  refreshLineFilter();
+function renderDashboard(){
+  const lines = applyFilters(state.lines);
+  // KPI
+  document.getElementById('kpiLines').textContent = lines.length;
+  const gs = globalStats(lines);
+  document.getElementById('kpiAvg').textContent = gs.avg + '%';
+  document.getElementById('kpiLate').textContent = gs.late;
 
-  sectorSelect.value=ui.sector;
-  if(ui.sector==='ALL') setSegBtn('#btnAll');
-  if(ui.sector==='Rettifica') setSegBtn('#btnFgr');
-  if(ui.sector==='Montaggio') setSegBtn('#btnAsm');
+  // chart
+  const labels = lines.map(a=>a.name);
+  const byS = [1,2,3,4,5].map(s => lines.map(a => areaStats(a).byS[s]));
+  const stacked = elChkStacked.checked;
 
-  const list=filteredAreas();
-  elAreas.innerHTML='';
-  list.forEach(a=>elAreas.appendChild(renderArea(a)));
-  updateDashboard(list);
-  drawChart(list);
-  buildLineButtons(list);
+  const datasets = [
+    {label:'1S', data:byS[0], backgroundColor:COLORS.s1},
+    {label:'2S', data:byS[1], backgroundColor:COLORS.s2},
+    {label:'3S', data:byS[2], backgroundColor:COLORS.s3},
+    {label:'4S', data:byS[3], backgroundColor:COLORS.s4},
+    {label:'5S', data:byS[4], backgroundColor:COLORS.s5}
+  ];
+
+  const ctx = document.getElementById('chartAreas').getContext('2d');
+  if (chart) chart.destroy();
+
+  chart = new Chart(ctx, {
+    type:'bar',
+    data:{ labels, datasets },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        datalabels:{
+          color:'#fff',
+          font:{weight:800, size:11},
+          formatter:(v, ctx)=>{
+            if (v<=0) return '';
+            // in non-stacked mostra anche la S
+            if (!stacked) return v+'%';
+            return v+'%';
+          },
+          anchor: stacked ? 'end' : 'end',
+          align: stacked ? 'end' : 'center',
+          clamp:true,
+          offset: stacked ? 2 : -12,
+          padding: 2
+        },
+        tooltip:{
+          callbacks:{
+            title:(items)=> items[0].label,
+            label:(c)=> `${c.dataset.label}: ${c.formattedValue}%`
+          }
+        }
+      },
+      scales:{
+        x:{
+          stacked, ticks:{color:COLORS.text, maxRotation:0, autoSkip:false, padding:8}
+        },
+        y:{
+          stacked, beginAtZero:true, max:100,
+          ticks:{color:COLORS.text, callback:(v)=>v+'%'}
+        }
+      },
+      layout:{padding:{top: stacked? 14: 6}}
+    }
+  });
 }
 
-function renderArea(area){
-  const node=$('#tplArea').content.firstElementChild.cloneNode(true);
-  const line=$('.area-line',node), scoreEl=$('.score-val',node), domEl=$('.doms',node);
-  const secTabs=$$('.tab.sec',node), sTabs=$$('.tab.s',node), panels=$$('.panel',node);
-
-  let curSector=(ui.sector==='ALL'?'Rettifica':ui.sector), curS='1S';
-  line.value=area.line||''; 
-  line.addEventListener('input',()=>{area.line=line.value.trim(); save(); refreshLineFilter(); buildLineButtons(); drawChart();});
-
-  secTabs.forEach(b=>{
-    if(b.dataset.sector===curSector) b.classList.add('active');
-    b.addEventListener('click',()=>{secTabs.forEach(x=>x.classList.remove('active')); b.classList.add('active'); curSector=b.dataset.sector; refill(); updateScore();});
+function renderAreaCards(){
+  const lines = applyFilters(state.lines);
+  elAreas.innerHTML = '';
+  lines.forEach(a => {
+    const st = areaStats(a);
+    const card = document.createElement('div');
+    card.className = 'area';
+    card.innerHTML = `
+      <div class="area__head">
+        <div class="area__title">
+          <input data-id="${a.id}" class="inpName" value="${a.name}" />
+          <span class="pill">Settore:
+            <select data-id="${a.id}" class="selSector">
+              <option value="rettifica" ${a.sector==='rettifica'?'selected':''}>Rettifica</option>
+              <option value="montaggio" ${a.sector==='montaggio'?'selected':''}>Montaggio</option>
+            </select>
+          </span>
+        </div>
+        <div class="pills">
+          <span class="pill score">Punteggio: <b>${st.avg}%</b></span>
+          <span class="pill predom">Predominante: <b>${st.predom.s}S ${st.predom.val}%</b></span>
+          <button class="btn" data-act="add" data-id="${a.id}">+ Voce</button>
+          <button class="btn" data-act="toggle" data-id="${a.id}">${a.collapsed ? 'Espandi' : 'Comprimi'}</button>
+          <button class="btn" data-act="del" data-id="${a.id}" style="background:#ff4d6d;color:#fff;border-color:#ff4d6d">Elimina</button>
+        </div>
+      </div>
+      <div class="area__body" ${a.collapsed?'style="display:none"':''}>
+        ${renderItems(a)}
+        ${renderSBadges(a)}
+      </div>
+    `;
+    elAreas.appendChild(card);
   });
 
-  sTabs.forEach(t=> t.addEventListener('click',()=>{
-    sTabs.forEach(x=>x.classList.remove('active'));
-    t.classList.add('active'); curS=t.dataset.s;
-    panels.forEach(p=>p.classList.toggle('active',p.dataset.s===curS));
+  // eventi card
+  elAreas.querySelectorAll('.inpName').forEach(i => i.addEventListener('change', e=>{
+    const a = state.lines.find(x=>x.id===e.target.dataset.id); a.name = e.target.value; save(); renderAll();
+  }));
+  elAreas.querySelectorAll('.selSector').forEach(i => i.addEventListener('change', e=>{
+    const a = state.lines.find(x=>x.id===e.target.dataset.id); a.sector = e.target.value; save(); renderDashboard();
+  }));
+  elAreas.querySelectorAll('button[data-act]').forEach(b => b.addEventListener('click', e=>{
+    const id = e.currentTarget.dataset.id;
+    const a = state.lines.find(x=>x.id===id);
+    const act = e.currentTarget.dataset.act;
+    if (act==='add'){ a.items.push(mkItem('Nuova voce')); }
+    if (act==='toggle'){ a.collapsed = !a.collapsed; }
+    if (act==='del'){ if (confirm('Eliminare la linea?')) state.lines = state.lines.filter(x=>x.id!==id); }
+    save(); renderAll();
   }));
 
-  $('.add-item',node).addEventListener('click',()=>{
-    area.sectors[curSector][curS].push({t:"",d:"",p:0,resp:"",due:"",note:""}); save(); refill(); updateScore();
-  });
+  // dots click
+  elAreas.querySelectorAll('.dot').forEach(d => d.addEventListener('click', e=>{
+    const aId = e.currentTarget.dataset.aid;
+    const iId = e.currentTarget.dataset.iid;
+    const val = +e.currentTarget.dataset.v;
+    const a = state.lines.find(x=>x.id===aId);
+    const it = a.items.find(x=>x.id===iId);
+    it.points = val;
+    save();
+    // aggiorna solo card + dashboard
+    renderDashboard();
+    renderAreaCards();
+    // evidenzia causa ritardo / S predominante già aggiornati
+  }));
 
-  const btnCol=$('.collapse',node);
-  const setCol=()=>{btnCol.textContent=node.classList.contains('collapsed')?'Espandi':'Comprimi'};
-  btnCol.addEventListener('click',()=>{node.classList.toggle('collapsed'); setCol();});
-  setCol();
-
-  $('.delete-area',node).addEventListener('click',()=>{
-    if(!confirm('Eliminare la linea?')) return;
-    state.areas.splice(state.areas.indexOf(area),1); save(); render();
-  });
-
-  function paintBadges(){
-    const {byS}=computeByS(area,curSector);
-    $('.score-1S',node).textContent=pct(byS['1S']);
-    $('.score-2S',node).textContent=pct(byS['2S']);
-    $('.score-3S',node).textContent=pct(byS['3S']);
-    $('.score-4S',node).textContent=pct(byS['4S']);
-    $('.score-5S',node).textContent=pct(byS['5S']);
-  }
-
-  function refill(){
-    panels.forEach(p=>{
-      const S=p.dataset.s; p.innerHTML='';
-      (area.sectors[curSector][S]||[]).forEach((it,i)=> p.appendChild(renderItem(area,curSector,S,i,it,()=>{updateScore();})));
-      p.classList.toggle('active',S===curS);
-    });
-    paintBadges();
-  }
-
-  function updateScore(){
-    const {total,dom}=computeByS(area,curSector);
-    scoreEl.textContent=pct(total);
-    domEl.dataset.s=dom.S; domEl.textContent=`${dom.S} ${pct(dom.v)}`;
-    paintBadges();
-    save(); updateDashboard(); drawChart(); buildLineButtons();
-  }
-
-  refill(); updateScore();
-  return node;
+  // meta input
+  elAreas.querySelectorAll('.item input, .item textarea').forEach(el => el.addEventListener('change', e=>{
+    const aId = e.target.closest('.item').dataset.aid;
+    const iId = e.target.closest('.item').dataset.iid;
+    const a = state.lines.find(x=>x.id===aId);
+    const it = a.items.find(x=>x.id===iId);
+    if (e.target.name==='responsible') it.responsible = e.target.value;
+    if (e.target.name==='due') it.due = e.target.value;
+    if (e.target.name==='note') it.note = e.target.value;
+    save(); renderDashboard();
+  }));
 }
 
-function renderItem(area,sector,S,idx,it,onChange){
-  const frag=document.createDocumentFragment();
-  const node=$('#tplItem').content.firstElementChild.cloneNode(true);
-  const desc=$('#tplItem').content.children[1].cloneNode(true);
-
-  const txt=$('.txt',node), resp=$('.resp',node), due=$('.due',node), note=$('.note',node);
-  const dots=$$('.points-dots .dot',node);
-
-  txt.value=it.t||''; resp.value=it.resp||''; due.value=it.due||''; note.value=it.note||'';
-  desc.innerHTML=`<b>${it.t||''}</b><br>${it.d||''}`;
-  const syncDots=()=>{ dots.forEach(d=> d.classList.toggle('active', +d.dataset.val === (+it.p||0))); };
-  syncDots(); node.classList.toggle('late',isOverdue(it.due));
-
-  txt.addEventListener('input',()=>{it.t=txt.value; desc.innerHTML=`<b>${it.t||''}</b><br>${it.d||''}`; save();});
-  resp.addEventListener('input',()=>{it.resp=resp.value; save();});
-  note.addEventListener('input',()=>{it.note=note.value; save();});
-  due.addEventListener('change',()=>{it.due=due.value; save(); node.classList.toggle('late',isOverdue(it.due)); onChange?.();});
-
-  dots.forEach(d=> d.addEventListener('click',()=>{ it.p=+d.dataset.val; syncDots(); save(); onChange?.(); }));
-
-  $('.info',node).addEventListener('click',()=>{const v=desc.style.display!=='block'; desc.style.display=v?'block':'none';});
-  $('.del',node).addEventListener('click',()=>{ const arr=area.sectors[sector][S]; arr.splice(idx,1); save(); render(); });
-
-  frag.appendChild(node); frag.appendChild(desc); return frag;
+function renderItems(a){
+  return a.items.map(it=>{
+    const circle = v => `<span class="dot ${it.points===v?'active':''}" data-aid="${a.id}" data-iid="${it.id}" data-v="${v}">${v}</span>`;
+    return `
+      <div class="item" data-aid="${a.id}" data-iid="${it.id}">
+        <div class="item__row">
+          <div class="item__title">${it.title}</div>
+          <div class="points">
+            ${circle(0)} ${circle(1)} ${circle(3)} ${circle(5)}
+          </div>
+          <div class="item__meta">
+            <input type="text" name="responsible" placeholder="Responsabile" value="${it.responsible||''}" />
+            <input type="date"  name="due" value="${it.due||''}" />
+          </div>
+          <div class="item__meta" style="width:100%">
+            <input type="text" name="note" style="width:100%" placeholder="Note…" value="${it.note||''}" />
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
-/* KPI & Late */
-function overallStats(list){
-  const secs=ui.sector==='ALL'?['Rettifica','Montaggio']:[ui.sector];
-  let sum=0,max=0,late=0;
-  (list||filteredAreas()).forEach(a=>{
-    secs.forEach(sec=>['1S','2S','3S','4S','5S'].forEach(S=>(a.sectors[sec][S]||[]).forEach(it=>{
-      sum+=(+it.p||0); max+=5; if(isOverdue(it.due)) late++;
-    })));
-  });
-  return {score:max?sum/max:0,late};
-}
-function updateDashboard(list){
-  const {score,late}=overallStats(list);
-  elKpiAreas.textContent=(list||filteredAreas()).length;
-  elKpiScore.textContent=pct(score);
-  elKpiLate.textContent=late;
-  renderLateList(list);
-}
-function renderLateList(list){
-  const host=$('#lateList'); host.innerHTML='';
-  highlightKeys.clear();
-  const secs=ui.sector==='ALL'?['Rettifica','Montaggio']:[ui.sector];
-  const arr=[];
-  (list||filteredAreas()).forEach(a=>{
-    secs.forEach(sec=>['1S','2S','3S','4S','5S'].forEach(S=>(a.sectors[sec][S]||[]).forEach((it,idx)=>{
-      if(isOverdue(it.due)){
-        arr.push({line:a.line||'—',sector:sec,S,idx,title:it.t||'(senza titolo)',due:it.due});
-        highlightKeys.add(`${a.line||'—'}|${S}`);
-      }
-    })));
-  });
-  if(!arr.length){host.style.display='none';drawChart();return;}
-  host.style.display='flex';
-  arr.forEach(x=>{
-    const b=document.createElement('button');
-    b.className='late-chip';
-    b.innerHTML=`<span class="meta">${x.line} · ${x.sector} · ${x.S}</span> — ${x.title} · scad. ${x.due}`;
-    b.addEventListener('click',()=>{focusLate(x); drawChart();});
-    host.appendChild(b);
-  });
-  drawChart();
-}
-function focusLate(x){
-  const card=[...document.querySelectorAll('.area')].find(a=>a.querySelector('.area-line')?.value.trim()===(x.line||'').trim());
-  if(!card) return;
-  card.classList.remove('collapsed');
-  const secBtn=[...card.querySelectorAll('.tab.sec')].find(b=>b.dataset.sector===x.sector); secBtn?.click();
-  const sBtn=[...card.querySelectorAll('.tab.s')].find(b=>b.dataset.s===x.S); sBtn?.click();
-  card.scrollIntoView({behavior:'smooth',block:'start'});
-  const panel=card.querySelector(`.panel[data-s="${x.S}"]`);
-  const item=panel?.querySelectorAll('.item')[x.idx];
-  if(item){
-    item.classList.add('highlight');
-    item.classList.remove('flash'); void item.offsetWidth; item.classList.add('flash');
-  }
-  highlightKeys.add(`${x.line||'—'}|${x.S}`);
+function renderSBadges(a){
+  const st = areaStats(a);
+  const mk = (s, c) => `<span class="badge s${s} ${st.predom.s===s?'active':''}"> ${s}S <b>${st.byS[s]}%</b></span>`;
+  return `<div class="pills">${mk(1,COLORS.s1)}${mk(2,COLORS.s2)}${mk(3,COLORS.s3)}${mk(4,COLORS.s4)}${mk(5,COLORS.s5)}</div>`;
 }
 
-/* CHART */
-function drawChart(list){
-  const canvas=$('#chartAreas');
-  const scroller=canvas?.closest('.chart-scroll');
-  const wrap=canvas?.closest('.chart-inner');
-  if(!canvas||!wrap) return;
+// ------------------ Eventi globali ------------------
+document.getElementById('btnNew').addEventListener('click', ()=>{
+  const n = nextName();
+  state.lines.push(mkArea(n));
+  save(); renderAll();
+});
+function nextName(){
+  // CH progressivo
+  let i=2;
+  while (state.lines.some(a=>a.name==='CH '+i)) i++;
+  return 'CH '+i;
+}
 
-  $('#toggleStacked').checked=!!chartPref.stacked;
-
-  const DPR=window.devicePixelRatio||1, Hcss=260;
-  const areas=(list||filteredAreas());
-  const css=getComputedStyle(document.documentElement);
-  const GRID=css.getPropertyValue('--outline')||'#d0d7e1';
-  const TXT=css.getPropertyValue('--text')||'#003366';
-  const C1=css.getPropertyValue('--c1').trim(),
-        C2=css.getPropertyValue('--c2').trim(),
-        C3=css.getPropertyValue('--c3').trim(),
-        C4=css.getPropertyValue('--c4').trim(),
-        C5=css.getPropertyValue('--c5').trim();
-  const secs=ui.sector==='ALL'?['Rettifica','Montaggio']:[ui.sector];
-
-  const rows=areas.map(a=>{
-    let perS={"1S":{s:0,m:0},"2S":{s:0,m:0},"3S":{s:0,m:0},"4S":{s:0,m:0},"5S":{s:0,m:0}}, t={s:0,m:0};
-    secs.forEach(sec=>['1S','2S','3S','4S','5S'].forEach(S=>(a.sectors[sec][S]||[]).forEach(it=>{
-      perS[S].s+=(+it.p||0); perS[S].m+=5; t.s+=(+it.p||0); t.m+=5;
-    })));
-    const byS={}; Object.keys(perS).forEach(S=>byS[S]=perS[S].m?perS[S].s/perS[S].m:0);
-    return {line:a.line||'—',byS,tot:t.m?t.s/t.m:0};
-  }).sort((a,b)=>a.line.localeCompare(b.line,'it',{numeric:true}));
-
-  const padL=56,padR=16,padT=12,padB=62; // un filo più basso
-  const bwBase=14,innerBase=4,gapBase=18;
-  const z=chartPref.zoom||1;
-  const bw=Math.max(8,bwBase*z),
-        inner=Math.max(3,innerBase*z),
-        gap=Math.max(12,gapBase*z);
-  const plotH=Hcss-padT-padB;
-
-  let totalW;
-  if(chartPref.stacked){
-    totalW=padL+padR+rows.length*bw+Math.max(0,(rows.length-1))*gap;
-  }else{
-    const MET=6;
-    const groupW=MET*bw+(MET-1)*inner;
-    totalW=padL+padR+rows.length*groupW+Math.max(0,(rows.length-1))*gap;
-  }
-
-  canvas.style.width=totalW+'px';
-  canvas.style.height=Hcss+'px';
-  canvas.width=Math.round(totalW*DPR);
-  canvas.height=Math.round(Hcss*DPR);
-  const ctx=canvas.getContext('2d');
-  ctx.setTransform(DPR,0,0,DPR,0,0);
-  ctx.clearRect(0,0,totalW,Hcss);
-
-  const plotW=totalW-padL-padR;
-  ctx.strokeStyle=GRID; ctx.font='12px system-ui'; ctx.fillStyle=TXT;
-  ctx.beginPath(); ctx.moveTo(padL,padT); ctx.lineTo(padL,padT+plotH); ctx.lineTo(padL+plotW,padT+plotH); ctx.stroke();
-  for(let i=0;i<=4;i++){
-    const y=padT+plotH-(i*0.25)*plotH;
-    ctx.fillText((i*25)+'%',8,y+4);
-    ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(padL+plotW,y); ctx.stroke();
-  }
-
-  const COLORS={'1S':C1,'2S':C2,'3S':C3,'4S':C4,'5S':C5,tot:'#9bb0d6'};
-  let x=padL;
-
-  const drawOutline=(xx,yy,ww,hh,key)=>{
-    if(!highlightKeys.has(key)) return;
-    ctx.save();
-    ctx.lineWidth=3;
-    ctx.strokeStyle='#ffb400';
-    ctx.shadowColor='rgba(255,180,0,.5)';
-    ctx.shadowBlur=8;
-    ctx.strokeRect(xx-1,yy-1,ww+2,hh+2);
-    ctx.restore();
+document.getElementById('btnExport').addEventListener('click', ()=>{
+  const blob = new Blob([JSON.stringify(state)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'SKF-5S-data.json';
+  a.click();
+});
+document.getElementById('btnImport').addEventListener('click', ()=>{
+  const i = document.createElement('input'); i.type='file'; i.accept='application/json';
+  i.onchange = () => {
+    const f = i.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = e => { state = JSON.parse(e.target.result); save(); renderAll(); };
+    r.readAsText(f);
   };
+  i.click();
+});
+document.getElementById('btnPrint').addEventListener('click', ()=>window.print());
+document.getElementById('btnTheme').addEventListener('click', ()=>{
+  // semplice toggle CSS prefers-color-scheme già gestito; qui potresti aggiungere classe
+  document.documentElement.classList.toggle('force-dark');
+  renderDashboard();
+});
 
-  if(chartPref.stacked){
-    rows.forEach(g=>{
-      const keys=['1S','2S','3S','4S','5S'];
-      let yTop=padT+plotH;
-      keys.forEach(k=>{
-        const v=g.byS[k]||0, h=v*plotH, y=yTop-h;
-        ctx.fillStyle=COLORS[k]; ctx.fillRect(x,y,bw,h);
+document.getElementById('btnClear').addEventListener('click', ()=>{
+  elSearch.value=''; elSelLinea.value='all'; elChkLate.checked=false;
+  document.querySelectorAll('.filter-chips .chip').forEach(c=>c.classList.toggle('active', c.dataset.sector==='all'));
+  renderAll();
+});
 
-        if(v>0){
-          const label=Math.round(v*100)+'%';
-          ctx.fillStyle='#fff'; ctx.textAlign='center'; // S sempre bianca
-          const inside = h>=18;
-          const yText = inside ? Math.max(padT+12, y+12) : Math.max(padT+12, y-2);
-          ctx.fillText(label, x+bw/2, yText);
-        }
+document.querySelectorAll('.filter-chips .chip').forEach(c=>c.addEventListener('click', ()=>{
+  document.querySelectorAll('.filter-chips .chip').forEach(x=>x.classList.remove('active'));
+  c.classList.add('active'); renderDashboard(); renderAreaCards();
+}));
 
-        // sigla S sempre bianca
-        if(h>22){
-          ctx.fillStyle='#fff'; ctx.textAlign='center';
-          ctx.fillText(k, x+bw/2, y+26);
-        }
+elSearch.addEventListener('input', ()=>{ renderDashboard(); renderAreaCards(); });
+elSelLinea.addEventListener('change', ()=>{ renderDashboard(); renderAreaCards(); });
+elChkLate.addEventListener('change', ()=>{ renderDashboard(); renderAreaCards(); });
+elChkStacked.addEventListener('change', ()=>{ renderDashboard(); });
 
-        drawOutline(x,y,bw,h,`${g.line}|${k}`);
-        yTop=y;
-      });
-      ctx.save(); ctx.fillStyle=TXT; ctx.textAlign='center';
-      ctx.font='600 13px system-ui';
-      ctx.translate(x+bw/2,padT+plotH+34);
-      ctx.rotate(-Math.PI/12); ctx.fillText(g.line,0,0); ctx.restore();
-      x+=bw+gap;
-    });
-  }else{
-    const MET=["tot","1S","2S","3S","4S","5S"];
-    const groupW=MET.length*bw+(MET.length-1)*inner;
-    rows.forEach(g=>{
-      let bx=x;
-      MET.forEach(m=>{
-        const v=(m==='tot'?g.tot:g.byS[m])||0, h=v*plotH, y=padT+plotH-h;
-        ctx.fillStyle=COLORS[m]; ctx.fillRect(bx,y,bw,h);
-
-        // percentuale: bianca se dentro, scura fuori
-        const inside=h>=18;
-        ctx.fillStyle= inside ? '#fff' : TXT;
-        ctx.textAlign='center';
-        const yPct = inside ? y+12 : Math.max(padT+12, y-4);
-        ctx.fillText(Math.round(v*100)+'%',bx+bw/2,yPct);
-
-        // sigla S: bianca dentro, scura fuori
-        if(m!=='tot'){
-          ctx.fillStyle= inside ? '#fff' : TXT;
-          ctx.fillText(m, bx+bw/2, inside ? y+26 : Math.max(padT+12, y-18));
-        }else{
-          // label Tot
-          ctx.fillStyle= inside ? '#fff' : TXT;
-          ctx.fillText('Tot', bx+bw/2, inside ? y+26 : Math.max(padT+12, y-18));
-        }
-
-        drawOutline(bx,y,bw,h, m==='tot' ? `${g.line}|tot` : `${g.line}|${m}`);
-        bx+=bw+inner;
-      });
-      ctx.save(); ctx.fillStyle=TXT; ctx.textAlign='center';
-      ctx.font='600 13px system-ui';
-      ctx.translate(x+groupW/2,padT+plotH+34);
-      ctx.rotate(-Math.PI/12); ctx.fillText(g.line,0,0); ctx.restore();
-      x+=groupW+gap;
-    });
-  }
-
-  if(scroller){
-    if(typeof chartPref.scroll==='number') scroller.scrollLeft=chartPref.scroll;
-    scroller.addEventListener('scroll',()=>{chartPref.scroll=scroller.scrollLeft; saveChartPref();},{passive:true});
-  }
+document.getElementById('btnZoomIn').addEventListener('click', ()=> zoom(1.1));
+document.getElementById('btnZoomOut').addEventListener('click', ()=> zoom(0.9));
+function zoom(mul){
+  const c = document.getElementById('chartAreas');
+  const h = c.height || 220;
+  c.height = Math.max(160, Math.min(460, h*mul));
+  chart?.resize();
 }
 
-/* line buttons */
-function buildLineButtons(list){
-  const host=$('#areasList'); host.innerHTML='';
-  const bAll=document.createElement('button'); bAll.className='line-btn'+(ui.line==='ALL'?' active':''); bAll.textContent='Tutte';
-  bAll.addEventListener('click',()=>{ui.line='ALL'; elLineFilter.value='ALL'; render(); window.scrollTo({top:host.offsetTop,behavior:'smooth'});});
-  host.appendChild(bAll);
-  (list||filteredAreas()).forEach(a=>{
-    const b=document.createElement('button'); b.className='line-btn'+(ui.line===(a.line||'')?' active':''); b.textContent=a.line||'—';
-    b.addEventListener('click',()=>{ui.line=a.line||''; elLineFilter.value=ui.line; render(); setTimeout(()=>{const card=[...document.querySelectorAll('.area')].find(x=>x.querySelector('.area-line')?.value.trim()===(a.line||'').trim()); card?.scrollIntoView({behavior:'smooth',block:'start'});},0);});
-    host.appendChild(b);
-  });
-}
-
-window.addEventListener('orientationchange',()=>setTimeout(()=>drawChart(),250));
-window.addEventListener('resize',()=>drawChart());
-window.addEventListener('load',()=>requestAnimationFrame(()=>drawChart()));
-
-render();
+document.getElementById('btnCollapseAll').addEventListener('click', ()=>{
+  state.lines.forEach(a=>a.collapsed=true); save(); renderAreaCards();
+});
+document.getElementById('btnExpandAll').addEventListener('click', ()=>{
+  state.lines.forEach(a=>a.collapsed=false); save(); renderAreaCards();
+});
