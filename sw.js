@@ -1,10 +1,10 @@
-/* SKF 5S – Service Worker (v7.10) */
-const CACHE = 'skf5s-cache-v7.10';
+/* SKF 5S – Service Worker (v7.11) */
+const CACHE = 'skf5s-cache-v7.11';
 const ASSETS = [
   './',
   './index.html',
-  './style.css?v=7.10',
-  './app.js?v=7.10',
+  './style.css?v=7.11',
+  './app.js?v=7.11',
   './assets/5s-hero.png',
   './assets/skf-logo.png',
   './assets/skf-192.png',
