@@ -1,13 +1,14 @@
-/* ===================== SKF 5S – app.js (v7.15.2) =========================
-   Fix: rimosso doppio 'const scroller' in drawChart() che rompeva tutto.
-   Restyling etichette S e CH rimane come nella 7.15.1.
+/* ===================== SKF 5S – app.js (v7.15.3) =========================
+   - Realtime update badge 1S..5S quando si cliccano i pallini 0/1/3/5
+   - Etichette S nel grafico sempre bianche, percentuali con contrasto
+   - CH spostato più in basso
 =========================================================================== */
-const VERSION='v7.15.2';
+const VERSION='v7.15.3';
 const STORE='skf.5s.v7.10.3';
 const CHART_STORE=STORE+'.chart';
 const POINTS=[0,1,3,5];
 
-/* --- Voci di esempio --- */
+/* --- voci (come in tua base) --- */
 const VOC_1S=[{t:"Zona pedonale pavimento",d:"Area pedonale libera da ostacoli e pericoli di inciampo"},
 {t:"Zona di lavoro (pavimento, macchina)",d:"Solo il necessario per l’ordine in corso"},
 {t:"Materiali",d:"Materiale non necessario rimosso/segregato"},
@@ -45,21 +46,12 @@ const VOC_4S=[{t:"Aree di passaggio",d:"Nessun deposito/ostacolo; pavimento libe
 const VOC_5S=[{t:"Ognuno & ogni giorno",d:"Tutti formati e coinvolti sugli standard"},
 {t:"Miglioramento continuo",d:"Evidenza prima/dopo; standard aggiornati"}];
 
-/* ---------------- Utils ---------------- */
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const todayISO=()=>new Date().toISOString().slice(0,10);
 const isOverdue=d=>d && new Date(d+'T23:59:59')<new Date();
 const pct=n=>Math.round((n||0)*100)+'%';
-const nextCH=()=>{
-  const nums=(state.areas||[]).map(a=>((a.line||'').match(/^CH\s*(\d+)/i)||[])[1]).filter(Boolean).map(n=>+n).sort((a,b)=>a-b);
-  const last=nums.length?nums[nums.length-1]:1; return `CH ${last+1}`;
-};
-const hex2rgb=h=>{const s=h.replace('#','');return {r:parseInt(s.substr(0,2),16),g:parseInt(s.substr(2,2),16),b:parseInt(s.substr(4,2),16)};}
-const luminance=c=>0.2126*c.r+0.7152*c.g+0.0722*c.b;
-const textOnBg=(hex,txt)=> (0.2126*hex2rgb(hex).r+0.7152*hex2rgb(hex).g+0.0722*hex2rgb(hex).b)>150 ? txt : '#ffffff';
 
-/* --------- State helpers ---------- */
 function makeS(v){return {"1S":v[0].map(c=>({...c,p:0,resp:"",due:"",note:""})),"2S":v[1].map(c=>({...c,p:0,resp:"",due:"",note:""})),"3S":v[2].map(c=>({...c,p:0,resp:"",due:"",note:""})),"4S":v[3].map(c=>({...c,p:0,resp:"",due:"",note:""})),"5S":v[4].map(c=>({...c,p:0,resp:"",due:"",note:""}))};}
 function makeSectorSet(){return makeS([VOC_1S,VOC_2S,VOC_3S,VOC_4S,VOC_5S]);}
 function makeArea(line){return{line,sectors:{Rettifica:makeSectorSet(),Montaggio:makeSectorSet()}};}
@@ -67,23 +59,22 @@ function load(){try{const raw=localStorage.getItem(STORE);return raw?JSON.parse(
 function save(){localStorage.setItem(STORE,JSON.stringify(state))}
 function loadChartPref(){try{return JSON.parse(localStorage.getItem(CHART_STORE))||{zoom:1,stacked:false,scroll:0}}catch{return{zoom:1,stacked:false,scroll:0}}}
 function saveChartPref(){localStorage.setItem(CHART_STORE,JSON.stringify(chartPref))}
+const nextCH=()=>{
+  const nums=(state.areas||[]).map(a=>((a.line||'').match(/^CH\s*(\d+)/i)||[])[1]).filter(Boolean).map(n=>+n).sort((a,b)=>a-b);
+  const last=nums.length?nums[nums.length-1]:1; return `CH ${last+1}`;
+};
 
-/* -------- State -------- */
 let state=load(); if(!state.areas?.length){state.areas=[makeArea('CH 2')]; save();}
 let ui={q:'',line:'ALL',sector:'ALL',onlyLate:false};
 let chartPref=loadChartPref();
-
-/* Evidenze ritardi da mostrare nel grafico */
 const highlightKeys=new Set();
 
-/* DOM */
 const elAreas=$('#areas'), elLineFilter=$('#lineFilter'), elQ=$('#q'), elOnlyLate=$('#onlyLate');
 const tplArea=$('#tplArea'), tplItem=$('#tplItem');
 const elKpiAreas=$('#kpiAreas'), elKpiScore=$('#kpiScore'), elKpiLate=$('#kpiLate');
 const sectorSelect=$('#sectorFilter');
-
-/* Tema */
 const btnTheme=$('#btnTheme');
+
 if(localStorage.getItem('theme')==='dark') document.documentElement.classList.add('dark');
 btnTheme?.addEventListener('click',()=>{
   const root=document.documentElement;
@@ -91,12 +82,10 @@ btnTheme?.addEventListener('click',()=>{
   localStorage.setItem('theme',root.classList.contains('dark')?'dark':'light');
 });
 
-/* Toolbar */
 $('#btnNewArea')?.addEventListener('click',()=>{
   const proposal=nextCH();
   const line=(prompt('Nuova linea? (es. CH 3)',proposal)||proposal).trim();
-  if(!line) return;
-  state.areas.push(makeArea(line)); save(); render();
+  if(!line) return; state.areas.push(makeArea(line)); save(); render();
 });
 $('#btnExport')?.addEventListener('click',()=>{
   const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
@@ -113,7 +102,6 @@ function setSegBtn(sel){['#btnAll','#btnFgr','#btnAsm'].forEach(s=>$(s)?.classLi
 $('#btnAll')?.addEventListener('click',()=>{ui.sector='ALL'; setSegBtn('#btnAll'); sectorSelect.value='ALL'; render();});
 $('#btnFgr')?.addEventListener('click',()=>{ui.sector='Rettifica'; setSegBtn('#btnFgr'); sectorSelect.value='Rettifica'; render();});
 $('#btnAsm')?.addEventListener('click',()=>{ui.sector='Montaggio'; setSegBtn('#btnAsm'); sectorSelect.value='Montaggio'; render();});
-
 sectorSelect?.addEventListener('change',()=>{
   ui.sector=sectorSelect.value;
   if(ui.sector==='ALL') setSegBtn('#btnAll');
@@ -137,23 +125,6 @@ $('#toggleStacked')?.addEventListener('change',e=>{chartPref.stacked=e.target.ch
 $('#btnCollapseAll')?.addEventListener('click',()=>{$$('.area').forEach(a=>a.classList.add('collapsed'));});
 $('#btnExpandAll')?.addEventListener('click',()=>{$$('.area').forEach(a=>a.classList.remove('collapsed'));});
 
-/* Render */
-function render(){
-  $('#appVersion')?.replaceChildren(VERSION);
-  refreshLineFilter();
-
-  sectorSelect.value=ui.sector;
-  if(ui.sector==='ALL') setSegBtn('#btnAll');
-  if(ui.sector==='Rettifica') setSegBtn('#btnFgr');
-  if(ui.sector==='Montaggio') setSegBtn('#btnAsm');
-
-  const list=filteredAreas();
-  elAreas.innerHTML='';
-  list.forEach(a=>elAreas.appendChild(renderArea(a)));
-  updateDashboard(list);
-  drawChart(list);
-  buildLineButtons(list);
-}
 function refreshLineFilter(){
   const lines=Array.from(new Set(state.areas.map(a=>(a.line||'').trim()).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'it',{numeric:true}));
   elLineFilter.innerHTML=`<option value="ALL">Linea: Tutte</option>` + lines.map(l=>`<option value="${l}">${l}</option>`).join('');
@@ -187,7 +158,24 @@ function computeByS(area,sector){
   return {byS, total:max?sum/max:0, dom:{S:domKey, v:byS[domKey]||0}};
 }
 
-/* Render area */
+function render(){
+  $('#appVersion').textContent=VERSION;
+  $('#appVersionFoot').textContent=VERSION;
+  refreshLineFilter();
+
+  sectorSelect.value=ui.sector;
+  if(ui.sector==='ALL') setSegBtn('#btnAll');
+  if(ui.sector==='Rettifica') setSegBtn('#btnFgr');
+  if(ui.sector==='Montaggio') setSegBtn('#btnAsm');
+
+  const list=filteredAreas();
+  elAreas.innerHTML='';
+  list.forEach(a=>elAreas.appendChild(renderArea(a)));
+  updateDashboard(list);
+  drawChart(list);
+  buildLineButtons(list);
+}
+
 function renderArea(area){
   const node=$('#tplArea').content.firstElementChild.cloneNode(true);
   const line=$('.area-line',node), scoreEl=$('.score-val',node), domEl=$('.doms',node);
@@ -222,12 +210,7 @@ function renderArea(area){
     state.areas.splice(state.areas.indexOf(area),1); save(); render();
   });
 
-  function refill(){
-    panels.forEach(p=>{
-      const S=p.dataset.s; p.innerHTML='';
-      (area.sectors[curSector][S]||[]).forEach((it,i)=> p.appendChild(renderItem(area,curSector,S,i,it,updateScore)));
-      p.classList.toggle('active',S===curS);
-    });
+  function paintBadges(){
     const {byS}=computeByS(area,curSector);
     $('.score-1S',node).textContent=pct(byS['1S']);
     $('.score-2S',node).textContent=pct(byS['2S']);
@@ -235,10 +218,21 @@ function renderArea(area){
     $('.score-4S',node).textContent=pct(byS['4S']);
     $('.score-5S',node).textContent=pct(byS['5S']);
   }
+
+  function refill(){
+    panels.forEach(p=>{
+      const S=p.dataset.s; p.innerHTML='';
+      (area.sectors[curSector][S]||[]).forEach((it,i)=> p.appendChild(renderItem(area,curSector,S,i,it,()=>{updateScore();})));
+      p.classList.toggle('active',S===curS);
+    });
+    paintBadges();
+  }
+
   function updateScore(){
     const {total,dom}=computeByS(area,curSector);
     scoreEl.textContent=pct(total);
     domEl.dataset.s=dom.S; domEl.textContent=`${dom.S} ${pct(dom.v)}`;
+    paintBadges();
     save(); updateDashboard(); drawChart(); buildLineButtons();
   }
 
@@ -246,7 +240,6 @@ function renderArea(area){
   return node;
 }
 
-/* Render item */
 function renderItem(area,sector,S,idx,it,onChange){
   const frag=document.createDocumentFragment();
   const node=$('#tplItem').content.firstElementChild.cloneNode(true);
@@ -257,7 +250,6 @@ function renderItem(area,sector,S,idx,it,onChange){
 
   txt.value=it.t||''; resp.value=it.resp||''; due.value=it.due||''; note.value=it.note||'';
   desc.innerHTML=`<b>${it.t||''}</b><br>${it.d||''}`;
-
   const syncDots=()=>{ dots.forEach(d=> d.classList.toggle('active', +d.dataset.val === (+it.p||0))); };
   syncDots(); node.classList.toggle('late',isOverdue(it.due));
 
@@ -271,13 +263,10 @@ function renderItem(area,sector,S,idx,it,onChange){
   $('.info',node).addEventListener('click',()=>{const v=desc.style.display!=='block'; desc.style.display=v?'block':'none';});
   $('.del',node).addEventListener('click',()=>{ const arr=area.sectors[sector][S]; arr.splice(idx,1); save(); render(); });
 
-  node.addEventListener('click',e=>{ if(e.target.classList.contains('dot')) node.classList.remove('highlight'); });
-  $('.info',node).addEventListener('click',()=> node.classList.remove('highlight'));
-
   frag.appendChild(node); frag.appendChild(desc); return frag;
 }
 
-/* KPI / Late */
+/* KPI & Late */
 function overallStats(list){
   const secs=ui.sector==='ALL'?['Rettifica','Montaggio']:[ui.sector];
   let sum=0,max=0,late=0;
@@ -335,11 +324,11 @@ function focusLate(x){
   highlightKeys.add(`${x.line||'—'}|${x.S}`);
 }
 
-/* ----------------- CHART ---------------- */
+/* CHART */
 function drawChart(list){
   const canvas=$('#chartAreas');
+  const scroller=canvas?.closest('.chart-scroll');
   const wrap=canvas?.closest('.chart-inner');
-  const scroller=canvas?.closest('.chart-scroll'); // <— unica dichiarazione!
   if(!canvas||!wrap) return;
 
   $('#toggleStacked').checked=!!chartPref.stacked;
@@ -365,7 +354,7 @@ function drawChart(list){
     return {line:a.line||'—',byS,tot:t.m?t.s/t.m:0};
   }).sort((a,b)=>a.line.localeCompare(b.line,'it',{numeric:true}));
 
-  const padL=56,padR=16,padT=12,padB=56;
+  const padL=56,padR=16,padT=12,padB=62; // un filo più basso
   const bwBase=14,innerBase=4,gapBase=18;
   const z=chartPref.zoom||1;
   const bw=Math.max(8,bwBase*z),
@@ -415,29 +404,32 @@ function drawChart(list){
 
   if(chartPref.stacked){
     rows.forEach(g=>{
-      const stackKey=['1S','2S','3S','4S','5S'];
-      const stack=stackKey.map(k=>g.byS[k]||0);
+      const keys=['1S','2S','3S','4S','5S'];
       let yTop=padT+plotH;
-      stack.forEach((v,i)=>{
-        const key=stackKey[i];
-        const h=v*plotH; const y=yTop-h;
-        ctx.fillStyle=COLORS[key]; ctx.fillRect(x,y,bw,h);
+      keys.forEach(k=>{
+        const v=g.byS[k]||0, h=v*plotH, y=yTop-h;
+        ctx.fillStyle=COLORS[k]; ctx.fillRect(x,y,bw,h);
 
         if(v>0){
           const label=Math.round(v*100)+'%';
-          const txtColor=textOnBg(COLORS[key],TXT);
-          ctx.fillStyle=txtColor; ctx.textAlign='center';
+          ctx.fillStyle='#fff'; ctx.textAlign='center'; // S sempre bianca
           const inside = h>=18;
           const yText = inside ? Math.max(padT+12, y+12) : Math.max(padT+12, y-2);
           ctx.fillText(label, x+bw/2, yText);
         }
 
-        drawOutline(x,y,bw,h,`${g.line}|${key}`);
+        // sigla S sempre bianca
+        if(h>22){
+          ctx.fillStyle='#fff'; ctx.textAlign='center';
+          ctx.fillText(k, x+bw/2, y+26);
+        }
+
+        drawOutline(x,y,bw,h,`${g.line}|${k}`);
         yTop=y;
       });
       ctx.save(); ctx.fillStyle=TXT; ctx.textAlign='center';
       ctx.font='600 13px system-ui';
-      ctx.translate(x+bw/2,padT+plotH+30);
+      ctx.translate(x+bw/2,padT+plotH+34);
       ctx.rotate(-Math.PI/12); ctx.fillText(g.line,0,0); ctx.restore();
       x+=bw+gap;
     });
@@ -450,18 +442,21 @@ function drawChart(list){
         const v=(m==='tot'?g.tot:g.byS[m])||0, h=v*plotH, y=padT+plotH-h;
         ctx.fillStyle=COLORS[m]; ctx.fillRect(bx,y,bw,h);
 
-        ctx.fillStyle=TXT; ctx.textAlign='center';
-        const yPct = h>18 ? y-4 : padT+plotH-4;
+        // percentuale: bianca se dentro, scura fuori
+        const inside=h>=18;
+        ctx.fillStyle= inside ? '#fff' : TXT;
+        ctx.textAlign='center';
+        const yPct = inside ? y+12 : Math.max(padT+12, y-4);
         ctx.fillText(Math.round(v*100)+'%',bx+bw/2,yPct);
 
-        const inside = h>=20;
-        const sTxt = m==='tot' ? 'Tot' : m;
-        if(inside){
-          ctx.fillStyle = textOnBg(COLORS[m],TXT);
-          ctx.fillText(sTxt, bx+bw/2, y+14);
+        // sigla S: bianca dentro, scura fuori
+        if(m!=='tot'){
+          ctx.fillStyle= inside ? '#fff' : TXT;
+          ctx.fillText(m, bx+bw/2, inside ? y+26 : Math.max(padT+12, y-18));
         }else{
-          ctx.fillStyle = TXT;
-          ctx.fillText(sTxt, bx+bw/2, Math.max(padT+12, y-6));
+          // label Tot
+          ctx.fillStyle= inside ? '#fff' : TXT;
+          ctx.fillText('Tot', bx+bw/2, inside ? y+26 : Math.max(padT+12, y-18));
         }
 
         drawOutline(bx,y,bw,h, m==='tot' ? `${g.line}|tot` : `${g.line}|${m}`);
@@ -469,7 +464,7 @@ function drawChart(list){
       });
       ctx.save(); ctx.fillStyle=TXT; ctx.textAlign='center';
       ctx.font='600 13px system-ui';
-      ctx.translate(x+groupW/2,padT+plotH+30);
+      ctx.translate(x+groupW/2,padT+plotH+34);
       ctx.rotate(-Math.PI/12); ctx.fillText(g.line,0,0); ctx.restore();
       x+=groupW+gap;
     });
@@ -481,7 +476,7 @@ function drawChart(list){
   }
 }
 
-/* Line buttons */
+/* line buttons */
 function buildLineButtons(list){
   const host=$('#areasList'); host.innerHTML='';
   const bAll=document.createElement('button'); bAll.className='line-btn'+(ui.line==='ALL'?' active':''); bAll.textContent='Tutte';
@@ -494,10 +489,8 @@ function buildLineButtons(list){
   });
 }
 
-/* Events */
 window.addEventListener('orientationchange',()=>setTimeout(()=>drawChart(),250));
 window.addEventListener('resize',()=>drawChart());
 window.addEventListener('load',()=>requestAnimationFrame(()=>drawChart()));
 
-/* Go */
 render();
