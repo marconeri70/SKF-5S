@@ -1,86 +1,67 @@
-/* ===================== SKF 5S – app.js (v7.13.0) =========================
-   - Filtro rifinito (etichette, select settore su mobile, pill desktop)
-   - Nuova linea: propone CH <numero libero>
-   - Evidenza persistente sull’item richiamato dalle “Azioni in ritardo”
-   - KPI/grafico/score realtime, comprimi/espandi globali, nav linee
+/* ===================== SKF 5S – app.js (v7.14.0) =========================
+   Novità v7.14.0:
+   - Etichette percentuali su ogni colore in grafico Stacked (contrasto auto)
 =========================================================================== */
-const VERSION='v7.13.0';
+const VERSION='v7.14.0';
 const STORE='skf.5s.v7.10.3';
 const CHART_STORE=STORE+'.chart';
 const POINTS=[0,1,3,5];
 
-/* ---------- Checklist base (ridotte, sostituibili con import Excel) ------ */
-const VOC_1S=[
-  {t:"Zona pedonale pavimento",d:"Area pedonale libera da ostacoli e pericoli di inciampo"},
-  {t:"Zona di lavoro (pavimento, macchina)",d:"Solo il necessario per l’ordine in corso"},
-  {t:"Materiali",d:"Materiale non necessario rimosso/segregato"},
-  {t:"Informazioni",d:"Documenti necessari e in buono stato"},
-  {t:"Processo di etichettatura",d:"Gestione etichette rosse / scarti definita"},
-  {t:"Piano per sostenere il risultato",d:"Lavagna 5S, foto prima/dopo, azioni, punteggi, SPL"}
-];
-const VOC_2S=[
-  {t:"1-S Stato",d:"Team e area definiti, 1S mantenuta"},
-  {t:"Sicurezza",d:"Dispositivi/attrezzature identificati e accessibili"},
-  {t:"Qualità",d:"Postazioni qualità ordinate e chiare"},
-  {t:"Documenti",d:"Documenti al punto d’uso e aggiornati"},
-  {t:"Concetti",d:"Ergonomia, punto d’uso, zero sprechi/confusione"},
-  {t:"Posizioni prefissate",d:"Sagome/posti fissi: facile capire cosa manca"},
-  {t:"Visual Management di base",d:"Linee/etichette/colori minimi attivi"}
-];
-const VOC_3S=[
-  {t:"1-S Stato",d:"1S mantenuta"},
-  {t:"2-S Stato",d:"2S mantenuta"},
-  {t:"Pulizia",d:"Aree e macchine pulite (anche punti difficili)"},
-  {t:"Misure preventive",d:"Cause di sporco/perdite rimosse alla radice"},
-  {t:"Pulire è routine",d:"Routine con responsabilità e frequenze"},
-  {t:"Standard di pulizia",d:"Standard e checklist visibili e seguiti"}
-];
-const VOC_4S=[
-  {t:"Aree di passaggio",d:"Nessun deposito/ostacolo; pavimento libero"},
-  {t:"Area di lavoro",d:"Solo il necessario per l’ordine corrente"},
-  {t:"Materiali",d:"Materiali corretti e identificati"},
-  {t:"Informazione",d:"Info necessarie e in buono stato"},
-  {t:"Visual Management",d:"Indicatori visivi efficaci in routine"},
-  {t:"Posizioni prefissate",d:"Prelievo/rimessa facili e immediati"},
-  {t:"Standard lavoro & check",d:"SPL/istruzioni/checklist visibili e usate"},
-  {t:"Etichette e colori",d:"Etichette chiare, codici colore coerenti"},
-  {t:"Marcature tubi/valvole",d:"Tubi/valvole marcati (colori standard)"},
-  {t:"Segnaletica a terra",d:"Linee/campiture presenti e mantenute"},
-  {t:"Punti di ispezione",d:"Chiari i punti e cosa controllare"},
-  {t:"Single Point Lessons",d:"SPL aggiornate e usate"},
-  {t:"Standard & documentazione",d:"Documentazione aggiornata/disponibile"},
-  {t:"Kanban & scorte",d:"Consumabili in visual management (min/max)"},
-  {t:"Misure preventive",d:"Anomalie risolte alla radice"}
-];
-const VOC_5S=[
-  {t:"Ognuno & ogni giorno",d:"Tutti formati e coinvolti sugli standard"},
-  {t:"Miglioramento continuo",d:"Evidenza prima/dopo; standard aggiornati"}
-];
+/* --- Voci di esempio (puoi sostituire con import Excel) --- */
+const VOC_1S=[{t:"Zona pedonale pavimento",d:"Area pedonale libera da ostacoli e pericoli di inciampo"},
+{t:"Zona di lavoro (pavimento, macchina)",d:"Solo il necessario per l’ordine in corso"},
+{t:"Materiali",d:"Materiale non necessario rimosso/segregato"},
+{t:"Informazioni",d:"Documenti necessari e in buono stato"},
+{t:"Processo di etichettatura",d:"Gestione etichette rosse / scarti definita"},
+{t:"Piano per sostenere il risultato",d:"Lavagna 5S, foto prima/dopo, azioni, punteggi, SPL"}];
+const VOC_2S=[{t:"1-S Stato",d:"Team e area definiti, 1S mantenuta"},
+{t:"Sicurezza",d:"Dispositivi/attrezzature identificati e accessibili"},
+{t:"Qualità",d:"Postazioni qualità ordinate e chiare"},
+{t:"Documenti",d:"Documenti al punto d’uso e aggiornati"},
+{t:"Concetti",d:"Ergonomia, punto d’uso, zero sprechi/confusione"},
+{t:"Posizioni prefissate",d:"Sagome/posti fissi: facile capire cosa manca"},
+{t:"Visual Management di base",d:"Linee/etichette/colori minimi attivi"}];
+const VOC_3S=[{t:"1-S Stato",d:"1S mantenuta"},
+{t:"2-S Stato",d:"2S mantenuta"},
+{t:"Pulizia",d:"Aree e macchine pulite (anche punti difficili)"},
+{t:"Misure preventive",d:"Cause di sporco/perdite rimosse alla radice"},
+{t:"Pulire è routine",d:"Routine con responsabilità e frequenze"},
+{t:"Standard di pulizia",d:"Standard e checklist visibili e seguiti"}];
+const VOC_4S=[{t:"Aree di passaggio",d:"Nessun deposito/ostacolo; pavimento libero"},
+{t:"Area di lavoro",d:"Solo il necessario per l’ordine corrente"},
+{t:"Materiali",d:"Materiali corretti e identificati"},
+{t:"Informazione",d:"Info necessarie e in buono stato"},
+{t:"Visual Management",d:"Indicatori visivi efficaci in routine"},
+{t:"Posizioni prefissate",d:"Prelievo/rimessa facili e immediati"},
+{t:"Standard lavoro & check",d:"SPL/istruzioni/checklist visibili e usate"},
+{t:"Etichette e colori",d:"Etichette chiare, codici colore coerenti"},
+{t:"Marcature tubi/valvole",d:"Tubi/valvole marcati (colori standard)"},
+{t:"Segnaletica a terra",d:"Linee/campiture presenti e mantenute"},
+{t:"Punti di ispezione",d:"Chiari i punti e cosa controllare"},
+{t:"Single Point Lessons",d:"SPL aggiornate e usate"},
+{t:"Standard & documentazione",d:"Documentazione aggiornata/disponibile"},
+{t:"Kanban & scorte",d:"Consumabili in visual management (min/max)"},
+{t:"Misure preventive",d:"Anomalie risolte alla radice"}];
+const VOC_5S=[{t:"Ognuno & ogni giorno",d:"Tutti formati e coinvolti sugli standard"},
+{t:"Miglioramento continuo",d:"Evidenza prima/dopo; standard aggiornati"}];
 
-/* ------------------------------- Utils ----------------------------------- */
+/* ---------------- Utils ---------------- */
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const todayISO=()=>new Date().toISOString().slice(0,10);
 const isOverdue=d=>d && new Date(d+'T23:59:59')<new Date();
 const pct=n=>Math.round((n||0)*100)+'%';
 const nextCH=()=>{
-  const nums=(state.areas||[])
-    .map(a=>((a.line||'').match(/^CH\s*(\d+)/i)||[])[1])
-    .filter(Boolean).map(n=>+n).sort((a,b)=>a-b);
-  const last=nums.length?nums[nums.length-1]:1;
-  return `CH ${last+1}`;
+  const nums=(state.areas||[]).map(a=>((a.line||'').match(/^CH\s*(\d+)/i)||[])[1]).filter(Boolean).map(n=>+n).sort((a,b)=>a-b);
+  const last=nums.length?nums[nums.length-1]:1; return `CH ${last+1}`;
 };
+/* contrasto testo per barre */
+const hex2rgb=h=>{const s=h.replace('#','');return {r:parseInt(s.substr(0,2),16),g:parseInt(s.substr(2,2),16),b:parseInt(s.substr(4,2),16)};}
+const luminance=c=>0.2126*c.r+0.7152*c.g+0.0722*c.b;
+const textOnBg=(hex,txt)=> luminance(hex2rgb(hex))>150 ? txt : '#ffffff';
 
-/* ---------------------------- State helpers ------------------------------ */
-function makeS(v){
-  return {
-    "1S":v[0].map(c=>({...c,p:0,resp:"",due:"",note:""})),
-    "2S":v[1].map(c=>({...c,p:0,resp:"",due:"",note:""})),
-    "3S":v[2].map(c=>({...c,p:0,resp:"",due:"",note:""})),
-    "4S":v[3].map(c=>({...c,p:0,resp:"",due:"",note:""})),
-    "5S":v[4].map(c=>({...c,p:0,resp:"",due:"",note:""}))
-  };
-}
+/* --------- State helpers ---------- */
+function makeS(v){return {"1S":v[0].map(c=>({...c,p:0,resp:"",due:"",note:""})),"2S":v[1].map(c=>({...c,p:0,resp:"",due:"",note:""})),"3S":v[2].map(c=>({...c,p:0,resp:"",due:"",note:""})),"4S":v[3].map(c=>({...c,p:0,resp:"",due:"",note:""})),"5S":v[4].map(c=>({...c,p:0,resp:"",due:"",note:""}))};}
 function makeSectorSet(){return makeS([VOC_1S,VOC_2S,VOC_3S,VOC_4S,VOC_5S]);}
 function makeArea(line){return{line,sectors:{Rettifica:makeSectorSet(),Montaggio:makeSectorSet()}};}
 function load(){try{const raw=localStorage.getItem(STORE);return raw?JSON.parse(raw):{areas:[]}}catch{return{areas:[]}}}
@@ -88,19 +69,18 @@ function save(){localStorage.setItem(STORE,JSON.stringify(state))}
 function loadChartPref(){try{return JSON.parse(localStorage.getItem(CHART_STORE))||{zoom:1,stacked:false,scroll:0}}catch{return{zoom:1,stacked:false,scroll:0}}}
 function saveChartPref(){localStorage.setItem(CHART_STORE,JSON.stringify(chartPref))}
 
-/* ------------------------------- State ----------------------------------- */
-let state=load();
-if(!state.areas?.length){state.areas=[makeArea('CH 2')]; save();}
+/* -------- State -------- */
+let state=load(); if(!state.areas?.length){state.areas=[makeArea('CH 2')]; save();}
 let ui={q:'',line:'ALL',sector:'ALL',onlyLate:false};
 let chartPref=loadChartPref();
 
-/* ----------------------------- DOM refs ---------------------------------- */
+/* DOM */
 const elAreas=$('#areas'), elLineFilter=$('#lineFilter'), elQ=$('#q'), elOnlyLate=$('#onlyLate');
 const tplArea=$('#tplArea'), tplItem=$('#tplItem');
 const elKpiAreas=$('#kpiAreas'), elKpiScore=$('#kpiScore'), elKpiLate=$('#kpiLate');
 const sectorSelect=$('#sectorFilter');
 
-/* --------------------------- Tema Light/Dark ----------------------------- */
+/* Tema */
 const btnTheme=$('#btnTheme');
 if(localStorage.getItem('theme')==='dark') document.documentElement.classList.add('dark');
 btnTheme?.addEventListener('click',()=>{
@@ -109,7 +89,7 @@ btnTheme?.addEventListener('click',()=>{
   localStorage.setItem('theme',root.classList.contains('dark')?'dark':'light');
 });
 
-/* ------------------------------ Toolbar ---------------------------------- */
+/* Toolbar */
 $('#btnNewArea')?.addEventListener('click',()=>{
   const proposal=nextCH();
   const line=(prompt('Nuova linea? (es. CH 3)',proposal)||proposal).trim();
@@ -127,13 +107,11 @@ $('#fileImport')?.addEventListener('change',async e=>{
 });
 $('#btnPrint')?.addEventListener('click',()=>window.print());
 
-/* settore: bottoni desktop */
 function setSegBtn(sel){['#btnAll','#btnFgr','#btnAsm'].forEach(s=>$(s)?.classList.remove('active')); $(sel)?.classList.add('active');}
 $('#btnAll')?.addEventListener('click',()=>{ui.sector='ALL'; setSegBtn('#btnAll'); sectorSelect.value='ALL'; render();});
 $('#btnFgr')?.addEventListener('click',()=>{ui.sector='Rettifica'; setSegBtn('#btnFgr'); sectorSelect.value='Rettifica'; render();});
 $('#btnAsm')?.addEventListener('click',()=>{ui.sector='Montaggio'; setSegBtn('#btnAsm'); sectorSelect.value='Montaggio'; render();});
 
-/* settore: select mobile */
 sectorSelect?.addEventListener('change',()=>{
   ui.sector=sectorSelect.value;
   if(ui.sector==='ALL') setSegBtn('#btnAll');
@@ -154,11 +132,10 @@ $('#zoomIn')?.addEventListener('click',()=>{chartPref.zoom=Math.min(2.5, +(chart
 $('#zoomOut')?.addEventListener('click',()=>{chartPref.zoom=Math.max(0.6, +(chartPref.zoom-0.1).toFixed(2)); saveChartPref(); drawChart();});
 $('#toggleStacked')?.addEventListener('change',e=>{chartPref.stacked=e.target.checked; saveChartPref(); drawChart();});
 
-/* ----------- Pulsanti globali: comprimi/espandi tutte le schede ---------- */
 $('#btnCollapseAll')?.addEventListener('click',()=>{$$('.area').forEach(a=>a.classList.add('collapsed'));});
 $('#btnExpandAll')?.addEventListener('click',()=>{$$('.area').forEach(a=>a.classList.remove('collapsed'));});
 
-/* ------------------------------ Render ---------------------------------- */
+/* Render base */
 function render(){
   $('#appVersion')?.replaceChildren(VERSION);
   refreshLineFilter();
@@ -207,7 +184,7 @@ function computeByS(area,sector){
   return {byS, total:max?sum/max:0, dom:{S:domKey, v:byS[domKey]||0}};
 }
 
-/* --------------------------- Render Area -------------------------------- */
+/* Render area */
 function renderArea(area){
   const node=$('#tplArea').content.firstElementChild.cloneNode(true);
   const line=$('.area-line',node), scoreEl=$('.score-val',node), domEl=$('.doms',node);
@@ -266,7 +243,7 @@ function renderArea(area){
   return node;
 }
 
-/* ---------------------------- Render Item ------------------------------- */
+/* Render item */
 function renderItem(area,sector,S,idx,it,onChange){
   const frag=document.createDocumentFragment();
   const node=$('#tplItem').content.firstElementChild.cloneNode(true);
@@ -291,16 +268,13 @@ function renderItem(area,sector,S,idx,it,onChange){
   $('.info',node).addEventListener('click',()=>{const v=desc.style.display!=='block'; desc.style.display=v?'block':'none';});
   $('.del',node).addEventListener('click',()=>{ const arr=area.sectors[sector][S]; arr.splice(idx,1); save(); render(); });
 
-  /* se l’item viene evidenziato, toglilo quando cambi punteggio o chiudi descrizione */
-  node.addEventListener('click',e=>{
-    if(e.target.classList.contains('dot')) node.classList.remove('highlight');
-  });
+  node.addEventListener('click',e=>{ if(e.target.classList.contains('dot')) node.classList.remove('highlight'); });
   $('.info',node).addEventListener('click',()=> node.classList.remove('highlight'));
 
   frag.appendChild(node); frag.appendChild(desc); return frag;
 }
 
-/* --------------------------- Dashboard / KPI ---------------------------- */
+/* KPI / Late */
 function overallStats(list){
   const secs=ui.sector==='ALL'?['Rettifica','Montaggio']:[ui.sector];
   let sum=0,max=0,late=0;
@@ -347,12 +321,12 @@ function focusLate(x){
   const panel=card.querySelector(`.panel[data-s="${x.S}"]`);
   const item=panel?.querySelectorAll('.item')[x.idx];
   if(item){
-    item.classList.add('highlight');    // rimane finché non cambi punteggio/chiudi info
-    item.classList.remove('flash'); void item.offsetWidth; item.classList.add('flash'); // piccolo flash iniziale
+    item.classList.add('highlight');
+    item.classList.remove('flash'); void item.offsetWidth; item.classList.add('flash');
   }
 }
 
-/* -------------------------------- Chart --------------------------------- */
+/* ----------------- CHART (con etichette in Stacked) ------------------- */
 function drawChart(list){
   const canvas=$('#chartAreas');
   const wrap=canvas?.closest('.chart-inner');
@@ -421,11 +395,28 @@ function drawChart(list){
 
   if(chartPref.stacked){
     rows.forEach(g=>{
-      const stack=['1S','2S','3S','4S','5S'].map(k=>g.byS[k]||0);
+      const stackKey=['1S','2S','3S','4S','5S'];
+      const stack=stackKey.map(k=>g.byS[k]||0);
       let yTop=padT+plotH;
-      stack.forEach((v,i)=>{const h=v*plotH; const y=yTop-h; ctx.fillStyle=COLORS[['1S','2S','3S','4S','5S'][i]]; ctx.fillRect(x,y,bw,h); yTop=y;});
-      ctx.fillStyle=TXT; ctx.textAlign='center'; ctx.fillText(Math.round((g.tot||0)*100)+'%',x+bw/2,yTop-4);
-      ctx.save(); ctx.translate(x+bw/2,padT+plotH+16); ctx.rotate(-Math.PI/12); ctx.fillText(g.line,0,0); ctx.restore();
+      stack.forEach((v,i)=>{
+        const key=stackKey[i];
+        const h=v*plotH; const y=yTop-h;
+        ctx.fillStyle=COLORS[key]; ctx.fillRect(x,y,bw,h);
+        /* etichetta percentuale per segmento */
+        if(v>0){
+          const label=Math.round(v*100)+'%';
+          const txtColor=textOnBg(COLORS[key],TXT);
+          ctx.fillStyle=txtColor; ctx.textAlign='center';
+          if(h>=18){
+            ctx.fillText(label, x+bw/2, y+12);             // dentro la barra
+          }else{
+            ctx.fillText(label, x+bw/2, Math.max(padT+10, y-2)); // appena sopra
+          }
+        }
+        yTop=y;
+      });
+      ctx.save(); ctx.fillStyle=TXT; ctx.textAlign='center';
+      ctx.translate(x+bw/2,padT+plotH+16); ctx.rotate(-Math.PI/12); ctx.fillText(g.line,0,0); ctx.restore();
       x+=bw+gap;
     });
   }else{
@@ -441,7 +432,8 @@ function drawChart(list){
         else     ctx.fillText(Math.round(v*100)+'%',bx+bw/2,padT+plotH-2);
         bx+=bw+inner;
       });
-      ctx.save(); ctx.translate(x+groupW/2,padT+plotH+16); ctx.rotate(-Math.PI/12); ctx.fillText(g.line,0,0); ctx.restore();
+      ctx.save(); ctx.fillStyle=TXT; ctx.textAlign='center';
+      ctx.translate(x+groupW/2,padT+plotH+16); ctx.rotate(-Math.PI/12); ctx.fillText(g.line,0,0); ctx.restore();
       x+=groupW+gap;
     });
   }
@@ -452,7 +444,7 @@ function drawChart(list){
   }
 }
 
-/* ------------------------- Line buttons / nav --------------------------- */
+/* Line buttons */
 function buildLineButtons(list){
   const host=$('#areasList'); host.innerHTML='';
   const bAll=document.createElement('button'); bAll.className='line-btn'+(ui.line==='ALL'?' active':''); bAll.textContent='Tutte';
@@ -465,10 +457,10 @@ function buildLineButtons(list){
   });
 }
 
-/* ----------------------------- Events ----------------------------------- */
+/* Events */
 window.addEventListener('orientationchange',()=>setTimeout(()=>drawChart(),250));
 window.addEventListener('resize',()=>drawChart());
 window.addEventListener('load',()=>requestAnimationFrame(()=>drawChart()));
 
-/* -------------------------------- Go! ----------------------------------- */
+/* Go */
 render();
