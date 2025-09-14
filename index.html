@@ -9,13 +9,13 @@
   <title>SKF 5S</title>
   <link rel="stylesheet" href="style.css" />
 
-  <!-- Chart.js + Datalabels -->
+  <!-- Chart.js + Datalabels (usate anche offline via SW dopo il primo avvio) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 </head>
 <body>
   <header class="brand">
-    <img src="assets/skf-logo.png" alt="SKF" class="logo" />
+    <img src="assets/skf-logo.png" alt="SKF" class="logo">
     <h1>SKF 5S</h1>
     <div class="toolbar">
       <button id="btnNew" class="btn primary">+ Nuova linea</button>
@@ -26,10 +26,11 @@
     </div>
   </header>
 
+  <!-- Intro 5S -->
   <section class="intro card">
     <div class="intro__media">
-      <!-- FALLBACK se 5S.png manca -->
-      <img src="assets/5S.png" alt="5S" onerror="this.src='assets/skf-512.png';this.style.objectFit='contain';" />
+      <img src="assets/5S.png" alt="5S"
+           onerror="this.src='assets/skf-512.png';this.style.objectFit='contain';">
     </div>
     <div class="intro__text">
       <h2>Cosa è 5S</h2>
@@ -47,28 +48,28 @@
     </div>
   </section>
 
+  <!-- Filtri -->
   <section class="controls card">
     <div class="filters">
-      <div class="filter">
-        <input id="txtSearch" type="search" placeholder="Cerca in descrizione / note / responsabile…" />
-      </div>
-      <div class="filter">
-        <select id="selLinea"></select>
-      </div>
-      <div class="filter filter-chips">
+      <input id="txtSearch" type="search" class="w100" placeholder="Cerca in descrizione / note / responsabile…" />
+      <select id="selLinea"></select>
+
+      <div class="chip-group" id="chipsSector">
         <button class="chip active" data-sector="all">Tutti</button>
         <button class="chip" data-sector="rettifica">Rettifica</button>
         <button class="chip" data-sector="montaggio">Montaggio</button>
       </div>
-      <div class="filter">
-        <label class="check"><input id="chkLate" type="checkbox" /> Solo in ritardo</label>
-      </div>
-      <div class="filter">
-        <button id="btnClear" class="btn">Pulisci</button>
-      </div>
+
+      <label class="check">
+        <input id="chkLate" type="checkbox" />
+        <span>Solo in ritardo</span>
+      </label>
+
+      <button id="btnClear" class="btn">Pulisci</button>
     </div>
   </section>
 
+  <!-- Cruscotto -->
   <section class="dashboard card">
     <div class="kpi">
       <div class="kpi__box"><div class="kpi__label">Linee</div><div id="kpiLines" class="kpi__value">0</div></div>
@@ -78,12 +79,15 @@
         <button id="btnZoomOut" class="btn icon">–</button>
         <button id="btnZoomIn" class="btn icon">+</button>
       </div>
-      <label class="check stacked"><input id="chkStacked" type="checkbox" /><span>Stacked</span></label>
+      <label class="check stacked">
+        <input id="chkStacked" type="checkbox" />
+        <span>Stacked</span>
+      </label>
     </div>
 
     <div class="chart-wrap">
       <canvas id="chartAreas" height="220"></canvas>
-      <div id="chartFallback" style="display:none;padding:10px 12px;color:#fff;background:#9aa7b4;border-radius:10px;margin-top:8px;">
+      <div id="chartFallback" class="chart-fallback" style="display:none;">
         Grafico non disponibile finché non apri l’app con connessione (scarico Chart.js per l’uso offline).
       </div>
     </div>
@@ -96,10 +100,11 @@
     </div>
   </section>
 
+  <!-- Schede linee -->
   <section id="areas" class="areas"></section>
 
   <footer class="footer">
-    <small>© SKF — PWA offline • <span id="appVersion">v7.9.6a</span></small>
+    <small>© SKF — PWA offline • <span id="appVersion">v7.9.7</span></small>
   </footer>
 
   <script src="app.js"></script>
@@ -112,3 +117,4 @@
   </script>
 </body>
 </html>
+
