@@ -1,13 +1,16 @@
-/* ===================== SKF 5S – app.js (v7.10.4) =========================
-   - Fix: variabile 'scroller' dichiarata una sola volta in drawChart()
-   - STORE invariato per non perdere i dati (skf.5s.v7.10.3)
+/* ===================== SKF 5S – app.js (v7.11.0) =========================
+   - Tema scuro: intro leggibile
+   - Pallini punteggi: rimangono colorati (classi v0/v1/v3/v5 + .active)
+   - Pulsanti globali “Comprimi tutto / Espandi tutto”
+   - Fix chart: 'scroller' dichiarato una sola volta
+   - STORE invariato (skf.5s.v7.10.3) per non perdere i dati
 =========================================================================== */
-const VERSION='v7.10.4';
+const VERSION='v7.11.0';
 const STORE='skf.5s.v7.10.3';
 const CHART_STORE=STORE+'.chart';
 const POINTS=[0,1,3,5];
 
-/* ---------- Checklist sintetiche (puoi ampliare liberamente) ------------- */
+/* --------- Checklist (puoi integrare con l’Excel quando vuoi) ------------ */
 const VOC_1S=[
   {t:"Zona pedonale pavimento",d:"Area pedonale libera da ostacoli e pericoli di inciampo"},
   {t:"Zona di lavoro (pavimento, macchina)",d:"Solo il necessario per l’ordine in corso"},
@@ -133,7 +136,15 @@ $('#zoomIn')?.addEventListener('click',()=>{chartPref.zoom=Math.min(2.5, +(chart
 $('#zoomOut')?.addEventListener('click',()=>{chartPref.zoom=Math.max(0.6, +(chartPref.zoom-0.1).toFixed(2)); saveChartPref(); drawChart();});
 $('#toggleStacked')?.addEventListener('change',e=>{chartPref.stacked=e.target.checked; saveChartPref(); drawChart();});
 
-/* ------------------------------ Render ----------------------------------- */
+/* ----------- Pulsanti globali: comprimi/espandi tutte le schede ---------- */
+$('#btnCollapseAll')?.addEventListener('click',()=>{
+  $$('.area').forEach(a=>a.classList.add('collapsed'));
+});
+$('#btnExpandAll')?.addEventListener('click',()=>{
+  $$('.area').forEach(a=>a.classList.remove('collapsed'));
+});
+
+/* ------------------------------ Render ---------------------------------- */
 function render(){
   $('#appVersion')?.replaceChildren(VERSION);
   refreshLineFilter();
@@ -177,7 +188,7 @@ function computeByS(area,sector){
   return {byS, total:max?sum/max:0, dom:{S:domKey, v:byS[domKey]||0}};
 }
 
-/* --------------------------- Render Area --------------------------------- */
+/* --------------------------- Render Area -------------------------------- */
 function renderArea(area){
   const node=$('#tplArea').content.firstElementChild.cloneNode(true);
   const line=$('.area-line',node), scoreEl=$('.score-val',node), domEl=$('.doms',node);
@@ -236,7 +247,7 @@ function renderArea(area){
   return node;
 }
 
-/* ---------------------------- Render Item -------------------------------- */
+/* ---------------------------- Render Item ------------------------------- */
 function renderItem(area,sector,S,idx,it,onChange){
   const frag=document.createDocumentFragment();
   const node=$('#tplItem').content.firstElementChild.cloneNode(true);
@@ -248,7 +259,12 @@ function renderItem(area,sector,S,idx,it,onChange){
   txt.value=it.t||''; resp.value=it.resp||''; due.value=it.due||''; note.value=it.note||'';
   desc.innerHTML=`<b>${it.t||''}</b><br>${it.d||''}`;
 
-  const syncDots=()=>dots.forEach(d=>d.classList.toggle('active', +d.dataset.val === (+it.p||0)));
+  // Stato iniziale pallini
+  const syncDots=()=>{
+    dots.forEach(d=>{
+      d.classList.toggle('active', +d.dataset.val === (+it.p||0));
+    });
+  };
   syncDots(); node.classList.toggle('late',isOverdue(it.due));
 
   txt.addEventListener('input',()=>{it.t=txt.value; desc.innerHTML=`<b>${it.t||''}</b><br>${it.d||''}`; save();});
@@ -270,7 +286,7 @@ function renderItem(area,sector,S,idx,it,onChange){
   frag.appendChild(node); frag.appendChild(desc); return frag;
 }
 
-/* --------------------------- Dashboard / KPI ----------------------------- */
+/* --------------------------- Dashboard / KPI ---------------------------- */
 function overallStats(list){
   const secs=ui.sector==='ALL'?['Rettifica','Montaggio']:[ui.sector];
   let sum=0,max=0,late=0;
@@ -318,7 +334,7 @@ function focusLate(x){
   if(item){item.classList.remove('flash');void item.offsetWidth;item.classList.add('flash');}
 }
 
-/* ------------------------------- Chart ----------------------------------- */
+/* -------------------------------- Chart --------------------------------- */
 function drawChart(list){
   const canvas=$('#chartAreas');
   const wrap=canvas?.closest('.chart-inner');
@@ -327,7 +343,7 @@ function drawChart(list){
 
   $('#toggleStacked').checked=!!chartPref.stacked;
 
-  const Hcss=260;
+  const DPR=window.devicePixelRatio||1, Hcss=260;
   const areas=(list||filteredAreas());
   const css=getComputedStyle(document.documentElement);
   const GRID=css.getPropertyValue('--outline')||'#d0d7e1';
@@ -367,10 +383,10 @@ function drawChart(list){
 
   canvas.style.width=totalW+'px';
   canvas.style.height=Hcss+'px';
-  canvas.width=Math.round(totalW*(window.devicePixelRatio||1));
-  canvas.height=Math.round(Hcss*(window.devicePixelRatio||1));
+  canvas.width=Math.round(totalW*DPR);
+  canvas.height=Math.round(Hcss*DPR);
   const ctx=canvas.getContext('2d');
-  ctx.setTransform(window.devicePixelRatio||1,0,0,window.devicePixelRatio||1,0,0);
+  ctx.setTransform(DPR,0,0,DPR,0,0);
   ctx.clearRect(0,0,totalW,Hcss);
 
   const plotW=totalW-padL-padR;
@@ -418,7 +434,7 @@ function drawChart(list){
   }
 }
 
-/* ------------------------- Line buttons / nav ---------------------------- */
+/* ------------------------- Line buttons / nav --------------------------- */
 function buildLineButtons(list){
   const host=$('#areasList'); host.innerHTML='';
   const bAll=document.createElement('button'); bAll.className='line-btn'+(ui.line==='ALL'?' active':''); bAll.textContent='Tutte';
@@ -431,11 +447,10 @@ function buildLineButtons(list){
   });
 }
 
-/* ------------------------------ Events ----------------------------------- */
+/* ----------------------------- Events ----------------------------------- */
 window.addEventListener('orientationchange',()=>setTimeout(()=>drawChart(),250));
 window.addEventListener('resize',()=>drawChart());
 window.addEventListener('load',()=>requestAnimationFrame(()=>drawChart()));
 
-/* -------------------------------- Go! ------------------------------------ */
+/* -------------------------------- Go! ----------------------------------- */
 render();
-
