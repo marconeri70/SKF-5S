@@ -44,24 +44,45 @@
   <!-- Filtri -->
   <section class="card controls">
     <div class="filters">
-      <input id="q" class="f-q" placeholder="🔎 Cerca in descrizione / note / responsabile…" />
-      <select id="lineFilter" class="f-line" title="Linea"></select>
+      <label class="field f-q">
+        <span class="field-label">🔎 Cerca</span>
+        <input id="q" placeholder="Descrizione, note o responsabile…" />
+      </label>
 
-      <!-- Bottoni settore (desktop / tablet) -->
-      <div class="sector-toggles f-seg">
-        <button id="btnAll" class="btn seg active">Tutti</button>
-        <button id="btnFgr" class="btn seg">Rettifica</button>
-        <button id="btnAsm" class="btn seg">Montaggio</button>
+      <label class="field f-line">
+        <span class="field-label">Linea</span>
+        <select id="lineFilter" title="Linea"></select>
+      </label>
+
+      <!-- Bottoni settore (desktop) -->
+      <div class="field f-seg">
+        <span class="field-label">Settore (rapido)</span>
+        <div class="sector-toggles">
+          <button id="btnAll" class="btn seg active">Tutti</button>
+          <button id="btnFgr" class="btn seg">Rettifica</button>
+          <button id="btnAsm" class="btn seg">Montaggio</button>
+        </div>
       </div>
-      <!-- Select settore (mobile) -->
-      <select id="sectorFilter" class="f-seg-select" title="Settore">
-        <option value="ALL">Settore: Tutti</option>
-        <option value="Rettifica">Rettifica</option>
-        <option value="Montaggio">Montaggio</option>
-      </select>
 
-      <label class="onlylate f-late"><input type="checkbox" id="onlyLate" /> Solo in ritardo</label>
-      <button id="btnClearFilters" class="btn ghost f-clear">Pulisci</button>
+      <!-- Select settore (mobile / fallback) -->
+      <label class="field f-seg-select">
+        <span class="field-label">Settore</span>
+        <select id="sectorFilter" title="Settore">
+          <option value="ALL">Tutti</option>
+          <option value="Rettifica">Rettifica</option>
+          <option value="Montaggio">Montaggio</option>
+        </select>
+      </label>
+
+      <label class="field f-late onlylate">
+        <span class="field-label">Filtro ritardi</span>
+        <span><input type="checkbox" id="onlyLate" /> Solo in ritardo</span>
+      </label>
+
+      <div class="field f-clear">
+        <span class="field-label">&nbsp;</span>
+        <button id="btnClearFilters" class="btn ghost wide">Pulisci</button>
+      </div>
     </div>
   </section>
 
