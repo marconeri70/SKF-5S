@@ -1,148 +1,146 @@
 <!doctype html>
 <html lang="it">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>SKF 5S v7.10</title>
-  <link rel="manifest" href="manifest.json"/>
-  <link rel="icon" href="assets/skf-192.png"/>
-  <link rel="stylesheet" href="style.css"/>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="assets/skf-192.png" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-<header class="app-header">
-  <div class="brand">
-    <img src="assets/skf-logo.png" alt="SKF" class="logo"/>
-    <h1>SKF 5S <span class="ver">v7.10</span></h1>
-  </div>
-  <div class="actions">
-    <button id="btnNewArea" class="btn">+ Nuova linea</button>
-    <button id="btnExport" class="btn ghost">Esporta</button>
-    <label for="fileImport" class="btn ghost">Importa</label>
-    <input id="fileImport" type="file" accept="application/json" hidden>
-    <button id="btnPrint" class="btn ghost">Stampa</button>
-    <button id="btnTheme" class="btn ghost">🌞 Tema</button>
-  </div>
-</header>
+  <header class="app-header">
+    <div class="logo">
+      <img src="assets/skf-logo.png" alt="SKF">
+      <h1>SKF 5S <span class="ver">v7.10</span></h1>
+    </div>
+    <div class="actions">
+      <button id="btnNewArea"   class="btn">+ Nuova linea</button>
+      <button id="btnExport"    class="btn ghost">Esporta</button>
+      <label  for="fileImport"  class="btn ghost">Importa</label>
+      <input  id="fileImport" type="file" accept="application/json" hidden>
+      <button id="btnPrint"     class="btn ghost">Stampa</button>
+      <button id="btnTheme"     class="btn ghost">🌞 Tema</button>
+    </div>
+  </header>
 
-<section class="intro5s card">
-  <div class="intro-grid">
-    <img src="assets/5s-hero.png" alt="Diagramma 5S" class="hero-img" loading="lazy" decoding="async"/>
-    <div class="intro-copy">
+  <!-- Intro 5S -->
+  <section class="card intro-grid">
+    <img src="assets/5s-hero.png" alt="Diagramma 5S" class="hero-img" loading="lazy" decoding="async">
+    <div>
       <h2>Cosa è 5S</h2>
       <p>5S è un metodo per fornire un posto di lavoro <b>sicuro</b>, <b>ben organizzato</b> e <b>pulito</b>, per fare il nostro lavoro facilmente e correttamente la prima volta.</p>
-      <ul class="legend5s">
-        <li><span class="dot" style="background:var(--c1)"></span><b class="tag s1">1S Selezionare</b> – Avere solo ciò che serve, eliminare il superfluo.</li>
-        <li><span class="dot" style="background:var(--c2)"></span><b class="tag s2">2S Sistemare</b> – Un posto per tutto e tutto al suo posto.</li>
-        <li><span class="dot" style="background:var(--c3)"></span><b class="tag s3">3S Splendere</b> – Pulire e rimuovere le cause dello sporco.</li>
-        <li><span class="dot" style="background:var(--c4)"></span><b class="tag s4">4S Standardizzare</b> – Regole e segnali visivi chiari.</li>
-        <li><span class="dot" style="background:var(--c5)"></span><b class="tag s5">5S Sostenere</b> – Disciplina, abitudine e miglioramento continuo.</li>
-      </ul>
+      <p>
+        <span class="tag" data-s="1S">1S Selezionare</span> — Avere solo ciò che serve, eliminare il superfluo.<br>
+        <span class="tag" data-s="2S">2S Sistemare</span> — Un posto per tutto e tutto al suo posto.<br>
+        <span class="tag" data-s="3S">3S Splendere</span> — Pulire e rimuovere le cause dello sporco.<br>
+        <span class="tag" data-s="4S">4S Standardizzare</span> — Regole e segnali visivi chiari.<br>
+        <span class="tag" data-s="5S">5S Sostenere</span> — Disciplina, abitudine e miglioramento continuo.
+      </p>
     </div>
-  </div>
-</section>
+  </section>
 
-<section class="controls card">
-  <div class="filters">
-    <input id="q" placeholder="🔎 Cerca in descrizione / note / responsabile…">
-    <select id="lineFilter" title="Filtra per linea"></select>
-    <div class="sector-toggles">
-      <button id="btnAll" class="btn seg active">Tutti</button>
-      <button id="btnFgr" class="btn seg">Rettifica</button>
-      <button id="btnAsm" class="btn seg">Montaggio</button>
+  <!-- Filtri -->
+  <section class="card controls">
+    <div class="filters" style="display:grid; grid-template-columns:1fr 220px auto auto auto auto; gap:10px; align-items:center;">
+      <input id="q" placeholder="🔎 Cerca in descrizione / note / responsabile…">
+      <select id="lineFilter" title="Linea"></select>
+      <div class="sector-toggles">
+        <button id="btnAll" class="btn seg active">Tutti</button>
+        <button id="btnFgr" class="btn seg">Rettifica</button>
+        <button id="btnAsm" class="btn seg">Montaggio</button>
+      </div>
+      <label class="onlylate"><input type="checkbox" id="onlyLate"> Solo in ritardo</label>
+      <button id="btnClearFilters" class="btn ghost">Pulisci</button>
     </div>
-    <label class="onlylate"><input type="checkbox" id="onlyLate"> Solo in ritardo</label>
-    <button id="btnClearFilters" class="btn ghost">Pulisci</button>
-  </div>
-</section>
+  </section>
 
-<section id="dashboard" class="card dash">
-  <div class="dash-head">
-    <h2>Cruscotto</h2>
+  <!-- Cruscotto -->
+  <section class="card">
     <div class="kpis">
       <div class="kpi"><div>Linee</div><div id="kpiAreas">0</div></div>
       <div class="kpi"><div>Punteggio medio</div><div id="kpiScore">0%</div></div>
       <div class="kpi"><div>Azioni in ritardo</div><div id="kpiLate">0</div></div>
     </div>
-  </div>
+    <canvas id="chartAreas" height="260"></canvas>
+    <div id="lateList" class="late-list" style="display:none"></div>
 
-  <canvas id="chartAreas" height="260"></canvas>
-  <div id="lateList" class="late-list"></div>
+    <div class="score-legend">
+      <span class="dot0">0</span> Non conforme
+      <span class="dot1">1</span> Parziale
+      <span class="dot3">3</span> Quasi ok
+      <span class="dot5">5</span> Conforme
+    </div>
 
-  <div class="score-legend">
-    <span class="dot0">0</span> Non conforme
-    <span class="dot1">1</span> Parziale
-    <span class="dot3">3</span> Quasi ok
-    <span class="dot5">5</span> Conforme
-  </div>
+    <div id="areasList" class="line-buttons"></div>
+  </section>
 
-  <div id="lineBtns" class="line-buttons"></div>
-</section>
+  <!-- Aree -->
+  <section id="areas"></section>
 
-<section id="areas"></section>
-
-<!-- Templates -->
-<template id="tplArea">
-  <div class="area card">
-    <div class="area-head">
-      <div>
-        <label class="lbl">Linea</label>
-        <input class="area-line" placeholder="es. L2">
+  <!-- Templates -->
+  <template id="tplArea">
+    <div class="card area">
+      <div class="area-head">
+        <div>
+          <div class="lbl">Linea</div>
+          <input class="area-line" placeholder="es. L2">
+        </div>
+        <div>Punteggio: <span class="badge-s score-val" data-s="5S">0%</span></div>
+        <div class="area-actions">
+          <button class="btn ghost add-item">+ Voce</button>
+          <button class="btn ghost collapse">Comprimi</button>
+          <button class="btn danger delete-area">Elimina</button>
+        </div>
       </div>
-      <div class="score">Punteggio: <span class="score-badge score-val">0%</span></div>
-      <div class="area-actions">
-        <button class="btn ghost add-item">+ Voce</button>
-        <button class="btn ghost collapse">Comprimi</button>
-        <button class="btn danger delete-area">Elimina</button>
+
+      <div class="sector-tabs" style="margin-top:10px; display:flex; gap:8px;">
+        <button class="tab sec active" data-sector="Rettifica">Rettifica</button>
+        <button class="tab sec" data-sector="Montaggio">Montaggio</button>
+      </div>
+
+      <div class="s-tabs">
+        <button class="tab s active" data-s="1S">1S <span class="badge-s score-1S" data-s="1S">0%</span></button>
+        <button class="tab s" data-s="2S">2S <span class="badge-s score-2S" data-s="2S">0%</span></button>
+        <button class="tab s" data-s="3S">3S <span class="badge-s score-3S" data-s="3S">0%</span></button>
+        <button class="tab s" data-s="4S">4S <span class="badge-s score-4S" data-s="4S">0%</span></button>
+        <button class="tab s" data-s="5S">5S <span class="badge-s score-5S" data-s="5S">0%</span></button>
+      </div>
+
+      <div class="s-panels">
+        <div class="panel active" data-s="1S"></div>
+        <div class="panel" data-s="2S"></div>
+        <div class="panel" data-s="3S"></div>
+        <div class="panel" data-s="4S"></div>
+        <div class="panel" data-s="5S"></div>
       </div>
     </div>
+  </template>
 
-    <div class="sector-tabs">
-      <button data-sector="Rettifica" class="tab sec active">Rettifica</button>
-      <button data-sector="Montaggio" class="tab sec">Montaggio</button>
+  <template id="tplItem">
+    <div class="item">
+      <button class="btn tiny info" title="Dettaglio">i</button>
+      <input  class="txt"  placeholder="Titolo…">
+      <div class="points-dots" role="radiogroup" aria-label="Punteggio">
+        <button class="dot" data-val="0" data-v="0" title="0">0</button>
+        <button class="dot" data-val="1" data-v="1" title="1">1</button>
+        <button class="dot" data-val="3" data-v="3" title="3">3</button>
+        <button class="dot" data-val="5" data-v="5" title="5">5</button>
+      </div>
+      <input  class="resp" placeholder="Responsabile">
+      <input  class="due"  type="date" title="Scadenza">
+      <input  class="note" placeholder="Note…">
+      <button class="btn tiny del" title="Elimina">×</button>
     </div>
+    <div class="desc-show" style="display:none"></div>
+  </template>
 
-    <div class="s-tabs">
-      <button data-s="1S" class="tab s active">1S <span class="pill score-1S">0%</span></button>
-      <button data-s="2S" class="tab s">2S <span class="pill score-2S">0%</span></button>
-      <button data-s="3S" class="tab s">3S <span class="pill score-3S">0%</span></button>
-      <button data-s="4S" class="tab s">4S <span class="pill score-4S">0%</span></button>
-      <button data-s="5S" class="tab s">5S <span class="pill score-5S">0%</span></button>
-    </div>
+  <footer><p>© SKF – PWA offline</p></footer>
 
-    <div class="s-panels">
-      <div class="panel active" data-s="1S"></div>
-      <div class="panel" data-s="2S"></div>
-      <div class="panel" data-s="3S"></div>
-      <div class="panel" data-s="4S"></div>
-      <div class="panel" data-s="5S"></div>
-    </div>
-  </div>
-</template>
-
-<template id="tplItem">
-  <div class="item">
-    <button class="btn tiny info" title="Dettaglio">i</button>
-    <input class="txt" placeholder="Titolo…">
-    <div class="points-dots" role="radiogroup" aria-label="Punteggio">
-      <button class="dot d0" data-val="0" title="0">0</button>
-      <button class="dot d1" data-val="1" title="1">1</button>
-      <button class="dot d3" data-val="3" title="3">3</button>
-      <button class="dot d5" data-val="5" title="5">5</button>
-    </div>
-    <input class="resp" placeholder="Responsabile">
-    <input type="date" class="due" title="Scadenza">
-    <input class="note" placeholder="Note…">
-    <button class="btn tiny del" title="Elimina">×</button>
-  </div>
-  <div class="desc"></div>
-</template>
-
-<footer><p>© SKF – PWA offline</p></footer>
-
-<script src="app.js"></script>
-<script>
-  if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
-</script>
+  <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
+  </script>
 </body>
 </html>
