@@ -25,7 +25,7 @@
     </div>
   </header>
 
-  <!-- Intro: ora con contrasto corretto anche in dark -->
+  <!-- Intro -->
   <section class="card intro-grid">
     <img src="assets/5s-hero.png" class="hero-img" alt="Diagramma 5S" loading="lazy" decoding="async" />
     <div>
@@ -44,15 +44,24 @@
   <!-- Filtri -->
   <section class="card controls">
     <div class="filters">
-      <input id="q" placeholder="🔎 Cerca in descrizione / note / responsabile…" />
-      <select id="lineFilter" title="Linea"></select>
-      <div class="sector-toggles">
+      <input id="q" class="f-q" placeholder="🔎 Cerca in descrizione / note / responsabile…" />
+      <select id="lineFilter" class="f-line" title="Linea"></select>
+
+      <!-- Bottoni settore (desktop / tablet) -->
+      <div class="sector-toggles f-seg">
         <button id="btnAll" class="btn seg active">Tutti</button>
         <button id="btnFgr" class="btn seg">Rettifica</button>
         <button id="btnAsm" class="btn seg">Montaggio</button>
       </div>
-      <label class="onlylate"><input type="checkbox" id="onlyLate" /> Solo in ritardo</label>
-      <button id="btnClearFilters" class="btn ghost">Pulisci</button>
+      <!-- Select settore (mobile) -->
+      <select id="sectorFilter" class="f-seg-select" title="Settore">
+        <option value="ALL">Settore: Tutti</option>
+        <option value="Rettifica">Rettifica</option>
+        <option value="Montaggio">Montaggio</option>
+      </select>
+
+      <label class="onlylate f-late"><input type="checkbox" id="onlyLate" /> Solo in ritardo</label>
+      <button id="btnClearFilters" class="btn ghost f-clear">Pulisci</button>
     </div>
   </section>
 
@@ -90,14 +99,14 @@
     <!-- NAV Linee -->
     <div id="areasList" class="line-buttons"></div>
 
-    <!-- Nuovi pulsanti globali -->
+    <!-- Global expand/collapse -->
     <div class="global-toggle">
       <button id="btnCollapseAll" class="btn ghost">Comprimi tutto</button>
       <button id="btnExpandAll" class="btn ghost">Espandi tutto</button>
     </div>
   </section>
 
-  <!-- Schede linee -->
+  <!-- Schede -->
   <section id="areas"></section>
 
   <!-- Template area -->
@@ -106,7 +115,7 @@
       <div class="area-head">
         <div>
           <div class="lbl">Linea</div>
-          <input class="area-line" placeholder="es. L2" />
+          <input class="area-line" placeholder="es. CH 2" />
         </div>
         <div class="area-metrics">
           <div>Punteggio: <span class="badge-s score-val" data-s="5S">0%</span></div>
