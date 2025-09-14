@@ -9,7 +9,7 @@
   <title>SKF 5S</title>
   <link rel="stylesheet" href="style.css" />
 
-  <!-- Chart.js + Datalabels -->
+  <!-- Chart.js + Datalabels (CDN) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 </head>
@@ -26,7 +26,6 @@
     </div>
   </header>
 
-  <!-- Intro / spiegazione -->
   <section class="intro card">
     <div class="intro__media">
       <img src="assets/5S.png" alt="5S" />
@@ -34,8 +33,8 @@
     <div class="intro__text">
       <h2>Cosa è 5S</h2>
       <p>
-        5S è un metodo per fornire un posto di lavoro <b>sicuro</b>, <b>ben organizzato</b> e <b>pulito</b>, per
-        fare il nostro lavoro facilmente e correttamente la prima volta.
+        5S è un metodo per fornire un posto di lavoro <b>sicuro</b>, <b>ben organizzato</b> e <b>pulito</b>,
+        per fare il nostro lavoro facilmente e correttamente la prima volta.
       </p>
       <ul class="legend5s">
         <li><span class="tag s1">1S Selezionare</span> — Avere solo ciò che serve, eliminare il superfluo.</li>
@@ -47,7 +46,6 @@
     </div>
   </section>
 
-  <!-- Filtri -->
   <section class="controls card">
     <div class="filters">
       <div class="filter">
@@ -70,40 +68,26 @@
     </div>
   </section>
 
-  <!-- Cruscotto -->
   <section class="dashboard card">
     <div class="kpi">
-      <div class="kpi__box">
-        <div class="kpi__label">Linee</div>
-        <div id="kpiLines" class="kpi__value">0</div>
-      </div>
-      <div class="kpi__box">
-        <div class="kpi__label">Punteggio medio</div>
-        <div id="kpiAvg" class="kpi__value">0%</div>
-      </div>
-      <div class="kpi__box">
-        <div class="kpi__label">Azioni in ritardo</div>
-        <div id="kpiLate" class="kpi__value">0</div>
-      </div>
-
+      <div class="kpi__box"><div class="kpi__label">Linee</div><div id="kpiLines" class="kpi__value">0</div></div>
+      <div class="kpi__box"><div class="kpi__label">Punteggio medio</div><div id="kpiAvg" class="kpi__value">0%</div></div>
+      <div class="kpi__box"><div class="kpi__label">Azioni in ritardo</div><div id="kpiLate" class="kpi__value">0</div></div>
       <div class="zoom">
         <button id="btnZoomOut" class="btn icon">–</button>
         <button id="btnZoomIn" class="btn icon">+</button>
       </div>
-
-      <label class="check stacked">
-        <input id="chkStacked" type="checkbox" />
-        <span>Stacked</span>
-      </label>
+      <label class="check stacked"><input id="chkStacked" type="checkbox" /><span>Stacked</span></label>
     </div>
 
     <div class="chart-wrap">
       <canvas id="chartAreas" height="220"></canvas>
+      <div id="chartFallback" style="display:none;padding:10px 12px;color:#fff;background:#9aa7b4;border-radius:10px;margin-top:8px;">
+        Grafico non disponibile finché non apri l’app con connessione (scarico Chart.js per l’uso offline).
+      </div>
     </div>
 
-    <div id="badgesRow" class="badges-row">
-      <!-- Chip stato + CH ... inseriti da JS -->
-    </div>
+    <div id="badgesRow" class="badges-row"></div>
 
     <div class="bulk">
       <button id="btnCollapseAll" class="btn">Comprimi tutto</button>
@@ -111,21 +95,18 @@
     </div>
   </section>
 
-  <!-- Contenitore schede linee -->
-  <section id="areas" class="areas">
-    <!-- Cards create da JS -->
-  </section>
+  <section id="areas" class="areas"></section>
 
   <footer class="footer">
-    <small>© SKF — PWA offline • <span id="appVersion">v7.9.5</span></small>
+    <small>© SKF — PWA offline • <span id="appVersion">v7.9.6</span></small>
   </footer>
 
   <script src="app.js"></script>
+
   <script>
-    // PWA
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(() => {});
+        navigator.serviceWorker.register('./sw.js').catch(()=>{});
       });
     }
   </script>
