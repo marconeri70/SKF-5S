@@ -4,66 +4,83 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <title>SKF 5S v7.10</title>
+  <title>SKF 5S</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="assets/skf-192.png" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- HEADER -->
   <header class="app-header">
     <div class="logo">
-      <img src="assets/skf-logo.png" alt="SKF">
-      <h1>SKF 5S <span class="ver">v7.10</span></h1>
+      <img src="assets/skf-logo.png" alt="SKF" />
+      <h1>SKF 5S</h1>
     </div>
     <div class="actions">
-      <button id="btnNewArea"   class="btn">+ Nuova linea</button>
-      <button id="btnExport"    class="btn ghost">Esporta</button>
-      <label  for="fileImport"  class="btn ghost">Importa</label>
-      <input  id="fileImport" type="file" accept="application/json" hidden>
-      <button id="btnPrint"     class="btn ghost">Stampa</button>
-      <button id="btnTheme"     class="btn ghost">🌞 Tema</button>
+      <button id="btnNewArea" class="btn">+ Nuova linea</button>
+      <button id="btnExport" class="btn ghost">Esporta</button>
+      <label for="fileImport" class="btn ghost">Importa</label>
+      <input id="fileImport" type="file" accept="application/json" hidden />
+      <button id="btnPrint" class="btn ghost">Stampa</button>
+      <button id="btnTheme" class="btn ghost">🌞 Tema</button>
     </div>
   </header>
 
-  <!-- Intro 5S -->
+  <!-- INTRO 5S -->
   <section class="card intro-grid">
-    <img src="assets/5s-hero.png" alt="Diagramma 5S" class="hero-img" loading="lazy" decoding="async">
+    <img src="assets/5s-hero.png" alt="Diagramma 5S" class="hero-img" loading="lazy" decoding="async" />
     <div>
       <h2>Cosa è 5S</h2>
       <p>5S è un metodo per fornire un posto di lavoro <b>sicuro</b>, <b>ben organizzato</b> e <b>pulito</b>, per fare il nostro lavoro facilmente e correttamente la prima volta.</p>
-      <p>
-        <span class="tag" data-s="1S">1S Selezionare</span> — Avere solo ciò che serve, eliminare il superfluo.<br>
-        <span class="tag" data-s="2S">2S Sistemare</span> — Un posto per tutto e tutto al suo posto.<br>
-        <span class="tag" data-s="3S">3S Splendere</span> — Pulire e rimuovere le cause dello sporco.<br>
-        <span class="tag" data-s="4S">4S Standardizzare</span> — Regole e segnali visivi chiari.<br>
+      <p class="legend5s">
+        <span class="tag" data-s="1S">1S Selezionare</span> — Avere solo ciò che serve, eliminare il superfluo.<br />
+        <span class="tag" data-s="2S">2S Sistemare</span> — Un posto per tutto e tutto al suo posto.<br />
+        <span class="tag" data-s="3S">3S Splendere</span> — Pulire e rimuovere le cause dello sporco.<br />
+        <span class="tag" data-s="4S">4S Standardizzare</span> — Regole e segnali visivi chiari.<br />
         <span class="tag" data-s="5S">5S Sostenere</span> — Disciplina, abitudine e miglioramento continuo.
       </p>
     </div>
   </section>
 
-  <!-- Filtri -->
+  <!-- FILTRI -->
   <section class="card controls">
-    <div class="filters" style="display:grid; grid-template-columns:1fr 220px auto auto auto auto; gap:10px; align-items:center;">
-      <input id="q" placeholder="🔎 Cerca in descrizione / note / responsabile…">
+    <div class="filters">
+      <input id="q" placeholder="🔎 Cerca in descrizione / note / responsabile…" />
       <select id="lineFilter" title="Linea"></select>
       <div class="sector-toggles">
         <button id="btnAll" class="btn seg active">Tutti</button>
         <button id="btnFgr" class="btn seg">Rettifica</button>
         <button id="btnAsm" class="btn seg">Montaggio</button>
       </div>
-      <label class="onlylate"><input type="checkbox" id="onlyLate"> Solo in ritardo</label>
+      <label class="onlylate"><input type="checkbox" id="onlyLate" /> Solo in ritardo</label>
       <button id="btnClearFilters" class="btn ghost">Pulisci</button>
     </div>
   </section>
 
-  <!-- Cruscotto -->
+  <!-- CRUSCOTTO -->
   <section class="card">
     <div class="kpis">
       <div class="kpi"><div>Linee</div><div id="kpiAreas">0</div></div>
       <div class="kpi"><div>Punteggio medio</div><div id="kpiScore">0%</div></div>
       <div class="kpi"><div>Azioni in ritardo</div><div id="kpiLate">0</div></div>
     </div>
-    <canvas id="chartAreas" height="260"></canvas>
+
+    <!-- Toolbar grafico -->
+    <div class="chart-toolbar">
+      <div class="left">
+        <button id="zoomOut" class="btn tiny">−</button>
+        <button id="zoomIn" class="btn tiny">+</button>
+      </div>
+      <label class="stacked"><input type="checkbox" id="toggleStacked" /> Stacked</label>
+    </div>
+
+    <!-- Grafico scrollabile -->
+    <div class="chart-scroll">
+      <div class="chart-inner">
+        <canvas id="chartAreas" height="260"></canvas>
+      </div>
+    </div>
+
     <div id="lateList" class="late-list" style="display:none"></div>
 
     <div class="score-legend">
@@ -76,16 +93,16 @@
     <div id="areasList" class="line-buttons"></div>
   </section>
 
-  <!-- Aree -->
+  <!-- AREE -->
   <section id="areas"></section>
 
-  <!-- Templates -->
+  <!-- TEMPLATE AREA -->
   <template id="tplArea">
     <div class="card area">
       <div class="area-head">
         <div>
           <div class="lbl">Linea</div>
-          <input class="area-line" placeholder="es. L2">
+          <input class="area-line" placeholder="es. L2" />
         </div>
         <div>Punteggio: <span class="badge-s score-val" data-s="5S">0%</span></div>
         <div class="area-actions">
@@ -95,7 +112,7 @@
         </div>
       </div>
 
-      <div class="sector-tabs" style="margin-top:10px; display:flex; gap:8px;">
+      <div class="sector-tabs">
         <button class="tab sec active" data-sector="Rettifica">Rettifica</button>
         <button class="tab sec" data-sector="Montaggio">Montaggio</button>
       </div>
@@ -118,25 +135,29 @@
     </div>
   </template>
 
+  <!-- TEMPLATE ITEM -->
   <template id="tplItem">
     <div class="item">
       <button class="btn tiny info" title="Dettaglio">i</button>
-      <input  class="txt"  placeholder="Titolo…">
+      <input class="txt" placeholder="Titolo…" />
       <div class="points-dots" role="radiogroup" aria-label="Punteggio">
         <button class="dot" data-val="0" data-v="0" title="0">0</button>
         <button class="dot" data-val="1" data-v="1" title="1">1</button>
         <button class="dot" data-val="3" data-v="3" title="3">3</button>
         <button class="dot" data-val="5" data-v="5" title="5">5</button>
       </div>
-      <input  class="resp" placeholder="Responsabile">
-      <input  class="due"  type="date" title="Scadenza">
-      <input  class="note" placeholder="Note…">
+      <input class="resp" placeholder="Responsabile" />
+      <input class="due" type="date" title="Scadenza" />
+      <input class="note" placeholder="Note…" />
       <button class="btn tiny del" title="Elimina">×</button>
     </div>
     <div class="desc-show" style="display:none"></div>
   </template>
 
-  <footer><p>© SKF – PWA offline</p></footer>
+  <!-- FOOTER -->
+  <footer>
+    <p>© SKF – PWA offline · <span id="appVersion"></span></p>
+  </footer>
 
   <script src="app.js"></script>
   <script>
@@ -144,3 +165,4 @@
   </script>
 </body>
 </html>
+
