@@ -2,172 +2,132 @@
 <html lang="it">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
-  <title>SKF 5S</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b5fff" />
   <link rel="manifest" href="manifest.json" />
-  <link rel="icon" href="assets/skf-192.png">
-  <link rel="apple-touch-icon" href="assets/skf-192.png">
-  <!-- iOS PWA (warning è solo deprecazione, ma lo lasciamo per compatibilità) -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <link rel="stylesheet" href="style.css?v=7.15.3" />
+  <link rel="icon" href="assets/skf-192.png" type="image/png" />
+  <title>SKF 5S</title>
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Chart.js + Datalabels -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 </head>
 <body>
-<header class="brand">
-  <img src="assets/skf-logo.png" alt="SKF" class="logo">
-  <h1>SKF 5S <small id="appVersion">v</small></h1>
-  <div class="actions">
-    <button id="btnNewArea" class="btn">+ Nuova linea</button>
-    <button id="btnExport" class="btn">Esporta</button>
-    <label class="btn">
-      <input id="fileImport" type="file" accept="application/json" hidden>
-      Importa
-    </label>
-    <button id="btnPrint" class="btn">Stampa</button>
-    <button id="btnTheme" class="btn">🌙 Tema</button>
-  </div>
-</header>
-
-<section class="intro card">
-  <div class="intro_img">
-    <img src="assets/5s-hero.png" alt="5S" />
-  </div>
-  <div class="intro_copy">
-    <h2>Cosa è 5S</h2>
-    <p>5S è un metodo per fornire un posto di lavoro <b>sicuro</b>, <b>ben organizzato</b> e <b>pulito</b>, per fare il nostro lavoro facilmente e correttamente la prima volta.</p>
-    <ul class="legend5s">
-      <li><span class="badge s1">1S Selezionare</span> — Avere solo ciò che serve, eliminare il superfluo.</li>
-      <li><span class="badge s2">2S Sistemare</span> — Un posto per tutto e tutto al suo posto.</li>
-      <li><span class="badge s3">3S Splendere</span> — Pulire e rimuovere le cause dello sporco.</li>
-      <li><span class="badge s4">4S Standardizzare</span> — Regole e segnali visivi chiari.</li>
-      <li><span class="badge s5">5S Sostenere</span> — Disciplina, abitudine e miglioramento continuo.</li>
-    </ul>
-  </div>
-</section>
-
-<section class="controls card" id="controls">
-  <div class="filters">
-    <input id="q" class="input" placeholder="Cerca in descrizione / note / responsabile…">
-    <select id="lineFilter" class="input"></select>
-    <select id="sectorFilter" class="input">
-      <option value="ALL">Settore: Tutti</option>
-      <option value="Rettifica">Settore: Rettifica</option>
-      <option value="Montaggio">Settore: Montaggio</option>
-    </select>
-    <label class="chk"><input id="onlyLate" type="checkbox"> Solo in ritardo</label>
-    <button id="btnClearFilters" class="btn">Pulisci</button>
-  </div>
-
-  <div class="quick">
-    <div class="seg-tabs">
-      <button id="btnAll" class="tab sec active">Tutti</button>
-      <button id="btnFgr" class="tab sec">Rettifica</button>
-      <button id="btnAsm" class="tab sec">Montaggio</button>
+  <header class="brand">
+    <img src="assets/skf-logo.png" alt="SKF" class="logo" />
+    <h1>SKF 5S</h1>
+    <div class="toolbar">
+      <button id="btnNew" class="btn primary">+ Nuova linea</button>
+      <button id="btnExport" class="btn">Esporta</button>
+      <button id="btnImport" class="btn">Importa</button>
+      <button id="btnPrint" class="btn">Stampa</button>
+      <button id="btnTheme" class="btn pill">Tema</button>
     </div>
-  </div>
-</section>
+  </header>
 
-<section class="dashboard card">
-  <div class="kpi">
-    <div class="kpi-box"><div class="kpi-title">Linee</div><div id="kpiAreas" class="kpi-val">0</div></div>
-    <div class="kpi-box"><div class="kpi-title">Punteggio medio</div><div id="kpiScore" class="kpi-val">0%</div></div>
-    <div class="kpi-box"><div class="kpi-title">Azioni in ritardo</div><div id="kpiLate" class="kpi-val">0</div></div>
-  </div>
-
-  <div class="chart-controls">
-    <div class="zoom">
-      <button id="zoomOut" class="btn">−</button>
-      <button id="zoomIn" class="btn">+</button>
+  <!-- Intro / spiegazione -->
+  <section class="intro card">
+    <div class="intro__media">
+      <img src="assets/5S.png" alt="5S" />
     </div>
-    <label class="chk"><input id="toggleStacked" type="checkbox"> Stacked</label>
-  </div>
-
-  <div class="chart-scroll">
-    <div class="chart-inner">
-      <canvas id="chartAreas" width="1200" height="300"></canvas>
+    <div class="intro__text">
+      <h2>Cosa è 5S</h2>
+      <p>
+        5S è un metodo per fornire un posto di lavoro <b>sicuro</b>, <b>ben organizzato</b> e <b>pulito</b>, per
+        fare il nostro lavoro facilmente e correttamente la prima volta.
+      </p>
+      <ul class="legend5s">
+        <li><span class="tag s1">1S Selezionare</span> — Avere solo ciò che serve, eliminare il superfluo.</li>
+        <li><span class="tag s2">2S Sistemare</span> — Un posto per tutto e tutto al suo posto.</li>
+        <li><span class="tag s3">3S Splendere</span> — Pulire e rimuovere le cause dello sporco.</li>
+        <li><span class="tag s4">4S Standardizzare</span> — Regole e segnali visivi chiari.</li>
+        <li><span class="tag s5">5S Sostenere</span> — Disciplina, abitudine e miglioramento continuo.</li>
+      </ul>
     </div>
-  </div>
+  </section>
 
-  <div id="areasList" class="line-list"></div>
-
-  <div id="lateList" class="late-wrap" style="display:none"></div>
-
-  <div class="bulk">
-    <button id="btnCollapseAll" class="btn ghost">Comprimi tutto</button>
-    <button id="btnExpandAll" class="btn ghost">Espandi tutto</button>
-  </div>
-</section>
-
-<section id="areas" class="areas"></section>
-
-<footer class="foot">
-  <small>© SKF — PWA offline — <span id="appVersionFoot"></span></small>
-</footer>
-
-<!-- TEMPLATES -->
-<template id="tplArea">
-  <article class="area card">
-    <header class="area_head">
-      <input class="area-line" placeholder="CH n" />
-      <div class="score">
-        <span>Punteggio:</span> <b class="score-val">0%</b>
-        <span class="dom"><span>Predominante:</span> <b class="doms">—</b></span>
+  <!-- Filtri -->
+  <section class="controls card">
+    <div class="filters">
+      <div class="filter">
+        <input id="txtSearch" type="search" placeholder="Cerca in descrizione / note / responsabile…" />
       </div>
-      <div class="head-actions">
-        <button class="btn add-item">+ Voce</button>
-        <button class="btn ghost collapse">Comprimi</button>
-        <button class="btn danger delete-area">Elimina</button>
+      <div class="filter">
+        <select id="selLinea"></select>
       </div>
-    </header>
-
-    <div class="tabs">
-      <div class="tab-row">
-        <button class="tab sec active" data-sector="Rettifica">Rettifica</button>
-        <button class="tab sec" data-sector="Montaggio">Montaggio</button>
+      <div class="filter filter-chips">
+        <button class="chip active" data-sector="all">Tutti</button>
+        <button class="chip" data-sector="rettifica">Rettifica</button>
+        <button class="chip" data-sector="montaggio">Montaggio</button>
       </div>
-      <div class="tab-row small">
-        <button class="tab s active" data-s="1S"><span class="badge s1 sm">1S</span><span class="sval score-1S">0%</span></button>
-        <button class="tab s" data-s="2S"><span class="badge s2 sm">2S</span><span class="sval score-2S">0%</span></button>
-        <button class="tab s" data-s="3S"><span class="badge s3 sm">3S</span><span class="sval score-3S">0%</span></button>
-        <button class="tab s" data-s="4S"><span class="badge s4 sm">4S</span><span class="sval score-4S">0%</span></button>
-        <button class="tab s" data-s="5S"><span class="badge s5 sm">5S</span><span class="sval score-5S">0%</span></button>
+      <div class="filter">
+        <label class="check"><input id="chkLate" type="checkbox" /> Solo in ritardo</label>
+      </div>
+      <div class="filter">
+        <button id="btnClear" class="btn">Pulisci</button>
       </div>
     </div>
+  </section>
 
-    <div class="panels">
-      <div class="panel active" data-s="1S"></div>
-      <div class="panel" data-s="2S"></div>
-      <div class="panel" data-s="3S"></div>
-      <div class="panel" data-s="4S"></div>
-      <div class="panel" data-s="5S"></div>
+  <!-- Cruscotto -->
+  <section class="dashboard card">
+    <div class="kpi">
+      <div class="kpi__box">
+        <div class="kpi__label">Linee</div>
+        <div id="kpiLines" class="kpi__value">0</div>
+      </div>
+      <div class="kpi__box">
+        <div class="kpi__label">Punteggio medio</div>
+        <div id="kpiAvg" class="kpi__value">0%</div>
+      </div>
+      <div class="kpi__box">
+        <div class="kpi__label">Azioni in ritardo</div>
+        <div id="kpiLate" class="kpi__value">0</div>
+      </div>
+
+      <div class="zoom">
+        <button id="btnZoomOut" class="btn icon">–</button>
+        <button id="btnZoomIn" class="btn icon">+</button>
+      </div>
+
+      <label class="check stacked">
+        <input id="chkStacked" type="checkbox" />
+        <span>Stacked</span>
+      </label>
     </div>
-  </article>
-</template>
 
-<template id="tplItem">
-  <div class="item">
-    <button class="info i">i</button>
-    <input class="txt" placeholder="Titolo voce">
-    <div class="points-dots">
-      <button class="dot" data-val="0">0</button>
-      <button class="dot" data-val="1">1</button>
-      <button class="dot" data-val="3">3</button>
-      <button class="dot" data-val="5">5</button>
+    <div class="chart-wrap">
+      <canvas id="chartAreas" height="220"></canvas>
     </div>
-    <input class="resp" placeholder="Responsabile">
-    <input class="due" type="date" placeholder="gg/mm/aaaa">
-    <input class="note" placeholder="Note…">
-    <button class="del x">✕</button>
-  </div>
-  <div class="desc"></div>
-</template>
 
-<script src="app.js?v=7.15.3"></script>
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js?v=7.15.3');
-    });
-  }
-</script>
+    <div id="badgesRow" class="badges-row">
+      <!-- Chip stato + CH ... inseriti da JS -->
+    </div>
+
+    <div class="bulk">
+      <button id="btnCollapseAll" class="btn">Comprimi tutto</button>
+      <button id="btnExpandAll" class="btn">Espandi tutto</button>
+    </div>
+  </section>
+
+  <!-- Contenitore schede linee -->
+  <section id="areas" class="areas">
+    <!-- Cards create da JS -->
+  </section>
+
+  <footer class="footer">
+    <small>© SKF — PWA offline • <span id="appVersion">v7.9.5</span></small>
+  </footer>
+
+  <script src="app.js"></script>
+  <script>
+    // PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+  </script>
 </body>
 </html>
