@@ -1,5 +1,5 @@
 // sw.js – SKF 5S v7.10 (PWA offline)
-const CACHE_NAME = "skf5s-cache-v18";
+const CACHE_NAME = "skf5s-cache-v19";
 const URLS_TO_CACHE = [
   "./",
   "index.html",
