@@ -1,4 +1,4 @@
-/* ================= SKF 5S – Light & Dark (v7.11.0) ================= */
+/* ================= SKF 5S – Light & Dark (v7.12.0) ================= */
 :root{
   --bg:#ffffff; --text:#003366; --muted:#5c6f82;
   --card:#f3f7fa; --panel:#ffffff; --panel-alt:#eef4f8;
@@ -39,9 +39,48 @@ a{color:var(--accent)}
 .tag[data-s="3S"]{background:var(--c3)} .tag[data-s="4S"]{background:var(--c4)}
 .tag[data-s="5S"]{background:var(--c5)}
 
-.controls .filters{display:grid;grid-template-columns:1fr 220px auto auto auto auto;gap:10px;align-items:center}
-.controls input,.controls select{padding:8px;border:1px solid var(--outline);border-radius:10px;background:#fff;color:var(--text)}
-.sector-toggles .btn{margin-right:6px}
+/* FILTRI */
+.controls .filters{
+  display:grid;
+  grid-template-columns:1fr 220px auto auto auto auto;
+  grid-template-areas:
+    "q line seg seg late clear";
+  gap:10px; align-items:center;
+}
+.f-q{grid-area:q;}
+.f-line{grid-area:line;}
+.f-seg{grid-area:seg;}           /* bottoni */
+.f-seg-select{display:none;}     /* select nascosta su desktop */
+.f-late{grid-area:late; font-weight:600; color:var(--muted); display:flex; align-items:center; gap:8px}
+.f-clear{grid-area:clear;}
+.sector-toggles{display:flex; gap:6px; flex-wrap:wrap;}
+
+@media (max-width:780px){
+  .controls .filters{
+    grid-template-columns:1fr 1fr;
+    grid-template-areas:
+      "q q"
+      "line line"
+      "seg seg"
+      "late clear";
+  }
+  .f-line, .f-q{width:100%}
+}
+@media (max-width:520px){
+  .f-seg{display:none}
+  .f-seg-select{display:block; grid-area:seg; padding:8px; border:1px solid var(--outline); border-radius:10px; background:#fff; color:var(--text)}
+}
+@media (max-width:420px){
+  .controls .filters{
+    grid-template-columns:1fr;
+    grid-template-areas:
+      "q"
+      "line"
+      "seg"
+      "late"
+      "clear";
+  }
+}
 
 .kpis{display:flex;gap:12px;flex-wrap:wrap;justify-content:space-between}
 .kpi{flex:1;text-align:center;padding:12px;border-radius:14px;background:var(--panel-alt);border:1px solid var(--outline)}
@@ -88,7 +127,7 @@ a{color:var(--accent)}
 .item .resp,.item .due,.item .note{padding:6px;border:1px solid var(--outline);border-radius:6px}
 .item .del{color:#f44767;cursor:pointer;font-weight:700;text-align:center}.item .del:hover{color:#fff;background:#f44767;border-radius:6px}
 
-/* Pallini punteggio — classi fisse + stato active */
+/* Pallini punteggio */
 .points-dots{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .dot{width:28px;height:28px;line-height:28px;text-align:center;border-radius:50%;border:2px solid var(--outline);font-weight:700;cursor:pointer;transition:.12s;color:var(--muted);background:#fff}
 .dot.v0{border-color:#666;color:#666}
@@ -107,7 +146,7 @@ a{color:var(--accent)}
 footer{text-align:center;padding:12px;font-size:.85rem;color:var(--muted)}
 
 @media (max-width:920px){.intro-grid{grid-template-columns:1fr}.hero-img{max-width:320px;margin-inline:auto}}
-@media (max-width:540px){.card{margin:10px 8px;padding:10px}.controls .filters{grid-template-columns:1fr 1fr auto auto auto auto}}
+@media (max-width:540px){.card{margin:10px 8px;padding:10px}}
 @media (max-width:480px){
   .item{grid-template-columns:1fr auto;grid-template-areas:"title points" "resp  due" "note  del";gap:8px}
   .item .txt{grid-area:title}.item .resp{grid-area:resp}.item .due{grid-area:due}.item .note{grid-area:note}.item .del{grid-area:del;justify-self:end}
