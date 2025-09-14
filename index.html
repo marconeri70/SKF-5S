@@ -11,9 +11,8 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="assets/skf-192.png" />
   <link rel="apple-touch-icon" href="assets/skf-192.png" />
-  <link rel="stylesheet" href="style.css?v=7.10" />
+  <link rel="stylesheet" href="style.css?v=7.11" />
 
-  <!-- Chart.js + datalabels -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 </head>
@@ -33,14 +32,11 @@
     </nav>
   </header>
 
-  <!-- Intro: immagine 3D + spiegazione -->
   <section class="intro card">
     <img src="assets/5s-hero.png" alt="5S" class="hero" />
     <div class="intro-text">
       <h2>Cosa è 5S</h2>
-      <p>5S è un metodo per fornire un posto di lavoro <b>sicuro</b>, <b>ben organizzato</b> e <b>pulito</b>,
-        per fare il nostro lavoro facilmente e correttamente la prima volta.</p>
-
+      <p>5S è un metodo per fornire un posto di lavoro <b>sicuro</b>, <b>ben organizzato</b> e <b>pulito</b>, per fare il nostro lavoro facilmente e correttamente la prima volta.</p>
       <ul class="bullets">
         <li><span class="chip s1">1S Selezionare</span> — Avere solo ciò che serve, eliminare il superfluo.</li>
         <li><span class="chip s2">2S Sistemare</span> — Un posto per tutto e tutto al suo posto.</li>
@@ -51,7 +47,6 @@
     </div>
   </section>
 
-  <!-- Filtri compatti -->
   <section class="controls card">
     <div class="filters">
       <div class="field grow">
@@ -84,21 +79,11 @@
     </div>
   </section>
 
-  <!-- KPI + grafico -->
   <section class="dashboard card">
     <div class="kpis">
-      <div class="kpi">
-        <div class="kpi-label">Linee</div>
-        <div class="kpi-value" id="kpiLines">0</div>
-      </div>
-      <div class="kpi">
-        <div class="kpi-label">Punteggio medio</div>
-        <div class="kpi-value" id="kpiAvg">0%</div>
-      </div>
-      <div class="kpi">
-        <div class="kpi-label">Azioni in ritardo</div>
-        <div class="kpi-value" id="kpiLate">0</div>
-      </div>
+      <div class="kpi"><div class="kpi-label">Linee</div><div class="kpi-value" id="kpiLines">0</div></div>
+      <div class="kpi"><div class="kpi-label">Punteggio medio</div><div class="kpi-value" id="kpiAvg">0%</div></div>
+      <div class="kpi"><div class="kpi-label">Azioni in ritardo</div><div class="kpi-value" id="kpiLate">0</div></div>
       <div class="zoomers">
         <button class="btn icon" id="zoomOut">−</button>
         <button class="btn icon" id="zoomIn">+</button>
@@ -113,7 +98,6 @@
       <canvas id="chart"></canvas>
     </div>
 
-    <!-- Stato globale + selezione linee -->
     <div class="legend-row">
       <div class="states" id="states">
         <span class="state nc">0</span><small>Non conforme</small>
@@ -130,20 +114,18 @@
     </div>
   </section>
 
-  <!-- Container schede -->
   <section id="areas" class="areas"></section>
 
   <footer class="foot muted">
     <span>© SKF – PWA offline</span>
-    <span class="ver" id="appVersion">v7.10</span>
+    <span class="ver" id="appVersion">v7.11</span>
   </footer>
 
-  <script src="app.js?v=7.10" defer></script>
+  <script src="app.js?v=7.11" defer></script>
   <script>
-    // Registrazione SW (cache-bust con versione)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js?v=7.10');
+        navigator.serviceWorker.register('sw.js?v=7.11');
       });
     }
   </script>
