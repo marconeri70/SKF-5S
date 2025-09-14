@@ -2,119 +2,133 @@
 <html lang="it">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#0b5fff" />
-  <link rel="manifest" href="manifest.json" />
-  <link rel="icon" href="assets/skf-192.png" type="image/png" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>SKF 5S</title>
+
+  <!-- PWA basics -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#0a6cff" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+
+  <link rel="icon" href="assets/skf-192.png" />
+  <link rel="apple-touch-icon" href="assets/skf-192.png" />
+
+  <!-- Styles -->
   <link rel="stylesheet" href="style.css" />
 
-  <!-- Chart.js + Datalabels (usate anche offline via SW dopo il primo avvio) -->
+  <!-- Chart.js + datalabels (etichette percentuali) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 </head>
 <body>
   <header class="brand">
-    <img src="assets/skf-logo.png" alt="SKF" class="logo">
-    <h1>SKF 5S</h1>
-    <div class="toolbar">
-      <button id="btnNew" class="btn primary">+ Nuova linea</button>
+    <div class="brand__left">
+      <img src="assets/skf-192.png" alt="SKF" class="brand__logo" />
+      <h1>SKF 5S</h1>
+    </div>
+
+    <div class="brand__right">
+      <button id="btnNew" class="btn btn--primary">+ Nuova linea</button>
       <button id="btnExport" class="btn">Esporta</button>
       <button id="btnImport" class="btn">Importa</button>
       <button id="btnPrint" class="btn">Stampa</button>
-      <button id="btnTheme" class="btn pill">Tema</button>
+      <button id="btnTheme" class="btn">Tema</button>
     </div>
   </header>
 
-  <!-- Intro 5S -->
   <section class="intro card">
-    <div class="intro__media">
-      <img src="assets/5S.png" alt="5S"
-           onerror="this.src='assets/skf-512.png';this.style.objectFit='contain';">
-    </div>
+    <img src="assets/5S.png" alt="5S" class="intro__img"
+         onerror="this.style.display='none'"/>
     <div class="intro__text">
       <h2>Cosa è 5S</h2>
-      <p>
-        5S è un metodo per fornire un posto di lavoro <b>sicuro</b>, <b>ben organizzato</b> e <b>pulito</b>,
-        per fare il nostro lavoro facilmente e correttamente la prima volta.
-      </p>
+      <p>5S è un metodo per fornire un posto di lavoro <strong>sicuro, ben organizzato e pulito</strong>, per fare il nostro lavoro facilmente e correttamente la prima volta.</p>
       <ul class="legend5s">
-        <li><span class="tag s1">1S Selezionare</span> — Avere solo ciò che serve, eliminare il superfluo.</li>
-        <li><span class="tag s2">2S Sistemare</span> — Un posto per tutto e tutto al suo posto.</li>
-        <li><span class="tag s3">3S Splendere</span> — Pulire e rimuovere le cause dello sporco.</li>
-        <li><span class="tag s4">4S Standardizzare</span> — Regole e segnali visivi chiari.</li>
-        <li><span class="tag s5">5S Sostenere</span> — Disciplina, abitudine e miglioramento continuo.</li>
+        <li><span class="pill pill--1s">1S Selezionare</span> — Avere solo ciò che serve, eliminare il superfluo.</li>
+        <li><span class="pill pill--2s">2S Sistemare</span> — Un posto per tutto e tutto al suo posto.</li>
+        <li><span class="pill pill--3s">3S Splendere</span> — Pulire e rimuovere le cause dello sporco.</li>
+        <li><span class="pill pill--4s">4S Standardizzare</span> — Regole e segnali visivi chiari.</li>
+        <li><span class="pill pill--5s">5S Sostenere</span> — Disciplina, abitudine e miglioramento continuo.</li>
       </ul>
     </div>
   </section>
 
   <!-- Filtri -->
   <section class="controls card">
-    <div class="filters">
-      <input id="txtSearch" type="search" class="w100" placeholder="Cerca in descrizione / note / responsabile…" />
-      <select id="selLinea"></select>
+    <input id="q" class="search" placeholder="Cerca in descrizione / note / responsabile…" />
+    <select id="lineFilter"></select>
 
-      <div class="chip-group" id="chipsSector">
-        <button class="chip active" data-sector="all">Tutti</button>
-        <button class="chip" data-sector="rettifica">Rettifica</button>
-        <button class="chip" data-sector="montaggio">Montaggio</button>
-      </div>
+    <div class="sector">
+      <button class="tab" data-sector="all">Tutti</button>
+      <button class="tab" data-sector="rettifica">Rettifica</button>
+      <button class="tab" data-sector="montaggio">Montaggio</button>
+    </div>
 
+    <label class="check">
+      <input type="checkbox" id="lateOnly" />
+      <span>Solo in ritardo</span>
+    </label>
+
+    <button id="btnClear" class="btn">Pulisci</button>
+  </section>
+
+  <!-- KPI -->
+  <section class="kpi card">
+    <div class="kpi__box">
+      <div class="kpi__title">Linee</div>
+      <div id="kpiLines" class="kpi__value">0</div>
+    </div>
+    <div class="kpi__box">
+      <div class="kpi__title">Punteggio medio</div>
+      <div id="kpiAvg" class="kpi__value">0%</div>
+    </div>
+    <div class="kpi__box">
+      <div class="kpi__title">Azioni in ritardo</div>
+      <div id="kpiLate" class="kpi__value">0</div>
+    </div>
+    <div class="kpi__stack">
+      <button id="zoomOut" class="btn btn--circle">−</button>
+      <button id="zoomIn" class="btn btn--circle">+</button>
       <label class="check">
-        <input id="chkLate" type="checkbox" />
-        <span>Solo in ritardo</span>
+        <input type="checkbox" id="stacked" />
+        <span>Stacked</span>
       </label>
-
-      <button id="btnClear" class="btn">Pulisci</button>
     </div>
   </section>
 
   <!-- Cruscotto -->
   <section class="dashboard card">
-    <div class="kpi">
-      <div class="kpi__box"><div class="kpi__label">Linee</div><div id="kpiLines" class="kpi__value">0</div></div>
-      <div class="kpi__box"><div class="kpi__label">Punteggio medio</div><div id="kpiAvg" class="kpi__value">0%</div></div>
-      <div class="kpi__box"><div class="kpi__label">Azioni in ritardo</div><div id="kpiLate" class="kpi__value">0</div></div>
-      <div class="zoom">
-        <button id="btnZoomOut" class="btn icon">–</button>
-        <button id="btnZoomIn" class="btn icon">+</button>
-      </div>
-      <label class="check stacked">
-        <input id="chkStacked" type="checkbox" />
-        <span>Stacked</span>
-      </label>
+    <div class="legendBars">
+      <span class="legendDot c1">1S</span>
+      <span class="legendDot c2">2S</span>
+      <span class="legendDot c3">3S</span>
+      <span class="legendDot c4">4S</span>
+      <span class="legendDot c5">5S</span>
     </div>
+    <canvas id="chart" height="130"></canvas>
 
-    <div class="chart-wrap">
-      <canvas id="chartAreas" height="220"></canvas>
-      <div id="chartFallback" class="chart-fallback" style="display:none;">
-        Grafico non disponibile finché non apri l’app con connessione (scarico Chart.js per l’uso offline).
-      </div>
-    </div>
-
-    <div id="badgesRow" class="badges-row"></div>
+    <div class="badges-row" id="lineBadges"></div>
 
     <div class="bulk">
-      <button id="btnCollapseAll" class="btn">Comprimi tutto</button>
-      <button id="btnExpandAll" class="btn">Espandi tutto</button>
+      <button id="collapseAll" class="btn">Comprimi tutto</button>
+      <button id="expandAll" class="btn">Espandi tutto</button>
     </div>
   </section>
 
-  <!-- Schede linee -->
+  <!-- Aree -->
   <section id="areas" class="areas"></section>
 
   <footer class="footer">
-    <small>© SKF — PWA offline • <span id="appVersion">v7.9.7</span></small>
+    <small>© SKF — PWA offline • <span id="version">v7.9.8</span></small>
   </footer>
 
   <script src="app.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(()=>{});
+        navigator.serviceWorker.register('sw.js').catch(()=>{});
       });
     }
   </script>
 </body>
 </html>
-
