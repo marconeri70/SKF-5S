@@ -1,5 +1,5 @@
-// PWA cache minimale (v7.10.4)
-const CACHE = 'skf5s-cache-v7.10.4';
+// PWA cache minimal (v7.11.0)
+const CACHE = 'skf5s-cache-v7.11.0';
 const ASSETS = [
   './','index.html','style.css','app.js','manifest.json',
   'assets/skf-logo.png','assets/skf-192.png','assets/5s-hero.png'
