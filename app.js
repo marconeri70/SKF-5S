@@ -1,390 +1,439 @@
-/* ================= SKF 5S – App (v7.9.7) ================= */
-const APP_VERSION = 'v7.9.7';
+/*  =========================================================
+    SKF 5S — v7.9.8 (compatta + fix mobile + note textarea)
+    ========================================================= */
 
-/* ---------- Stato ---------- */
-const state = {
-  areas: [],              // [{id,line,sector,items[],collapsed,activeS}]
-  filter: { search:'', line:'Tutte', sector:'all', onlyLate:false, stacked:false },
-  chart: { inst:null, zoom:1 },
+Chart.register(ChartDataLabels);
+
+// ---------- Stato & Costanti ----------
+const LSKEY = 'skf5s_v2';
+const COLORS = {
+  '1S': getCSS('--c1'),
+  '2S': getCSS('--c2'),
+  '3S': getCSS('--c3'),
+  '4S': getCSS('--c4'),
+  '5S': getCSS('--c5'),
 };
+const S_ORDER = ['1S','2S','3S','4S','5S'];
+const NOW = () => new Date().toISOString().slice(0,10);
 
-/* ---------- Dataset demo minimo (puoi poi importare i tuoi) ---------- */
-function demoAreas(){
-  return [
-    mkArea('CH 2','rettifica'),
-    mkArea('CH 3','montaggio'),
-  ];
-}
-function mkArea(line, sector){
-  // 4 voci d’esempio, una per ciascuna S
-  const items = [
-    { s:'1S', title:'1-S Stato', points:null, resp:'', due:'', note:'' },
-    { s:'2S', title:'Sicurezza', points:null, resp:'', due:'', note:'' },
-    { s:'3S', title:'Qualità', points:null, resp:'', due:'', note:'' },
-    { s:'5S', title:'Pulizia', points:null, resp:'', due:'', note:'' },
-  ];
-  return { id:crypto.randomUUID(), line, sector, items, collapsed:false, activeS:'ALL' };
-}
+let state = load();
+let ui = {};
+let chart;
 
-/* ---------- Utilità ---------- */
-const S_COLORS = { '1S':'#7d5bd6','2S':'#e64a45','3S':'#f1b11a','4S':'#23a35a','5S':'#4597ff' };
-const S_LIST = ['1S','2S','3S','4S','5S'];
-
-function percent(n){ return isFinite(n)? Math.round(n) : 0; }
-function byId(id){ return document.getElementById(id); }
-function qs(sel,root=document){ return root.querySelector(sel); }
-function qsa(sel,root=document){ return Array.from(root.querySelectorAll(sel)); }
-
-/* ---------- Storage ---------- */
-const LS_KEY = 'skf5s-data-v2';
+// ---------- Utils ----------
+function getCSS(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+function save(){ localStorage.setItem(LSKEY, JSON.stringify(state)); }
 function load(){
-  try{
-    const raw = localStorage.getItem(LS_KEY);
-    if(!raw){ state.areas = demoAreas(); save(); return; }
-    state.areas = JSON.parse(raw);
-  }catch{ state.areas = demoAreas(); save(); }
+  try { return JSON.parse(localStorage.getItem(LSKEY)) || seed(); }
+  catch { return seed(); }
 }
-function save(){ localStorage.setItem(LS_KEY, JSON.stringify(state.areas)); }
+function seed(){
+  return {
+    theme:'light',
+    stacked:false,
+    areas:[]
+  };
+}
+function uid(){ return Math.random().toString(36).slice(2,9); }
+function percent(part, tot){ return tot ? Math.round((part/tot)*100) : 0; }
 
-/* ---------- Score ---------- */
-function computeAreaStats(area){
-  const byS = { '1S':[], '2S':[], '3S':[], '4S':[], '5S':[] };
-  area.items.forEach(it => byS[it.s]?.push(it.points ?? 0));
+// Calcolo punteggi 5S per area
+function calcArea(area){
+  // somma punti per S (p0=0, p1=1, p3=3, p5=5)
+  let sums = {'1S':0,'2S':0,'3S':0,'4S':0,'5S':0};
+  let counts = {'1S':0,'2S':0,'3S':0,'4S':0,'5S':0};
 
-  const sPct = {};
-  for(const s of S_LIST){
-    const arr = byS[s];
-    const max = arr.length*5 || 1;
-    const sum = arr.reduce((a,b)=>a+(b||0),0);
-    sPct[s] = 100 * (sum/max);
+  for(const it of area.items){
+    const v = it.score ?? 0; // 0/1/3/5
+    sums[it.S] += v;
+    counts[it.S] += 5; // massimo per item = 5
   }
-  const all = Object.values(sPct);
-  const avg = all.length ? all.reduce((a,b)=>a+b,0)/all.length : 0;
 
-  // predominante
-  let predS='1S', predV=-1;
-  for(const s of S_LIST){ if(sPct[s]>predV){ predV=sPct[s]; predS=s; } }
+  // percentuali per S
+  const p = {};
+  for(const s of S_ORDER){
+    p[s] = counts[s] ? Math.round((sums[s]/counts[s])*100) : 0;
+  }
+  // punteggio totale area = media delle 5S
+  const media = Math.round((p['1S']+p['2S']+p['3S']+p['4S']+p['5S'])/5);
 
-  // ritardi
-  const now = new Date().setHours(0,0,0,0);
-  const late = area.items.some(it => it.due && new Date(it.due).setHours(0,0,0,0)<now && (it.points??0)<5);
+  // predominante (S con valore più alto)
+  let predS = '1S', predV = -1;
+  for(const s of S_ORDER){ if(p[s] > predV){ predV = p[s]; predS = s; } }
 
-  return { sPct, avg, predS, predV, late };
+  // azioni in ritardo
+  const late = area.items.filter(it => it.due && it.due < NOW()).length;
+
+  return {p, media, predS, predV, late};
 }
 
-/* ---------- Filtri ---------- */
-function applyFilters(){
-  const {search,line,sector,onlyLate} = state.filter;
-  const text = search.trim().toLowerCase();
+// ---------- Rendering ----------
+window.addEventListener('DOMContentLoaded', () => {
+  bindUI();
+  renderAll();
+});
 
-  return state.areas.filter(a=>{
-    if(line!=='Tutte' && a.line!==line) return false;
-    if(sector!=='all' && a.sector!==sector) return false;
+function bindUI(){
+  ui.q = byId('q');
+  ui.lineFilter = byId('lineFilter');
+  ui.lateOnly = byId('lateOnly');
+  ui.stacked = byId('stacked');
+  ui.kpiLines = byId('kpiLines');
+  ui.kpiAvg   = byId('kpiAvg');
+  ui.kpiLate  = byId('kpiLate');
+  ui.zoomIn = byId('zoomIn');
+  ui.zoomOut = byId('zoomOut');
+  ui.chart = byId('chart');
+  ui.lineBadges = byId('lineBadges');
+  ui.areas = byId('areas');
 
-    const st = computeAreaStats(a);
-    if(onlyLate && !st.late) return false;
-
-    if(text){
-      const t = [a.line,a.sector, ...a.items.map(i=>`${i.title} ${i.note??''} ${i.resp??''}`)].join(' ').toLowerCase();
-      if(!t.includes(text)) return false;
-    }
-    return true;
+  // Barra settori rapidi
+  document.querySelectorAll('.sector .tab').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.sector .tab').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      state.quickSector = btn.dataset.sector; save(); renderAll();
+    });
   });
+
+  // Filtri
+  ui.q.addEventListener('input', renderAll);
+  ui.lineFilter.addEventListener('change', renderAll);
+  ui.lateOnly.addEventListener('change', renderAll);
+  ui.stacked.addEventListener('change', ()=>{ state.stacked = ui.stacked.checked; save(); renderChart(); });
+  byId('btnClear').addEventListener('click', ()=>{
+    ui.q.value=''; ui.lineFilter.value=''; ui.lateOnly.checked=false; renderAll();
+  });
+
+  // Top actions
+  byId('btnTheme').addEventListener('click', toggleTheme);
+  byId('btnNew').addEventListener('click', newArea);
+  byId('btnExport').addEventListener('click', exportJSON);
+  byId('btnImport').addEventListener('click', importJSON);
+  byId('btnPrint').addEventListener('click', ()=>window.print());
+
+  // Zoom chart
+  let scale = 1;
+  ui.zoomIn.addEventListener('click', ()=>{ scale=Math.min(2, scale+0.1); ui.chart.style.transform=`scale(${scale})`; ui.chart.style.transformOrigin='top left'; });
+  ui.zoomOut.addEventListener('click', ()=>{ scale=Math.max(1, scale-0.1); ui.chart.style.transform=`scale(${scale})`; });
+
+  // Bulk expand/collapse
+  byId('collapseAll').addEventListener('click', ()=>{
+    document.querySelectorAll('.area').forEach(a=>a.classList.add('collapsed'));
+  });
+  byId('expandAll').addEventListener('click', ()=>{
+    document.querySelectorAll('.area').forEach(a=>a.classList.remove('collapsed'));
+  });
+
+  // Tema
+  if(state.theme==='dark'){ document.documentElement.setAttribute('data-theme','dark'); }
+  ui.stacked.checked = state.stacked || false;
+  document.getElementById('version').textContent = 'v7.9.8';
 }
 
-/* ---------- Render Dashboard ---------- */
-function renderDashboard(){
-  // drop e ricostruisci linea select + chip linee
-  const lines = [...new Set(state.areas.map(a=>a.line))].sort((a,b)=>{
-    const na=parseInt(a.replace(/\D/g,'')); const nb=parseInt(b.replace(/\D/g,'')); return na-nb;
-  });
-  const sel = byId('selLinea');
-  sel.innerHTML = `<option value="Tutte">Linea: Tutte</option>` + lines.map(l=>`<option>${l}</option>`).join('');
-  sel.value = state.filter.line;
+function renderAll(){
+  // popola select linee
+  const lines = state.areas.map(a=>a.name).sort();
+  ui.lineFilter.innerHTML = `<option value="">Linea: Tutte</option>` + lines.map(l=>`<option>${l}</option>`).join('');
 
-  const filtered = applyFilters();
+  const filtered = state.areas.filter(a=>{
+    if(ui.lineFilter.value && a.name!==ui.lineFilter.value) return false;
+    if(ui.lateOnly.checked && calcArea(a).late===0) return false;
+    const q = ui.q.value.trim().toLowerCase();
+    if(!q) return true;
+    return a.items.some(it=>
+      (it.title||'').toLowerCase().includes(q) ||
+      (it.note||'').toLowerCase().includes(q) ||
+      (it.owner||'').toLowerCase().includes(q)
+    );
+  });
 
   // KPI
-  byId('kpiLines').textContent = filtered.length;
-  const avgs = filtered.map(a=>computeAreaStats(a).avg);
-  byId('kpiAvg').textContent = (avgs.length?percent(avgs.reduce((a,b)=>a+b,0)/avgs.length):0) + '%';
-  const lateCount = filtered.filter(a=>computeAreaStats(a).late).length;
-  byId('kpiLate').textContent = lateCount;
+  ui.kpiLines.textContent = filtered.length;
+  const medias = filtered.map(a=>calcArea(a).media);
+  const avg = medias.length ? Math.round(medias.reduce((a,b)=>a+b,0)/medias.length) : 0;
+  ui.kpiAvg.textContent = `${avg}%`;
+  const lateTot = filtered.reduce((n,a)=>n+calcArea(a).late,0);
+  ui.kpiLate.textContent = lateTot;
 
-  // badge linee
-  const row = byId('badgesRow');
-  row.innerHTML = '';
-  if(lines.length){
-    const all = document.createElement('button');
-    all.className='chip'+(state.filter.line==='Tutte'?' active':'');
-    all.textContent='Tutte';
-    all.onclick=()=>{state.filter.line='Tutte'; renderAll();};
-    row.appendChild(all);
-  }
-  lines.forEach(l=>{
-    const b = document.createElement('button');
-    b.className='chip'+(state.filter.line===l?' active':'');
-    b.textContent=l;
-    b.onclick=()=>{ state.filter.line = l; renderAll(); };
-    row.appendChild(b);
-  });
-
+  // render chart + badges
   renderChart(filtered);
+  renderBadges(filtered);
+
+  // render areas
+  renderAreas(filtered);
 }
 
-/* ---------- Chart ---------- */
-function renderChart(areas){
-  const el = byId('chartAreas');
-  const fb = byId('chartFallback');
-  if(!(window.Chart && window.ChartDataLabels)){
-    el.style.display='none'; fb.style.display='block'; return;
-  }
-  el.style.display='block'; fb.style.display='none';
-
-  // dati per linee
-  const labels = areas.map(a=>a.line);
-  const dataByS = {};
-  S_LIST.forEach(s=>dataByS[s]=areas.map(a=>computeAreaStats(a).sPct[s]));
-
-  // distruggi precedente
-  if(state.chart.inst){ state.chart.inst.destroy(); state.chart.inst=null; }
-
-  const stacked = state.filter.stacked;
-  const datasets = S_LIST.map(s=>({
-    label:s, data:dataByS[s],
-    backgroundColor:S_COLORS[s],
-    borderColor:S_COLORS[s],
-    borderWidth:1,
-    datalabels:{
-      color:'#fff', clamp:true, anchor: stacked?'center':'end', align: stacked?'center':'end',
-      formatter:(v)=> v?`${percent(v)}%`:''
-    }
-  }));
-
-  const cfg = {
-    type:'bar',
-    data:{ labels, datasets },
-    options:{
-      responsive:true,
-      maintainAspectRatio:false,
-      scales:{
-        x:{ stacked, ticks:{
-          callback:(val,idx)=> labels[idx], // CH
-        }},
-        y:{ stacked, beginAtZero:true, max:100 }
-      },
-      plugins:{
-        legend:{ display:true },
-        datalabels:{ textStrokeColor:'rgba(0,0,0,.35)', textStrokeWidth:2 }
-      }
-    },
-    plugins:[ChartDataLabels]
-  };
-  state.chart.inst = new Chart(el.getContext('2d'), cfg);
-
-  // abbassa leggermente l’etichetta CH
-  state.chart.inst.options.scales.x.ticks.padding = 10;
-  state.chart.inst.update();
-}
-
-/* ---------- Render Aree (schede) ---------- */
-function renderAreas(){
-  const wr = byId('areas');
-  wr.innerHTML='';
-  const list = applyFilters();
-
-  list.forEach(area=>{
-    const st = computeAreaStats(area);
-
-    const box = document.createElement('div');
-    box.className='area';
-    if(st.late) box.style.boxShadow = '0 0 0 3px rgba(231,76,60,.25)';
-
-    /* HEAD */
-    const head = document.createElement('div');
-    head.className='area__head';
-
-    const title = document.createElement('div');
-    title.className='area__line';
-    title.textContent = area.line;
-    head.appendChild(title);
-
-    // settore chips
-    const sectors = document.createElement('div');
-    sectors.className='sector-chips';
-    ['rettifica','montaggio'].forEach(sec=>{
-      const b=document.createElement('button');
-      b.className='chip'+(area.sector===sec?' active':'');
-      b.textContent=sec[0].toUpperCase()+sec.slice(1);
-      b.onclick=()=>{ area.sector=sec; save(); renderAll(); };
-      sectors.appendChild(b);
-    });
-    head.appendChild(sectors);
-
-    // stats pill
-    const stats = document.createElement('div');
-    stats.className='area__stats';
-    const pTot = document.createElement('div');
-    pTot.className='stat-pill';
-    pTot.innerHTML = `Punteggio: <b>${percent(st.avg)}%</b>`;
-    const pPred = document.createElement('div');
-    pPred.className='stat-pill';
-    pPred.innerHTML = `Predominante: <span class="muted">${st.predS}</span> <b>${percent(st.predV)}%</b>`;
-    stats.appendChild(pTot); stats.appendChild(pPred);
-
-    const btnAdd = document.createElement('button'); btnAdd.className='btn'; btnAdd.textContent='+ Voce';
-    btnAdd.onclick=()=>{ addItem(area); };
-    const btnToggle = document.createElement('button'); btnToggle.className='btn';
-    btnToggle.textContent= area.collapsed?'Espandi':'Comprimi';
-    btnToggle.onclick=()=>{ area.collapsed=!area.collapsed; save(); renderAll(); };
-
-    stats.appendChild(btnAdd); stats.appendChild(btnToggle);
-    head.appendChild(stats);
-    box.appendChild(head);
-
-    /* TABS 5S */
-    const tabs = document.createElement('div'); tabs.className='area__tabs';
-    const tabAll = mkTab('ALL','Tutte', null, area);
-    tabs.appendChild(tabAll);
-    S_LIST.forEach(s=>{
-      const t = mkTab(s, s, percent(st.sPct[s])+'%', area, s);
-      tabs.appendChild(t);
-    });
-    box.appendChild(tabs);
-
-    /* BODY */
-    const body = document.createElement('div'); body.className='area__body';
-    if(area.collapsed) body.style.display='none';
-
-    const visibleS = area.activeS==='ALL'? null : area.activeS;
-    area.items.forEach((it,idx)=>{
-      if(visibleS && it.s!==visibleS) return;
-
-      const row = document.createElement('div'); row.className='item';
-      if(isLate(it)) row.classList.add('late');
-
-      const info = document.createElement('div'); info.className='info'; info.textContent='i';
-      row.appendChild(info);
-
-      const title = document.createElement('div'); title.textContent = it.title; row.appendChild(title);
-
-      const pts = document.createElement('div'); pts.className='points';
-      [0,1,3,5].forEach(v=>{
-        const p=document.createElement('div'); p.className='pt'; p.dataset.v=v; p.textContent=v;
-        if(it.points===v) p.classList.add('active');
-        p.onclick=()=>{ it.points=v; save(); renderAll(); };
-        pts.appendChild(p);
-      });
-      row.appendChild(pts);
-
-      const resp = document.createElement('input'); resp.placeholder='Responsabile'; resp.value=it.resp||''; resp.className='mono';
-      resp.oninput=()=>{ it.resp=resp.value; save(); };
-      row.appendChild(resp);
-
-      const due = document.createElement('input'); due.type='date'; due.value=it.due||'';
-      due.onchange=()=>{ it.due=due.value; save(); renderAll(); };
-      row.appendChild(due);
-
-      const note = document.createElement('input'); note.placeholder='Note…'; note.className='note'; note.value=it.note||'';
-      note.oninput=()=>{ it.note=note.value; save(); };
-      row.appendChild(note);
-
-      body.appendChild(row);
-    });
-    box.appendChild(body);
-
-    wr.appendChild(box);
+function renderChart(list=state.areas){
+  const labels = list.map(a=>a.name);
+  const dataByS = S_ORDER.map(S=>{
+    return list.map(a=>calcArea(a).p[S]);
   });
 
-  function mkTab(kind, label, pct, area, s){
-    const b = document.createElement('button');
-    b.className = 'tab' + (s?(' '+s.toLowerCase()):'');
-    if(area.activeS===kind) b.classList.add('active');
-    b.innerHTML = (s?label:label) + (pct? ` <span class="pct">${pct}</span>` : '');
-    b.onclick=()=>{ area.activeS=kind; save(); renderAll(); };
-    return b;
-  }
+  if(chart) chart.destroy();
 
-  function isLate(it){
-    if(!it.due) return false;
-    const d = new Date(it.due).setHours(0,0,0,0);
-    return d < new Date().setHours(0,0,0,0) && (it.points??0) < 5;
-  }
+  const stacked = ui.stacked.checked;
+
+  chart = new Chart(ui.chart.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: S_ORDER.map((S,idx)=>({
+        label: S,
+        data: dataByS[idx],
+        backgroundColor: hex(COLORS[S], 0.9),
+        borderColor: COLORS[S],
+        borderWidth: 1,
+        stack: stacked ? 'stack' : undefined
+      }))
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { stacked, ticks:{ color:getCSS('--text') } },
+        y: { stacked, beginAtZero:true, max:100, ticks:{ color:getCSS('--muted'), callback:v=>v+'%'} }
+      },
+      plugins: {
+        legend: { display:false },
+        datalabels: {
+          color: '#fff',
+          font: { weight: 800 },
+          formatter: (v,ctx)=>{
+            // Etichetta: percentuale + S quando non stacked
+            if(!stacked && v>0){ return `${v}%`; }
+            if(stacked && v>0){ return `${v}%`; }
+            return '';
+          },
+          clamp:true,
+          anchor:'end',
+          align:'start',
+          offset: 2
+        },
+        tooltip: {
+          callbacks:{
+            title: ctx => labels[ctx[0].dataIndex],
+            label: ctx => `${ctx.dataset.label}: ${ctx.raw}%`
+          }
+        }
+      }
+    }
+  });
 }
 
-function addItem(area){
-  area.items.push({ s:'1S', title:'Nuova voce', points:null, resp:'', due:'', note:'' });
+function renderBadges(list){
+  ui.lineBadges.innerHTML = '';
+  const all = document.createElement('button');
+  all.className='badge active';
+  all.textContent='Tutte';
+  all.addEventListener('click',()=>{ ui.lineFilter.value=''; renderAll(); });
+  ui.lineBadges.appendChild(all);
+
+  list.forEach(a=>{
+    const b = document.createElement('button');
+    b.className='badge';
+    b.textContent=a.name;
+    b.addEventListener('click',()=>{ ui.lineFilter.value=a.name; renderAll(); });
+    ui.lineBadges.appendChild(b);
+  });
+}
+
+function renderAreas(list){
+  ui.areas.innerHTML = '';
+  list.forEach(area=>{
+    const calc = calcArea(area);
+
+    const el = document.createElement('div');
+    el.className='area';
+
+    el.innerHTML = `
+      <div class="area__head">
+        <div class="area__title">Linea <strong>${area.name}</strong></div>
+        <div class="scores">
+          <span class="score s1">1S ${calc.p['1S']}%</span>
+          <span class="score s2">2S ${calc.p['2S']}%</span>
+          <span class="score s3">3S ${calc.p['3S']}%</span>
+          <span class="score s4">4S ${calc.p['4S']}%</span>
+          <span class="score s5">5S ${calc.p['5S']}%</span>
+        </div>
+        <div>
+          <span class="badge">Punteggio: <strong>${calc.media}%</strong></span>
+          <span class="badge">Predominante: <strong>${calc.predS} ${calc.predV}%</strong></span>
+        </div>
+        <div class="area__tabs">
+          <button class="tab ${area.sector==='rettifica'?'active':''}" data-s="rettifica">Rettifica</button>
+          <button class="tab ${area.sector==='montaggio'?'active':''}" data-s="montaggio">Montaggio</button>
+        </div>
+      </div>
+      <div class="items"></div>
+      <div class="area__foot" style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn" data-act="add">+ Voce</button>
+        <button class="btn" data-act="toggle">${el.classList.contains('collapsed')?'Espandi':'Comprimi'}</button>
+        <button class="btn btn--danger" data-act="del">Elimina</button>
+      </div>
+    `;
+
+    // Tab settore
+    el.querySelectorAll('.area__tabs .tab').forEach(t=>{
+      t.addEventListener('click',()=>{
+        el.querySelectorAll('.area__tabs .tab').forEach(b=>b.classList.remove('active'));
+        t.classList.add('active');
+        area.sector = t.dataset.s;
+        save(); renderAll();
+      });
+    });
+
+    // Bottoni footer
+    el.querySelector('[data-act="add"]').addEventListener('click', ()=>{
+      area.items.push(blankItem());
+      save(); renderAll();
+    });
+    el.querySelector('[data-act="del"]').addEventListener('click', ()=>{
+      if(confirm('Eliminare la linea?')){
+        state.areas = state.areas.filter(a=>a!==area);
+        save(); renderAll();
+      }
+    });
+    el.querySelector('[data-act="toggle"]').addEventListener('click', (e)=>{
+      el.classList.toggle('collapsed');
+      e.target.textContent = el.classList.contains('collapsed')?'Espandi':'Comprimi';
+    });
+
+    // Voci
+    const listEl = el.querySelector('.items');
+    area.items.forEach(it=>{
+      listEl.appendChild(renderItem(area, it));
+    });
+
+    ui.areas.appendChild(el);
+  });
+}
+
+function renderItem(area, it){
+  const row = document.createElement('div');
+  row.className='item';
+
+  // info
+  const info = document.createElement('div');
+  info.className='i';
+  info.textContent='i';
+  info.title = it.desc || '';
+  row.appendChild(info);
+
+  // titolo
+  const title = document.createElement('input');
+  title.type='text';
+  title.value = it.title || '';
+  title.placeholder = 'Descrizione…';
+  title.oninput = () => { it.title = title.value; save(); };
+  row.appendChild(title);
+
+  // punti (0,1,3,5)
+  const pts = document.createElement('div');
+  pts.className='points';
+  [0,1,3,5].forEach(v=>{
+    const p = document.createElement('button');
+    p.className = `point p${v} ${it.score===v?'active':''}`;
+    p.textContent = v;
+    p.style.borderColor = v===1?COLORS['1S'] : v===3?COLORS['3S'] : v===5?COLORS['5S'] : '#9aa5b1';
+    p.addEventListener('click', ()=>{
+      it.score = v; save();
+      // evidenzia pulsante e aggiorna punteggi in tempo reale
+      pts.querySelectorAll('.point').forEach(b=>b.classList.remove('active'));
+      p.classList.add('active');
+      renderAll();
+    });
+    pts.appendChild(p);
+  });
+  row.appendChild(pts);
+
+  // scadenza + owner
+  const due = document.createElement('input');
+  due.type='date';
+  due.value = it.due || '';
+  due.onchange = ()=>{ it.due = due.value; save(); renderAll(); };
+
+  const owner = document.createElement('input');
+  owner.type='text';
+  owner.placeholder='Responsabile';
+  owner.value = it.owner || '';
+  owner.oninput = ()=>{ it.owner = owner.value; save(); };
+
+  const wrapMeta = document.createElement('div');
+  wrapMeta.style.display='flex';
+  wrapMeta.style.gap='8px';
+  wrapMeta.append(due, owner);
+  row.appendChild(wrapMeta);
+
+  // NOTE (textarea ampia)
+  const note = document.createElement('textarea');
+  note.placeholder='Note…';
+  note.className='note';
+  note.rows = 3;
+  note.value = it.note || '';
+  note.oninput = ()=>{ it.note = note.value; save(); };
+  row.appendChild(note);
+
+  return row;
+}
+
+// ---------- Azioni di alto livello ----------
+function newArea(){
+  const n = prompt('Nome linea (es. CH 2):','CH 2');
+  if(!n) return;
+  state.areas.push({
+    id: uid(),
+    name: n,
+    sector: 'rettifica',
+    items: [
+      blankItem('1-S Stato','1S'),
+      blankItem('Sicurezza','1S'),
+      blankItem('Qualità','1S'),
+      blankItem('Pulizia','1S')
+    ]
+  });
   save(); renderAll();
 }
 
-/* ---------- Render All ---------- */
-function renderAll(){
-  byId('appVersion').textContent = APP_VERSION;
-  renderDashboard();
-  renderAreas();
+function blankItem(title='Voce', s='1S'){
+  return { id:uid(), title, desc:'', S:s, score:0, owner:'', due:'', note:'' };
 }
 
-/* ---------- Eventi UI ---------- */
-function bindUI(){
-  byId('btnTheme').onclick = ()=> document.documentElement.classList.toggle('dark');
-
-  byId('txtSearch').oninput = e=>{ state.filter.search=e.target.value; renderAll(); };
-  byId('selLinea').onchange = e=>{ state.filter.line=e.target.value; renderAll(); };
-  byId('chkLate').onchange = e=>{ state.filter.onlyLate=e.target.checked; renderAll(); };
-
-  // sector chips (filtri globali)
-  qsa('#chipsSector .chip').forEach(ch=>{
-    ch.onclick = ()=>{
-      qsa('#chipsSector .chip').forEach(c=>c.classList.remove('active'));
-      ch.classList.add('active');
-      state.filter.sector = ch.dataset.sector;
-      renderAll();
-    };
-  });
-
-  byId('btnClear').onclick = ()=>{
-    state.filter = { search:'', line:'Tutte', sector:'all', onlyLate:false, stacked: state.filter.stacked };
-    byId('txtSearch').value=''; byId('selLinea').value='Tutte'; byId('chkLate').checked=false;
-    qsa('#chipsSector .chip').forEach((c,i)=> c.classList.toggle('active', i===0));
-    renderAll();
-  };
-
-  byId('btnZoomIn').onclick = ()=>{ state.chart.zoom=Math.min(2,state.chart.zoom+0.1); renderAll(); };
-  byId('btnZoomOut').onclick = ()=>{ state.chart.zoom=Math.max(0.6,state.chart.zoom-0.1); renderAll(); };
-  byId('chkStacked').onchange = e=>{ state.filter.stacked=e.target.checked; renderAll(); };
-
-  byId('btnCollapseAll').onclick = ()=>{ applyFilters().forEach(a=>a.collapsed=true); save(); renderAll(); };
-  byId('btnExpandAll').onclick = ()=>{ applyFilters().forEach(a=>a.collapsed=false); save(); renderAll(); };
-
-  byId('btnNew').onclick = ()=>{
-    // crea CH successiva
-    const nums = state.areas.map(a=>parseInt(a.line.replace(/\D/g,''))||0);
-    const next = Math.max(0,...nums)+1;
-    state.areas.push(mkArea(`CH ${next}`,'rettifica'));
-    save(); renderAll();
-  };
-
-  byId('btnExport').onclick = ()=>{
-    const blob = new Blob([JSON.stringify(state.areas,null,2)], {type:'application/json'});
-    const url = URL.createObjectURL(blob);
-    const a=document.createElement('a'); a.href=url; a.download='skf5s-export.json'; a.click();
-    setTimeout(()=>URL.revokeObjectURL(url),2000);
-  };
-  byId('btnImport').onclick = ()=>{
-    const inp = document.createElement('input'); inp.type='file'; inp.accept='application/json';
-    inp.onchange = ()=> {
-      const f = inp.files[0]; if(!f) return;
-      const r=new FileReader(); r.onload=()=>{
-        try{ state.areas=JSON.parse(r.result); save(); renderAll(); }
-        catch{ alert('File non valido'); }
-      }; r.readAsText(f);
-    };
-    inp.click();
-  };
-  byId('btnPrint').onclick = ()=> window.print();
+function exportJSON(){
+  const data = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(data);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'SKF-5S.json'; a.click();
+  URL.revokeObjectURL(url);
 }
 
-/* ---------- Avvio ---------- */
-load();
-bindUI();
-renderAll();
+function importJSON(){
+  const inp = document.createElement('input');
+  inp.type='file'; inp.accept='application/json';
+  inp.onchange = () => {
+    const f = inp.files[0]; if(!f) return;
+    const r = new FileReader();
+    r.onload = () => { state = JSON.parse(r.result); save(); renderAll(); };
+    r.readAsText(f);
+  };
+  inp.click();
+}
+
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur==='dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  state.theme = next; save(); renderChart();
+}
+
+// Helpers
+function byId(id){ return document.getElementById(id); }
+function hex(h, alpha=1){
+  // if already rgba return as is
+  if(h.startsWith('rgba')||h.startsWith('rgb')) return h;
+  // convert #rrggbb to rgba
+  const r = parseInt(h.slice(1,3),16);
+  const g = parseInt(h.slice(3,5),16);
+  const b = parseInt(h.slice(5,7),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
