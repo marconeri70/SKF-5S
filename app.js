@@ -1,503 +1,428 @@
-/* ===================== SKF 5S – app.js (v7.15.2) =========================
-   Fix: rimosso doppio 'const scroller' in drawChart() che rompeva tutto.
-   Restyling etichette S e CH rimane come nella 7.15.1.
-=========================================================================== */
-const VERSION='v7.15.2';
-const STORE='skf.5s.v7.10.3';
-const CHART_STORE=STORE+'.chart';
-const POINTS=[0,1,3,5];
+/* ====================== SKF 5S – App (v7.10) ====================== */
+const VERSION = 'v7.10';
 
-/* --- Voci di esempio --- */
-const VOC_1S=[{t:"Zona pedonale pavimento",d:"Area pedonale libera da ostacoli e pericoli di inciampo"},
-{t:"Zona di lavoro (pavimento, macchina)",d:"Solo il necessario per l’ordine in corso"},
-{t:"Materiali",d:"Materiale non necessario rimosso/segregato"},
-{t:"Informazioni",d:"Documenti necessari e in buono stato"},
-{t:"Processo di etichettatura",d:"Gestione etichette rosse / scarti definita"},
-{t:"Piano per sostenere il risultato",d:"Lavagna 5S, foto prima/dopo, azioni, punteggi, SPL"}];
-const VOC_2S=[{t:"1-S Stato",d:"Team e area definiti, 1S mantenuta"},
-{t:"Sicurezza",d:"Dispositivi/attrezzature identificati e accessibili"},
-{t:"Qualità",d:"Postazioni qualità ordinate e chiare"},
-{t:"Documenti",d:"Documenti al punto d’uso e aggiornati"},
-{t:"Concetti",d:"Ergonomia, punto d’uso, zero sprechi/confusione"},
-{t:"Posizioni prefissate",d:"Sagome/posti fissi: facile capire cosa manca"},
-{t:"Visual Management di base",d:"Linee/etichette/colori minimi attivi"}];
-const VOC_3S=[{t:"1-S Stato",d:"1S mantenuta"},
-{t:"2-S Stato",d:"2S mantenuta"},
-{t:"Pulizia",d:"Aree e macchine pulite (anche punti difficili)"},
-{t:"Misure preventive",d:"Cause di sporco/perdite rimosse alla radice"},
-{t:"Pulire è routine",d:"Routine con responsabilità e frequenze"},
-{t:"Standard di pulizia",d:"Standard e checklist visibili e seguiti"}];
-const VOC_4S=[{t:"Aree di passaggio",d:"Nessun deposito/ostacolo; pavimento libero"},
-{t:"Area di lavoro",d:"Solo il necessario per l’ordine corrente"},
-{t:"Materiali",d:"Materiali corretti e identificati"},
-{t:"Informazione",d:"Info necessarie e in buono stato"},
-{t:"Visual Management",d:"Indicatori visivi efficaci in routine"},
-{t:"Posizioni prefissate",d:"Prelievo/rimessa facili e immediati"},
-{t:"Standard lavoro & check",d:"SPL/istruzioni/checklist visibili e usate"},
-{t:"Etichette e colori",d:"Etichette chiare, codici colore coerenti"},
-{t:"Marcature tubi/valvole",d:"Tubi/valvole marcati (colori standard)"},
-{t:"Segnaletica a terra",d:"Linee/campiture presenti e mantenute"},
-{t:"Punti di ispezione",d:"Chiari i punti e cosa controllare"},
-{t:"Single Point Lessons",d:"SPL aggiornate e usate"},
-{t:"Standard & documentazione",d:"Documentazione aggiornata/disponibile"},
-{t:"Kanban & scorte",d:"Consumabili in visual management (min/max)"},
-{t:"Misure preventive",d:"Anomalie risolte alla radice"}];
-const VOC_5S=[{t:"Ognuno & ogni giorno",d:"Tutti formati e coinvolti sugli standard"},
-{t:"Miglioramento continuo",d:"Evidenza prima/dopo; standard aggiornati"}];
-
-/* ---------------- Utils ---------------- */
-const $=(s,r=document)=>r.querySelector(s);
-const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
-const todayISO=()=>new Date().toISOString().slice(0,10);
-const isOverdue=d=>d && new Date(d+'T23:59:59')<new Date();
-const pct=n=>Math.round((n||0)*100)+'%';
-const nextCH=()=>{
-  const nums=(state.areas||[]).map(a=>((a.line||'').match(/^CH\s*(\d+)/i)||[])[1]).filter(Boolean).map(n=>+n).sort((a,b)=>a-b);
-  const last=nums.length?nums[nums.length-1]:1; return `CH ${last+1}`;
+const COLORS = {
+  s1:'#8b60d3', s2:'#e25555', s3:'#f0b62b', s4:'#27a55f', s5:'#3c7bd8',
+  grid:getCss('--chart-grid'), text:getCss('--text')
 };
-const hex2rgb=h=>{const s=h.replace('#','');return {r:parseInt(s.substr(0,2),16),g:parseInt(s.substr(2,2),16),b:parseInt(s.substr(4,2),16)};}
-const luminance=c=>0.2126*c.r+0.7152*c.g+0.0722*c.b;
-const textOnBg=(hex,txt)=> (0.2126*hex2rgb(hex).r+0.7152*hex2rgb(hex).g+0.0722*hex2rgb(hex).b)>150 ? txt : '#ffffff';
+const S_LABELS = ['1S','2S','3S','4S','5S'];
 
-/* --------- State helpers ---------- */
-function makeS(v){return {"1S":v[0].map(c=>({...c,p:0,resp:"",due:"",note:""})),"2S":v[1].map(c=>({...c,p:0,resp:"",due:"",note:""})),"3S":v[2].map(c=>({...c,p:0,resp:"",due:"",note:""})),"4S":v[3].map(c=>({...c,p:0,resp:"",due:"",note:""})),"5S":v[4].map(c=>({...c,p:0,resp:"",due:"",note:""}))};}
-function makeSectorSet(){return makeS([VOC_1S,VOC_2S,VOC_3S,VOC_4S,VOC_5S]);}
-function makeArea(line){return{line,sectors:{Rettifica:makeSectorSet(),Montaggio:makeSectorSet()}};}
-function load(){try{const raw=localStorage.getItem(STORE);return raw?JSON.parse(raw):{areas:[]}}catch{return{areas:[]}}}
-function save(){localStorage.setItem(STORE,JSON.stringify(state))}
-function loadChartPref(){try{return JSON.parse(localStorage.getItem(CHART_STORE))||{zoom:1,stacked:false,scroll:0}}catch{return{zoom:1,stacked:false,scroll:0}}}
-function saveChartPref(){localStorage.setItem(CHART_STORE,JSON.stringify(chartPref))}
+const els = {
+  q: qs('#q'),
+  selLine: qs('#selLine'),
+  sectorPills: qs('#sectorPills'),
+  onlyLate: qs('#onlyLate'),
+  btnClear: qs('#btnClear'),
+  kpiLines: qs('#kpiLines'), kpiAvg: qs('#kpiAvg'), kpiLate: qs('#kpiLate'),
+  zoomIn: qs('#zoomIn'), zoomOut: qs('#zoomOut'), chkStacked: qs('#chkStacked'),
+  lineChips: qs('#lineChips'),
+  btnCollapseAll: qs('#btnCollapseAll'), btnExpandAll: qs('#btnExpandAll'),
+  areas: qs('#areas'),
+  btnNew: qs('#btnNew'), btnExport: qs('#btnExport'), btnImport: qs('#btnImport'), btnPrint: qs('#btnPrint'),
+  btnTheme: qs('#btnTheme'),
+  ver: qs('#appVersion')
+};
+els.ver.textContent = VERSION;
 
-/* -------- State -------- */
-let state=load(); if(!state.areas?.length){state.areas=[makeArea('CH 2')]; save();}
-let ui={q:'',line:'ALL',sector:'ALL',onlyLate:false};
-let chartPref=loadChartPref();
+/* ---------- Stato / Storage ---------- */
+const LS_KEY = 'skf5s:data';
+let DATA = load() ?? seed();
 
-/* Evidenze ritardi da mostrare nel grafico */
-const highlightKeys=new Set();
+function seed(){
+  // dataset minimo di esempio
+  return {
+    theme:'light',
+    zoom:1,
+    stacked:true,
+    lines:[
+      makeLine('CH 2'),
+      makeLine('CH 3'),
+    ]
+  };
+}
 
-/* DOM */
-const elAreas=$('#areas'), elLineFilter=$('#lineFilter'), elQ=$('#q'), elOnlyLate=$('#onlyLate');
-const tplArea=$('#tplArea'), tplItem=$('#tplItem');
-const elKpiAreas=$('#kpiAreas'), elKpiScore=$('#kpiScore'), elKpiLate=$('#kpiLate');
-const sectorSelect=$('#sectorFilter');
+function makeLine(name){
+  return {
+    name,
+    sector:'rettifica', // default tab aperta
+    // percentuali 1S..5S per ogni settore sono calcolate dalle voci
+    rettifica: { items: defaultItems(), collapsed:false },
+    montaggio: { items: defaultItems(), collapsed:true }
+  };
+}
+function defaultItems(){
+  // ognuna ha: titolo, punti(0/1/3/5), responsabile, scad, note
+  return [
+    { title:'1-S Stato', points:0, resp:'', due:'', note:'' },
+    { title:'Sicurezza', points:0, resp:'', due:'', note:'' },
+    { title:'Qualità', points:0, resp:'', due:'', note:'' },
+    { title:'Pulizia', points:0, resp:'', due:'', note:'' },
+  ];
+}
+function save(){ localStorage.setItem(LS_KEY, JSON.stringify(DATA)); }
+function load(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)||''); }catch{ return null; } }
 
-/* Tema */
-const btnTheme=$('#btnTheme');
-if(localStorage.getItem('theme')==='dark') document.documentElement.classList.add('dark');
-btnTheme?.addEventListener('click',()=>{
-  const root=document.documentElement;
-  root.classList.toggle('dark');
-  localStorage.setItem('theme',root.classList.contains('dark')?'dark':'light');
+/* ---------- Tema ---------- */
+if (DATA.theme) document.documentElement.setAttribute('data-theme', DATA.theme);
+els.btnTheme.addEventListener('click', ()=>{
+  const t = document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme', t);
+  DATA.theme = t; save();
 });
 
-/* Toolbar */
-$('#btnNewArea')?.addEventListener('click',()=>{
-  const proposal=nextCH();
-  const line=(prompt('Nuova linea? (es. CH 3)',proposal)||proposal).trim();
-  if(!line) return;
-  state.areas.push(makeArea(line)); save(); render();
-});
-$('#btnExport')?.addEventListener('click',()=>{
-  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
-  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:`SKF_5S_${todayISO()}.json`});
-  document.body.appendChild(a); a.click(); a.remove();
-});
-$('#fileImport')?.addEventListener('change',async e=>{
-  const f=e.target.files[0]; if(!f) return;
-  try{ state=JSON.parse(await f.text()); save(); render(); }catch{ alert('File non valido'); }
-});
-$('#btnPrint')?.addEventListener('click',()=>window.print());
+/* ---------- UI Helpers ---------- */
+function qs(s,root=document){ return root.querySelector(s); }
+function qsa(s,root=document){ return [...root.querySelectorAll(s)]; }
+function getCss(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+function fmt(n, p=0){ return (n||0).toFixed(p); }
 
-function setSegBtn(sel){['#btnAll','#btnFgr','#btnAsm'].forEach(s=>$(s)?.classList.remove('active')); $(sel)?.classList.add('active');}
-$('#btnAll')?.addEventListener('click',()=>{ui.sector='ALL'; setSegBtn('#btnAll'); sectorSelect.value='ALL'; render();});
-$('#btnFgr')?.addEventListener('click',()=>{ui.sector='Rettifica'; setSegBtn('#btnFgr'); sectorSelect.value='Rettifica'; render();});
-$('#btnAsm')?.addEventListener('click',()=>{ui.sector='Montaggio'; setSegBtn('#btnAsm'); sectorSelect.value='Montaggio'; render();});
+/* ---------- Filtri ---------- */
+let currentFilter = { q:'', line:'all', sector:'all', onlyLate:false };
+function setupFilters(){
+  // options line
+  els.selLine.innerHTML = `<option value="all">Tutte</option>` + 
+    DATA.lines.map((l,i)=>`<option value="${i}">${l.name}</option>`).join('');
 
-sectorSelect?.addEventListener('change',()=>{
-  ui.sector=sectorSelect.value;
-  if(ui.sector==='ALL') setSegBtn('#btnAll');
-  if(ui.sector==='Rettifica') setSegBtn('#btnFgr');
-  if(ui.sector==='Montaggio') setSegBtn('#btnAsm');
+  // chips dinamici
+  els.lineChips.innerHTML = `<span class="chip">Tutte</span>` + 
+    DATA.lines.map((l,i)=>`<button class="chip" data-i="${i}">${l.name}</button>`).join('');
+
+  // listeners
+  els.q.addEventListener('input', e=>{ currentFilter.q = e.target.value.trim().toLowerCase(); render(); });
+  els.selLine.addEventListener('change', e=>{ currentFilter.line = e.target.value; render(); });
+  els.onlyLate.addEventListener('change', e=>{ currentFilter.onlyLate = e.target.checked; render(); });
+  els.sectorPills.addEventListener('click', e=>{
+    const b = e.target.closest('.pill'); if(!b) return;
+    qsa('.pill', els.sectorPills).forEach(p=>p.classList.remove('active'));
+    b.classList.add('active');
+    currentFilter.sector = b.dataset.sector;
+    render();
+  });
+  els.btnClear.addEventListener('click', ()=>{
+    els.q.value=''; els.selLine.value='all'; currentFilter={q:'', line:'all', sector:getActiveSector(), onlyLate:false};
+    els.onlyLate.checked=false; render();
+  });
+  els.lineChips.addEventListener('click', e=>{
+    const b = e.target.closest('button'); if(!b) return;
+    els.selLine.value = b.dataset.i;
+    currentFilter.line = b.dataset.i;
+    render();
+  });
+}
+function getActiveSector(){
+  const a = qs('.pill.active', els.sectorPills);
+  return a ? a.dataset.sector : 'all';
+}
+
+/* ---------- Grafico ---------- */
+let chart;
+function buildChart(datasets, labels){
+  if(chart){ chart.destroy(); }
+  const stacked = els.chkStacked.checked;
+
+  chart = new Chart(qs('#chart'), {
+    type:'bar',
+    data:{ labels, datasets },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      scales:{
+        x:{ stacked, ticks:{ color: COLORS.text, font:{weight:800} }, grid:{ color:COLORS.grid }},
+        y:{ stacked, min:0, max:100, ticks:{ color:COLORS.text, callback:(v)=>v+'%' }, grid:{ color:COLORS.grid }}
+      },
+      plugins:{
+        legend:{ display:false },
+        tooltip:{ mode:'index', intersect:false },
+        datalabels:{
+          color:'#fff', anchor:'end', align:'start', clamp:true, formatter:(v)=> v?`${fmt(v)}%`:'',
+          textStrokeColor:'rgba(0,0,0,.5)', textStrokeWidth:2
+        }
+      }
+    },
+    plugins:[ChartDataLabels]
+  });
+}
+function makeDatasetsForChart(lines){
+  const labels = lines.map(l=>l.name);
+  const sColors = [COLORS.s1, COLORS.s2, COLORS.s3, COLORS.s4, COLORS.s5];
+
+  const arr = [0,1,2,3,4].map(sIndex=>{
+    return {
+      label:S_LABELS[sIndex],
+      backgroundColor:sColors[sIndex],
+      borderColor:'#fff',
+      borderWidth:1,
+      data: lines.map(l => getSPercent(l, sIndex+1, l.sector)),
+      datalabels:{ display: (ctx)=> ctx.dataset.data[ctx.dataIndex] > 0 }
+    };
+  });
+
+  // Totale per colonna in modalità unstacked (mostra barra unica "Tot")
+  if(!els.chkStacked.checked){
+    const tot = lines.map(l => avgLine(l, l.sector));
+    arr.unshift({
+      label:'Tot',
+      backgroundColor:'#aabbd3',
+      data: tot,
+      datalabels:{ display:(ctx)=> ctx.dataset.data[ctx.dataIndex]>0 }
+    });
+  }
+  return {labels, datasets:arr};
+}
+
+/* ---------- Calcoli ---------- */
+function itemsFor(line, sector){
+  const sec = sector==='montaggio' ? line.montaggio : line.rettifica;
+  return sec.items;
+}
+function getSPercent(line, sIndex, sector){
+  // mappo 1S..5S a voci (qui tutte contribuiscono equamente per semplicità)
+  const items = itemsFor(line, sector);
+  if(items.length===0) return 0;
+
+  // media dei punti mappati su 0..100 (0,1,3,5 equivalgono a 0%,20%,60%,100%)
+  const toPct = (p)=> p===0?0 : p===1?20 : p===3?60 : 100;
+  const avg = items.reduce((a,it)=>a+toPct(it.points),0) / items.length;
+  // Per dare "colore" ai 5 segmenti, ripartiamo la media su tutti (esempio didattico)
+  // Se in futuro vuoi pesi diversi per voce → qui.
+  return avg;
+}
+function avgLine(line, sector){
+  const arr = [1,2,3,4,5].map(i=>getSPercent(line,i,sector));
+  return arr.reduce((a,b)=>a+b,0) / arr.length;
+}
+function predominantLabel(line, sector){
+  let best = 1, bestVal = -1;
+  for(let i=1;i<=5;i++){
+    const v = getSPercent(line, i, sector);
+    if(v>bestVal){bestVal=v; best=i;}
+  }
+  return `${best}S ${fmt(bestVal)}%`;
+}
+
+/* ---------- Rendering principale ---------- */
+function render(){
+  // filtro linee
+  let lines = [...DATA.lines];
+  if(currentFilter.line!=='all') lines = [ DATA.lines[+currentFilter.line] ];
+  // filtro ricerca
+  if(currentFilter.q){
+    const q = currentFilter.q;
+    lines = lines.filter(l=>{
+      const sec= getSector(l);
+      return sec.items.some(it =>
+        it.title.toLowerCase().includes(q) ||
+        (it.resp||'').toLowerCase().includes(q) ||
+        (it.note||'').toLowerCase().includes(q)
+      );
+    });
+  }
+  // solo in ritardo
+  if(currentFilter.onlyLate){
+    const isLate = (it)=> it.due && new Date(it.due) < new Date();
+    lines = lines.filter(l=> getSector(l).items.some(isLate));
+  }
+
+  // KPI
+  els.kpiLines.textContent = lines.length;
+  const avg = lines.length ? (lines.map(l=>avgLine(l, l.sector)).reduce((a,b)=>a+b,0) / lines.length) : 0;
+  els.kpiAvg.textContent = `${fmt(avg)}%`;
+  const late = lines.reduce((n,l)=> n + getSector(l).items.filter(it => it.due && new Date(it.due) < new Date()).length, 0);
+  els.kpiLate.textContent = late;
+
+  // Chart
+  const {labels, datasets} = makeDatasetsForChart(lines);
+  buildChart(datasets, labels);
+
+  // Line chips
+  els.lineChips.innerHTML = `<button class="chip main">Tutte</button>` + lines.map(l=>`<span class="chip">${l.name}</span>`).join('');
+
+  // Aree
+  renderAreas(lines);
+
+  save();
+}
+
+function getSector(line){
+  const s = (currentFilter.sector==='all') ? line.sector : currentFilter.sector;
+  return s==='montaggio' ? line.montaggio : line.rettifica;
+}
+
+function renderAreas(lines){
+  els.areas.innerHTML = '';
+  lines.forEach((line, idx)=>{
+    const sector = (currentFilter.sector==='all') ? line.sector : currentFilter.sector;
+    const secObj = sector==='montaggio' ? line.montaggio : line.rettifica;
+
+    const area = document.createElement('div');
+    area.className = 'area';
+    area.innerHTML = `
+      <div class="area-head">
+        <span class="name">${line.name}</span>
+        <div class="badges">
+          ${[1,2,3,4,5].map(i=>`<span class="badge s${i}">${i}S ${fmt(getSPercent(line,i,sector))}%</span>`).join('')}
+          <span class="badge main">Punteggio: ${fmt(avgLine(line,sector))}%</span>
+          <span class="badge">Predominante: ${predominantLabel(line,sector)}</span>
+        </div>
+      </div>
+
+      <div class="area-toolbar">
+        <div class="sector-tabs" data-idx="${idx}">
+          <button class="tab ${sector==='rettifica'?'active':''}" data-s="rettifica">Rettifica</button>
+          <button class="tab ${sector==='montaggio'?'active':''}" data-s="montaggio">Montaggio</button>
+        </div>
+        <div class="row gap">
+          <button class="btn" data-cmd="add" data-idx="${idx}">+ Voce</button>
+          <button class="btn" data-cmd="toggle" data-idx="${idx}">${secObj.collapsed ? 'Espandi' : 'Comprimi'}</button>
+          <button class="btn" data-cmd="remove" data-idx="${idx}">Elimina</button>
+        </div>
+      </div>
+
+      <div class="voc" data-idx="${idx}" style="${secObj.collapsed?'display:none':''}">
+        ${secObj.items.map((it,i)=>renderItem(it, idx, i)).join('')}
+      </div>
+    `;
+    els.areas.appendChild(area);
+  });
+
+  // listeners tab settore
+  qsa('.sector-tabs').forEach(t=>{
+    t.addEventListener('click', e=>{
+      const b = e.target.closest('.tab'); if(!b) return;
+      const i = +t.dataset.idx;
+      DATA.lines[i].sector = b.dataset.s;
+      currentFilter.sector = 'all'; // mantieni filtro dashboard ma apri tab corrente
+      render();
+    });
+  });
+
+  // toolbar area
+  els.areas.addEventListener('click', e=>{
+    const b = e.target.closest('button'); if(!b) return;
+    const idx = +b.dataset.idx;
+    const line = DATA.lines[idx];
+    const sec = getSector(line);
+    if(b.dataset.cmd==='add'){
+      sec.items.push({ title:'Nuova voce', points:0, resp:'', due:'', note:'' });
+      render();
+    }
+    if(b.dataset.cmd==='toggle'){
+      sec.collapsed = !sec.collapsed; render();
+    }
+    if(b.dataset.cmd==='remove'){
+      if(confirm(`Eliminare la linea ${line.name}?`)){
+        DATA.lines.splice(idx,1); setupFilters(); render();
+      }
+    }
+  });
+
+  // punti click
+  qsa('.points').forEach(pWrap=>{
+    pWrap.addEventListener('click', e=>{
+      const p = e.target.closest('.p'); if(!p) return;
+      const iLine = +pWrap.dataset.line, iItem = +pWrap.dataset.item;
+      const which = +p.dataset.pt; // 0/1/3/5
+      const line = DATA.lines[iLine];
+      const sec = getSector(line);
+      sec.items[iItem].points = which;
+      render();
+    });
+  });
+
+  // inputs
+  qsa('.item-bar').forEach(bar=>{
+    bar.addEventListener('input', e=>{
+      const iLine = +bar.dataset.line, iItem = +bar.dataset.item;
+      const line = DATA.lines[iLine]; const sec = getSector(line); const it = sec.items[iItem];
+      if(e.target.name==='resp') it.resp = e.target.value;
+      if(e.target.name==='due') it.due = e.target.value;
+      if(e.target.name==='note') it.note = e.target.value;
+      render();
+    });
+  });
+}
+
+function renderItem(it, iLine, iItem){
+  const p = (v)=>`<div class="p p${v} ${it.points===v?'active':''}" data-pt="${v}">${v}</div>`;
+  return `
+    <div class="item">
+      <div class="item-head">
+        <div class="item-title">
+          <div class="info">i</div>
+          <div class="title">${it.title}</div>
+        </div>
+        <div class="points" data-line="${iLine}" data-item="${iItem}">
+          ${p(0)}${p(1)}${p(3)}${p(5)}
+        </div>
+      </div>
+      <div class="item-bar" data-line="${iLine}" data-item="${iItem}">
+        <input name="resp" placeholder="Responsabile" value="${it.resp||''}">
+        <input name="due" type="date" value="${it.due||''}">
+        <textarea name="note" placeholder="Note...">${it.note||''}</textarea>
+      </div>
+    </div>
+  `;
+}
+
+/* ---------- Toolbar top ---------- */
+els.btnNew.addEventListener('click', ()=>{
+  const n = nextLineNumber();
+  DATA.lines.push(makeLine(`CH ${n}`));
+  setupFilters(); render();
+});
+function nextLineNumber(){
+  const nums = DATA.lines
+    .map(l => +(l.name.replace('CH','').trim()))
+    .filter(n => !Number.isNaN(n));
+  return (nums.length ? Math.max(...nums) : 1) + 1;
+}
+
+els.btnExport.addEventListener('click', ()=>{
+  const blob = new Blob([JSON.stringify(DATA,null,2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `SKF-5S-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+});
+
+els.btnImport.addEventListener('click', ()=>{
+  const inp = document.createElement('input'); inp.type='file'; inp.accept='application/json';
+  inp.onchange = async ()=> {
+    const txt = await inp.files[0].text();
+    try{
+      const obj = JSON.parse(txt);
+      if(!obj.lines) throw Error('Formato non valido');
+      DATA = obj; setupFilters(); render();
+    }catch(e){ alert('File non valido'); }
+  };
+  inp.click();
+});
+
+els.btnPrint.addEventListener('click', ()=>window.print());
+
+/* ---------- Zoom + stacked ---------- */
+els.zoomIn.addEventListener('click', ()=>{ DATA.zoom=Math.min(2, (DATA.zoom||1)+.1); qs('.chart-wrap').style.scale = DATA.zoom; save(); });
+els.zoomOut.addEventListener('click', ()=>{ DATA.zoom=Math.max(.8, (DATA.zoom||1)-.1); qs('.chart-wrap').style.scale = DATA.zoom; save(); });
+els.chkStacked.checked = !!DATA.stacked;
+els.chkStacked.addEventListener('change', ()=>{ DATA.stacked = els.chkStacked.checked; render(); });
+
+/* ---------- Comprimi / Espandi tutto ---------- */
+els.btnCollapseAll.addEventListener('click', ()=>{
+  getVisibleLines().forEach(l=>{ getSector(l).collapsed = true; });
   render();
 });
-
-elQ?.addEventListener('input',()=>{ui.q=elQ.value; render();});
-elOnlyLate?.addEventListener('change',()=>{ui.onlyLate=elOnlyLate.checked; render();});
-$('#btnClearFilters')?.addEventListener('click',()=>{
-  ui={q:'',line:'ALL',sector:'ALL',onlyLate:false};
-  elQ.value=''; elOnlyLate.checked=false; elLineFilter.value='ALL'; setSegBtn('#btnAll'); sectorSelect.value='ALL'; render();
+els.btnExpandAll.addEventListener('click', ()=>{
+  getVisibleLines().forEach(l=>{ getSector(l).collapsed = false; });
+  render();
 });
-elLineFilter?.addEventListener('change',()=>{ui.line=elLineFilter.value; render();});
-
-$('#zoomIn')?.addEventListener('click',()=>{chartPref.zoom=Math.min(2.5, +(chartPref.zoom+0.1).toFixed(2)); saveChartPref(); drawChart();});
-$('#zoomOut')?.addEventListener('click',()=>{chartPref.zoom=Math.max(0.6, +(chartPref.zoom-0.1).toFixed(2)); saveChartPref(); drawChart();});
-$('#toggleStacked')?.addEventListener('change',e=>{chartPref.stacked=e.target.checked; saveChartPref(); drawChart();});
-
-$('#btnCollapseAll')?.addEventListener('click',()=>{$$('.area').forEach(a=>a.classList.add('collapsed'));});
-$('#btnExpandAll')?.addEventListener('click',()=>{$$('.area').forEach(a=>a.classList.remove('collapsed'));});
-
-/* Render */
-function render(){
-  $('#appVersion')?.replaceChildren(VERSION);
-  refreshLineFilter();
-
-  sectorSelect.value=ui.sector;
-  if(ui.sector==='ALL') setSegBtn('#btnAll');
-  if(ui.sector==='Rettifica') setSegBtn('#btnFgr');
-  if(ui.sector==='Montaggio') setSegBtn('#btnAsm');
-
-  const list=filteredAreas();
-  elAreas.innerHTML='';
-  list.forEach(a=>elAreas.appendChild(renderArea(a)));
-  updateDashboard(list);
-  drawChart(list);
-  buildLineButtons(list);
-}
-function refreshLineFilter(){
-  const lines=Array.from(new Set(state.areas.map(a=>(a.line||'').trim()).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'it',{numeric:true}));
-  elLineFilter.innerHTML=`<option value="ALL">Linea: Tutte</option>` + lines.map(l=>`<option value="${l}">${l}</option>`).join('');
-  if(!lines.includes(ui.line)) ui.line='ALL'; elLineFilter.value=ui.line;
-}
-function filteredAreas(){
-  const q=(ui.q||'').toLowerCase();
-  const secs=ui.sector==='ALL'?['Rettifica','Montaggio']:[ui.sector];
-  return state.areas.filter(a=>{
-    if(ui.line!=='ALL' && (a.line||'').trim()!==ui.line) return false;
-    if(!q && !ui.onlyLate) return true;
-    let ok=false;
-    secs.forEach(sec=>['1S','2S','3S','4S','5S'].forEach(S=>(a.sectors[sec][S]||[]).forEach(it=>{
-      if(ui.onlyLate && !isOverdue(it.due)) return;
-      if(!q){ ok=true; return; }
-      const bag=`${it.t||''} ${it.note||''} ${it.resp||''}`.toLowerCase();
-      if(bag.includes(q)) ok=true;
-    })));
-    return ok;
-  });
-}
-function computeByS(area,sector){
-  const secs=sector==='ALL'?['Rettifica','Montaggio']:[sector];
-  const perS={"1S":{s:0,m:0},"2S":{s:0,m:0},"3S":{s:0,m:0},"4S":{s:0,m:0},"5S":{s:0,m:0}};
-  let sum=0,max=0;
-  secs.forEach(sec=>['1S','2S','3S','4S','5S'].forEach(S=>(area.sectors[sec][S]||[]).forEach(it=>{
-    perS[S].s+=(+it.p||0); perS[S].m+=5; sum+=(+it.p||0); max+=5;
-  })));
-  const byS={}; Object.keys(perS).forEach(S=>byS[S]=perS[S].m?perS[S].s/perS[S].m:0);
-  const domKey=Object.keys(byS).reduce((a,b)=> byS[a]>=byS[b]?a:b, '1S');
-  return {byS, total:max?sum/max:0, dom:{S:domKey, v:byS[domKey]||0}};
+function getVisibleLines(){
+  let lines = [...DATA.lines];
+  if(currentFilter.line!=='all') lines = [ DATA.lines[+currentFilter.line] ];
+  return lines;
 }
 
-/* Render area */
-function renderArea(area){
-  const node=$('#tplArea').content.firstElementChild.cloneNode(true);
-  const line=$('.area-line',node), scoreEl=$('.score-val',node), domEl=$('.doms',node);
-  const secTabs=$$('.tab.sec',node), sTabs=$$('.tab.s',node), panels=$$('.panel',node);
-
-  let curSector=(ui.sector==='ALL'?'Rettifica':ui.sector), curS='1S';
-  line.value=area.line||''; 
-  line.addEventListener('input',()=>{area.line=line.value.trim(); save(); refreshLineFilter(); buildLineButtons(); drawChart();});
-
-  secTabs.forEach(b=>{
-    if(b.dataset.sector===curSector) b.classList.add('active');
-    b.addEventListener('click',()=>{secTabs.forEach(x=>x.classList.remove('active')); b.classList.add('active'); curSector=b.dataset.sector; refill(); updateScore();});
-  });
-
-  sTabs.forEach(t=> t.addEventListener('click',()=>{
-    sTabs.forEach(x=>x.classList.remove('active'));
-    t.classList.add('active'); curS=t.dataset.s;
-    panels.forEach(p=>p.classList.toggle('active',p.dataset.s===curS));
-  }));
-
-  $('.add-item',node).addEventListener('click',()=>{
-    area.sectors[curSector][curS].push({t:"",d:"",p:0,resp:"",due:"",note:""}); save(); refill(); updateScore();
-  });
-
-  const btnCol=$('.collapse',node);
-  const setCol=()=>{btnCol.textContent=node.classList.contains('collapsed')?'Espandi':'Comprimi'};
-  btnCol.addEventListener('click',()=>{node.classList.toggle('collapsed'); setCol();});
-  setCol();
-
-  $('.delete-area',node).addEventListener('click',()=>{
-    if(!confirm('Eliminare la linea?')) return;
-    state.areas.splice(state.areas.indexOf(area),1); save(); render();
-  });
-
-  function refill(){
-    panels.forEach(p=>{
-      const S=p.dataset.s; p.innerHTML='';
-      (area.sectors[curSector][S]||[]).forEach((it,i)=> p.appendChild(renderItem(area,curSector,S,i,it,updateScore)));
-      p.classList.toggle('active',S===curS);
-    });
-    const {byS}=computeByS(area,curSector);
-    $('.score-1S',node).textContent=pct(byS['1S']);
-    $('.score-2S',node).textContent=pct(byS['2S']);
-    $('.score-3S',node).textContent=pct(byS['3S']);
-    $('.score-4S',node).textContent=pct(byS['4S']);
-    $('.score-5S',node).textContent=pct(byS['5S']);
-  }
-  function updateScore(){
-    const {total,dom}=computeByS(area,curSector);
-    scoreEl.textContent=pct(total);
-    domEl.dataset.s=dom.S; domEl.textContent=`${dom.S} ${pct(dom.v)}`;
-    save(); updateDashboard(); drawChart(); buildLineButtons();
-  }
-
-  refill(); updateScore();
-  return node;
-}
-
-/* Render item */
-function renderItem(area,sector,S,idx,it,onChange){
-  const frag=document.createDocumentFragment();
-  const node=$('#tplItem').content.firstElementChild.cloneNode(true);
-  const desc=$('#tplItem').content.children[1].cloneNode(true);
-
-  const txt=$('.txt',node), resp=$('.resp',node), due=$('.due',node), note=$('.note',node);
-  const dots=$$('.points-dots .dot',node);
-
-  txt.value=it.t||''; resp.value=it.resp||''; due.value=it.due||''; note.value=it.note||'';
-  desc.innerHTML=`<b>${it.t||''}</b><br>${it.d||''}`;
-
-  const syncDots=()=>{ dots.forEach(d=> d.classList.toggle('active', +d.dataset.val === (+it.p||0))); };
-  syncDots(); node.classList.toggle('late',isOverdue(it.due));
-
-  txt.addEventListener('input',()=>{it.t=txt.value; desc.innerHTML=`<b>${it.t||''}</b><br>${it.d||''}`; save();});
-  resp.addEventListener('input',()=>{it.resp=resp.value; save();});
-  note.addEventListener('input',()=>{it.note=note.value; save();});
-  due.addEventListener('change',()=>{it.due=due.value; save(); node.classList.toggle('late',isOverdue(it.due)); onChange?.();});
-
-  dots.forEach(d=> d.addEventListener('click',()=>{ it.p=+d.dataset.val; syncDots(); save(); onChange?.(); }));
-
-  $('.info',node).addEventListener('click',()=>{const v=desc.style.display!=='block'; desc.style.display=v?'block':'none';});
-  $('.del',node).addEventListener('click',()=>{ const arr=area.sectors[sector][S]; arr.splice(idx,1); save(); render(); });
-
-  node.addEventListener('click',e=>{ if(e.target.classList.contains('dot')) node.classList.remove('highlight'); });
-  $('.info',node).addEventListener('click',()=> node.classList.remove('highlight'));
-
-  frag.appendChild(node); frag.appendChild(desc); return frag;
-}
-
-/* KPI / Late */
-function overallStats(list){
-  const secs=ui.sector==='ALL'?['Rettifica','Montaggio']:[ui.sector];
-  let sum=0,max=0,late=0;
-  (list||filteredAreas()).forEach(a=>{
-    secs.forEach(sec=>['1S','2S','3S','4S','5S'].forEach(S=>(a.sectors[sec][S]||[]).forEach(it=>{
-      sum+=(+it.p||0); max+=5; if(isOverdue(it.due)) late++;
-    })));
-  });
-  return {score:max?sum/max:0,late};
-}
-function updateDashboard(list){
-  const {score,late}=overallStats(list);
-  elKpiAreas.textContent=(list||filteredAreas()).length;
-  elKpiScore.textContent=pct(score);
-  elKpiLate.textContent=late;
-  renderLateList(list);
-}
-function renderLateList(list){
-  const host=$('#lateList'); host.innerHTML='';
-  highlightKeys.clear();
-  const secs=ui.sector==='ALL'?['Rettifica','Montaggio']:[ui.sector];
-  const arr=[];
-  (list||filteredAreas()).forEach(a=>{
-    secs.forEach(sec=>['1S','2S','3S','4S','5S'].forEach(S=>(a.sectors[sec][S]||[]).forEach((it,idx)=>{
-      if(isOverdue(it.due)){
-        arr.push({line:a.line||'—',sector:sec,S,idx,title:it.t||'(senza titolo)',due:it.due});
-        highlightKeys.add(`${a.line||'—'}|${S}`);
-      }
-    })));
-  });
-  if(!arr.length){host.style.display='none';drawChart();return;}
-  host.style.display='flex';
-  arr.forEach(x=>{
-    const b=document.createElement('button');
-    b.className='late-chip';
-    b.innerHTML=`<span class="meta">${x.line} · ${x.sector} · ${x.S}</span> — ${x.title} · scad. ${x.due}`;
-    b.addEventListener('click',()=>{focusLate(x); drawChart();});
-    host.appendChild(b);
-  });
-  drawChart();
-}
-function focusLate(x){
-  const card=[...document.querySelectorAll('.area')].find(a=>a.querySelector('.area-line')?.value.trim()===(x.line||'').trim());
-  if(!card) return;
-  card.classList.remove('collapsed');
-  const secBtn=[...card.querySelectorAll('.tab.sec')].find(b=>b.dataset.sector===x.sector); secBtn?.click();
-  const sBtn=[...card.querySelectorAll('.tab.s')].find(b=>b.dataset.s===x.S); sBtn?.click();
-  card.scrollIntoView({behavior:'smooth',block:'start'});
-  const panel=card.querySelector(`.panel[data-s="${x.S}"]`);
-  const item=panel?.querySelectorAll('.item')[x.idx];
-  if(item){
-    item.classList.add('highlight');
-    item.classList.remove('flash'); void item.offsetWidth; item.classList.add('flash');
-  }
-  highlightKeys.add(`${x.line||'—'}|${x.S}`);
-}
-
-/* ----------------- CHART ---------------- */
-function drawChart(list){
-  const canvas=$('#chartAreas');
-  const wrap=canvas?.closest('.chart-inner');
-  const scroller=canvas?.closest('.chart-scroll'); // <— unica dichiarazione!
-  if(!canvas||!wrap) return;
-
-  $('#toggleStacked').checked=!!chartPref.stacked;
-
-  const DPR=window.devicePixelRatio||1, Hcss=260;
-  const areas=(list||filteredAreas());
-  const css=getComputedStyle(document.documentElement);
-  const GRID=css.getPropertyValue('--outline')||'#d0d7e1';
-  const TXT=css.getPropertyValue('--text')||'#003366';
-  const C1=css.getPropertyValue('--c1').trim(),
-        C2=css.getPropertyValue('--c2').trim(),
-        C3=css.getPropertyValue('--c3').trim(),
-        C4=css.getPropertyValue('--c4').trim(),
-        C5=css.getPropertyValue('--c5').trim();
-  const secs=ui.sector==='ALL'?['Rettifica','Montaggio']:[ui.sector];
-
-  const rows=areas.map(a=>{
-    let perS={"1S":{s:0,m:0},"2S":{s:0,m:0},"3S":{s:0,m:0},"4S":{s:0,m:0},"5S":{s:0,m:0}}, t={s:0,m:0};
-    secs.forEach(sec=>['1S','2S','3S','4S','5S'].forEach(S=>(a.sectors[sec][S]||[]).forEach(it=>{
-      perS[S].s+=(+it.p||0); perS[S].m+=5; t.s+=(+it.p||0); t.m+=5;
-    })));
-    const byS={}; Object.keys(perS).forEach(S=>byS[S]=perS[S].m?perS[S].s/perS[S].m:0);
-    return {line:a.line||'—',byS,tot:t.m?t.s/t.m:0};
-  }).sort((a,b)=>a.line.localeCompare(b.line,'it',{numeric:true}));
-
-  const padL=56,padR=16,padT=12,padB=56;
-  const bwBase=14,innerBase=4,gapBase=18;
-  const z=chartPref.zoom||1;
-  const bw=Math.max(8,bwBase*z),
-        inner=Math.max(3,innerBase*z),
-        gap=Math.max(12,gapBase*z);
-  const plotH=Hcss-padT-padB;
-
-  let totalW;
-  if(chartPref.stacked){
-    totalW=padL+padR+rows.length*bw+Math.max(0,(rows.length-1))*gap;
-  }else{
-    const MET=6;
-    const groupW=MET*bw+(MET-1)*inner;
-    totalW=padL+padR+rows.length*groupW+Math.max(0,(rows.length-1))*gap;
-  }
-
-  canvas.style.width=totalW+'px';
-  canvas.style.height=Hcss+'px';
-  canvas.width=Math.round(totalW*DPR);
-  canvas.height=Math.round(Hcss*DPR);
-  const ctx=canvas.getContext('2d');
-  ctx.setTransform(DPR,0,0,DPR,0,0);
-  ctx.clearRect(0,0,totalW,Hcss);
-
-  const plotW=totalW-padL-padR;
-  ctx.strokeStyle=GRID; ctx.font='12px system-ui'; ctx.fillStyle=TXT;
-  ctx.beginPath(); ctx.moveTo(padL,padT); ctx.lineTo(padL,padT+plotH); ctx.lineTo(padL+plotW,padT+plotH); ctx.stroke();
-  for(let i=0;i<=4;i++){
-    const y=padT+plotH-(i*0.25)*plotH;
-    ctx.fillText((i*25)+'%',8,y+4);
-    ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(padL+plotW,y); ctx.stroke();
-  }
-
-  const COLORS={'1S':C1,'2S':C2,'3S':C3,'4S':C4,'5S':C5,tot:'#9bb0d6'};
-  let x=padL;
-
-  const drawOutline=(xx,yy,ww,hh,key)=>{
-    if(!highlightKeys.has(key)) return;
-    ctx.save();
-    ctx.lineWidth=3;
-    ctx.strokeStyle='#ffb400';
-    ctx.shadowColor='rgba(255,180,0,.5)';
-    ctx.shadowBlur=8;
-    ctx.strokeRect(xx-1,yy-1,ww+2,hh+2);
-    ctx.restore();
-  };
-
-  if(chartPref.stacked){
-    rows.forEach(g=>{
-      const stackKey=['1S','2S','3S','4S','5S'];
-      const stack=stackKey.map(k=>g.byS[k]||0);
-      let yTop=padT+plotH;
-      stack.forEach((v,i)=>{
-        const key=stackKey[i];
-        const h=v*plotH; const y=yTop-h;
-        ctx.fillStyle=COLORS[key]; ctx.fillRect(x,y,bw,h);
-
-        if(v>0){
-          const label=Math.round(v*100)+'%';
-          const txtColor=textOnBg(COLORS[key],TXT);
-          ctx.fillStyle=txtColor; ctx.textAlign='center';
-          const inside = h>=18;
-          const yText = inside ? Math.max(padT+12, y+12) : Math.max(padT+12, y-2);
-          ctx.fillText(label, x+bw/2, yText);
-        }
-
-        drawOutline(x,y,bw,h,`${g.line}|${key}`);
-        yTop=y;
-      });
-      ctx.save(); ctx.fillStyle=TXT; ctx.textAlign='center';
-      ctx.font='600 13px system-ui';
-      ctx.translate(x+bw/2,padT+plotH+30);
-      ctx.rotate(-Math.PI/12); ctx.fillText(g.line,0,0); ctx.restore();
-      x+=bw+gap;
-    });
-  }else{
-    const MET=["tot","1S","2S","3S","4S","5S"];
-    const groupW=MET.length*bw+(MET.length-1)*inner;
-    rows.forEach(g=>{
-      let bx=x;
-      MET.forEach(m=>{
-        const v=(m==='tot'?g.tot:g.byS[m])||0, h=v*plotH, y=padT+plotH-h;
-        ctx.fillStyle=COLORS[m]; ctx.fillRect(bx,y,bw,h);
-
-        ctx.fillStyle=TXT; ctx.textAlign='center';
-        const yPct = h>18 ? y-4 : padT+plotH-4;
-        ctx.fillText(Math.round(v*100)+'%',bx+bw/2,yPct);
-
-        const inside = h>=20;
-        const sTxt = m==='tot' ? 'Tot' : m;
-        if(inside){
-          ctx.fillStyle = textOnBg(COLORS[m],TXT);
-          ctx.fillText(sTxt, bx+bw/2, y+14);
-        }else{
-          ctx.fillStyle = TXT;
-          ctx.fillText(sTxt, bx+bw/2, Math.max(padT+12, y-6));
-        }
-
-        drawOutline(bx,y,bw,h, m==='tot' ? `${g.line}|tot` : `${g.line}|${m}`);
-        bx+=bw+inner;
-      });
-      ctx.save(); ctx.fillStyle=TXT; ctx.textAlign='center';
-      ctx.font='600 13px system-ui';
-      ctx.translate(x+groupW/2,padT+plotH+30);
-      ctx.rotate(-Math.PI/12); ctx.fillText(g.line,0,0); ctx.restore();
-      x+=groupW+gap;
-    });
-  }
-
-  if(scroller){
-    if(typeof chartPref.scroll==='number') scroller.scrollLeft=chartPref.scroll;
-    scroller.addEventListener('scroll',()=>{chartPref.scroll=scroller.scrollLeft; saveChartPref();},{passive:true});
-  }
-}
-
-/* Line buttons */
-function buildLineButtons(list){
-  const host=$('#areasList'); host.innerHTML='';
-  const bAll=document.createElement('button'); bAll.className='line-btn'+(ui.line==='ALL'?' active':''); bAll.textContent='Tutte';
-  bAll.addEventListener('click',()=>{ui.line='ALL'; elLineFilter.value='ALL'; render(); window.scrollTo({top:host.offsetTop,behavior:'smooth'});});
-  host.appendChild(bAll);
-  (list||filteredAreas()).forEach(a=>{
-    const b=document.createElement('button'); b.className='line-btn'+(ui.line===(a.line||'')?' active':''); b.textContent=a.line||'—';
-    b.addEventListener('click',()=>{ui.line=a.line||''; elLineFilter.value=ui.line; render(); setTimeout(()=>{const card=[...document.querySelectorAll('.area')].find(x=>x.querySelector('.area-line')?.value.trim()===(a.line||'').trim()); card?.scrollIntoView({behavior:'smooth',block:'start'});},0);});
-    host.appendChild(b);
-  });
-}
-
-/* Events */
-window.addEventListener('orientationchange',()=>setTimeout(()=>drawChart(),250));
-window.addEventListener('resize',()=>drawChart());
-window.addEventListener('load',()=>requestAnimationFrame(()=>drawChart()));
-
-/* Go */
+/* ---------- Avvio ---------- */
+setupFilters();
+els.chkStacked.checked = DATA.stacked ?? true;
+qs('.chart-wrap').style.scale = DATA.zoom || 1;
 render();
