@@ -1,16 +1,16 @@
-/* ===================== SKF 5S – app.js (v7.11.0) =========================
-   - Tema scuro: intro leggibile
-   - Pallini punteggi: rimangono colorati (classi v0/v1/v3/v5 + .active)
-   - Pulsanti globali “Comprimi tutto / Espandi tutto”
-   - Fix chart: 'scroller' dichiarato una sola volta
-   - STORE invariato (skf.5s.v7.10.3) per non perdere i dati
+/* ===================== SKF 5S – app.js (v7.12.0) =========================
+   - Filtri responsive (select settore su mobile) + sync con bottoni
+   - Nuova linea: proposta CH <prossimo numero libero>
+   - Linea iniziale: CH 2
+   - Pallini punteggi stabili, comprimi/espandi globali, grafico scrollabile
+   - STORE invariato per non perdere dati
 =========================================================================== */
-const VERSION='v7.11.0';
+const VERSION='v7.12.0';
 const STORE='skf.5s.v7.10.3';
 const CHART_STORE=STORE+'.chart';
 const POINTS=[0,1,3,5];
 
-/* --------- Checklist (puoi integrare con l’Excel quando vuoi) ------------ */
+/* --------- Checklist dummy (puoi sostituire con import da Excel) --------- */
 const VOC_1S=[
   {t:"Zona pedonale pavimento",d:"Area pedonale libera da ostacoli e pericoli di inciampo"},
   {t:"Zona di lavoro (pavimento, macchina)",d:"Solo il necessario per l’ordine in corso"},
@@ -64,6 +64,13 @@ const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const todayISO=()=>new Date().toISOString().slice(0,10);
 const isOverdue=d=>d && new Date(d+'T23:59:59')<new Date();
 const pct=n=>Math.round((n||0)*100)+'%';
+const nextCH=()=>{
+  const nums=(state.areas||[])
+    .map(a=>((a.line||'').match(/^CH\s*(\d+)/i)||[])[1])
+    .filter(Boolean).map(n=>+n).sort((a,b)=>a-b);
+  const last=nums.length?nums[nums.length-1]:1;
+  return `CH ${last+1}`;
+};
 
 /* ---------------------------- State helpers ------------------------------ */
 function makeS(v){
@@ -84,7 +91,7 @@ function saveChartPref(){localStorage.setItem(CHART_STORE,JSON.stringify(chartPr
 
 /* ------------------------------- State ----------------------------------- */
 let state=load();
-if(!state.areas?.length){state.areas=[makeArea('L2')]; save();}
+if(!state.areas?.length){state.areas=[makeArea('CH 2')]; save();}
 let ui={q:'',line:'ALL',sector:'ALL',onlyLate:false};
 let chartPref=loadChartPref();
 
@@ -92,6 +99,7 @@ let chartPref=loadChartPref();
 const elAreas=$('#areas'), elLineFilter=$('#lineFilter'), elQ=$('#q'), elOnlyLate=$('#onlyLate');
 const tplArea=$('#tplArea'), tplItem=$('#tplItem');
 const elKpiAreas=$('#kpiAreas'), elKpiScore=$('#kpiScore'), elKpiLate=$('#kpiLate');
+const sectorSelect=$('#sectorFilter');
 
 /* --------------------------- Tema Light/Dark ----------------------------- */
 const btnTheme=$('#btnTheme');
@@ -104,7 +112,8 @@ btnTheme?.addEventListener('click',()=>{
 
 /* ------------------------------ Toolbar ---------------------------------- */
 $('#btnNewArea')?.addEventListener('click',()=>{
-  const line=(prompt('Nuova linea? (es. L3)','L3')||'Lx').trim();
+  const proposal=nextCH();
+  const line=(prompt('Nuova linea? (es. CH 3)',proposal)||proposal).trim();
   if(!line) return;
   state.areas.push(makeArea(line)); save(); render();
 });
@@ -119,16 +128,26 @@ $('#fileImport')?.addEventListener('change',async e=>{
 });
 $('#btnPrint')?.addEventListener('click',()=>window.print());
 
-$('#btnAll')?.addEventListener('click',()=>{ui.sector='ALL'; setSeg('#btnAll'); render();});
-$('#btnFgr')?.addEventListener('click',()=>{ui.sector='Rettifica'; setSeg('#btnFgr'); render();});
-$('#btnAsm')?.addEventListener('click',()=>{ui.sector='Montaggio'; setSeg('#btnAsm'); render();});
-function setSeg(sel){['#btnAll','#btnFgr','#btnAsm'].forEach(s=>$(s)?.classList.remove('active')); $(sel)?.classList.add('active');}
+/* settore: bottoni desktop */
+function setSegBtn(sel){['#btnAll','#btnFgr','#btnAsm'].forEach(s=>$(s)?.classList.remove('active')); $(sel)?.classList.add('active');}
+$('#btnAll')?.addEventListener('click',()=>{ui.sector='ALL'; setSegBtn('#btnAll'); sectorSelect.value='ALL'; render();});
+$('#btnFgr')?.addEventListener('click',()=>{ui.sector='Rettifica'; setSegBtn('#btnFgr'); sectorSelect.value='Rettifica'; render();});
+$('#btnAsm')?.addEventListener('click',()=>{ui.sector='Montaggio'; setSegBtn('#btnAsm'); sectorSelect.value='Montaggio'; render();});
+
+/* settore: select mobile */
+sectorSelect?.addEventListener('change',()=>{
+  ui.sector=sectorSelect.value;
+  if(ui.sector==='ALL') setSegBtn('#btnAll');
+  if(ui.sector==='Rettifica') setSegBtn('#btnFgr');
+  if(ui.sector==='Montaggio') setSegBtn('#btnAsm');
+  render();
+});
 
 elQ?.addEventListener('input',()=>{ui.q=elQ.value; render();});
 elOnlyLate?.addEventListener('change',()=>{ui.onlyLate=elOnlyLate.checked; render();});
 $('#btnClearFilters')?.addEventListener('click',()=>{
   ui={q:'',line:'ALL',sector:'ALL',onlyLate:false};
-  elQ.value=''; elOnlyLate.checked=false; elLineFilter.value='ALL'; setSeg('#btnAll'); render();
+  elQ.value=''; elOnlyLate.checked=false; elLineFilter.value='ALL'; setSegBtn('#btnAll'); sectorSelect.value='ALL'; render();
 });
 elLineFilter?.addEventListener('change',()=>{ui.line=elLineFilter.value; render();});
 
@@ -137,17 +156,19 @@ $('#zoomOut')?.addEventListener('click',()=>{chartPref.zoom=Math.max(0.6, +(char
 $('#toggleStacked')?.addEventListener('change',e=>{chartPref.stacked=e.target.checked; saveChartPref(); drawChart();});
 
 /* ----------- Pulsanti globali: comprimi/espandi tutte le schede ---------- */
-$('#btnCollapseAll')?.addEventListener('click',()=>{
-  $$('.area').forEach(a=>a.classList.add('collapsed'));
-});
-$('#btnExpandAll')?.addEventListener('click',()=>{
-  $$('.area').forEach(a=>a.classList.remove('collapsed'));
-});
+$('#btnCollapseAll')?.addEventListener('click',()=>{$$('.area').forEach(a=>a.classList.add('collapsed'));});
+$('#btnExpandAll')?.addEventListener('click',()=>{$$('.area').forEach(a=>a.classList.remove('collapsed'));});
 
 /* ------------------------------ Render ---------------------------------- */
 function render(){
   $('#appVersion')?.replaceChildren(VERSION);
   refreshLineFilter();
+  // sincronia select settore con bottoni (in caso di ripristino pagina)
+  sectorSelect.value=ui.sector;
+  if(ui.sector==='ALL') setSegBtn('#btnAll');
+  if(ui.sector==='Rettifica') setSegBtn('#btnFgr');
+  if(ui.sector==='Montaggio') setSegBtn('#btnAsm');
+
   const list=filteredAreas();
   elAreas.innerHTML='';
   list.forEach(a=>elAreas.appendChild(renderArea(a)));
@@ -156,7 +177,7 @@ function render(){
   buildLineButtons(list);
 }
 function refreshLineFilter(){
-  const lines=Array.from(new Set(state.areas.map(a=>(a.line||'').trim()).filter(Boolean))).sort();
+  const lines=Array.from(new Set(state.areas.map(a=>(a.line||'').trim()).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'it',{numeric:true}));
   elLineFilter.innerHTML=`<option value="ALL">Linea: Tutte</option>` + lines.map(l=>`<option value="${l}">${l}</option>`).join('');
   if(!lines.includes(ui.line)) ui.line='ALL'; elLineFilter.value=ui.line;
 }
@@ -259,12 +280,7 @@ function renderItem(area,sector,S,idx,it,onChange){
   txt.value=it.t||''; resp.value=it.resp||''; due.value=it.due||''; note.value=it.note||'';
   desc.innerHTML=`<b>${it.t||''}</b><br>${it.d||''}`;
 
-  // Stato iniziale pallini
-  const syncDots=()=>{
-    dots.forEach(d=>{
-      d.classList.toggle('active', +d.dataset.val === (+it.p||0));
-    });
-  };
+  const syncDots=()=>{ dots.forEach(d=> d.classList.toggle('active', +d.dataset.val === (+it.p||0))); };
   syncDots(); node.classList.toggle('late',isOverdue(it.due));
 
   txt.addEventListener('input',()=>{it.t=txt.value; desc.innerHTML=`<b>${it.t||''}</b><br>${it.d||''}`; save();});
@@ -272,16 +288,10 @@ function renderItem(area,sector,S,idx,it,onChange){
   note.addEventListener('input',()=>{it.note=note.value; save();});
   due.addEventListener('change',()=>{it.due=due.value; save(); node.classList.toggle('late',isOverdue(it.due)); onChange?.();});
 
-  dots.forEach(d=> d.addEventListener('click',()=>{
-    it.p=+d.dataset.val; syncDots(); save(); onChange?.();
-  }));
+  dots.forEach(d=> d.addEventListener('click',()=>{ it.p=+d.dataset.val; syncDots(); save(); onChange?.(); }));
 
-  $('.info',node).addEventListener('click',()=>{
-    const v=desc.style.display!=='block'; desc.style.display=v?'block':'none';
-  });
-  $('.del',node).addEventListener('click',()=>{
-    const arr=area.sectors[sector][S]; arr.splice(idx,1); save(); render();
-  });
+  $('.info',node).addEventListener('click',()=>{const v=desc.style.display!=='block'; desc.style.display=v?'block':'none';});
+  $('.del',node).addEventListener('click',()=>{ const arr=area.sectors[sector][S]; arr.splice(idx,1); save(); render(); });
 
   frag.appendChild(node); frag.appendChild(desc); return frag;
 }
@@ -338,7 +348,7 @@ function focusLate(x){
 function drawChart(list){
   const canvas=$('#chartAreas');
   const wrap=canvas?.closest('.chart-inner');
-  const scroller=canvas?.closest('.chart-scroll'); // unica dichiarazione
+  const scroller=canvas?.closest('.chart-scroll');
   if(!canvas||!wrap) return;
 
   $('#toggleStacked').checked=!!chartPref.stacked;
@@ -362,7 +372,7 @@ function drawChart(list){
     })));
     const byS={}; Object.keys(perS).forEach(S=>byS[S]=perS[S].m?perS[S].s/perS[S].m:0);
     return {line:a.line||'—',byS,tot:t.m?t.s/t.m:0};
-  }).sort((a,b)=>a.line.localeCompare(b.line));
+  }).sort((a,b)=>a.line.localeCompare(b.line,'it',{numeric:true}));
 
   const padL=56,padR=16,padT=12,padB=46;
   const bwBase=14,innerBase=4,gapBase=18;
