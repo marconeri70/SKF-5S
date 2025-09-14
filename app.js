@@ -1,8 +1,8 @@
-/* SKF 5S – app.js v7.9.4 *****************************************************/
-const STORE = 'skf.5s.v7.9.4';
+/* SKF 5S – app.js v7.10 *****************************************************/
+const STORE = 'skf.5s.v7.10';
 const POINTS = [0,1,3,5];
 
-/* Voci base (riassunto) – puoi estendere liberamente */
+/* Voci (sintesi Excel) */
 const VOC_1S=[{title:"Zona pedonale pavimento",desc:"Area pedonale libera da congestione/ostacoli e pericoli di inciampo"},
 {title:"Zona di lavoro (pavimento, macchina)",desc:"Solo il necessario per l’ordine in corso"},
 {title:"Materiali",desc:"Materiale non necessario rimosso/segregato"},
@@ -40,7 +40,7 @@ const VOC_4S=[{title:"Aree di passaggio",desc:"Nessun deposito/ostacolo; pavimen
 const VOC_5S=[{title:"Ognuno & ogni giorno",desc:"Tutti formati e coinvolti sugli standard"},
 {title:"Miglioramento continuo",desc:"Evidenza prima/dopo; standard aggiornati"}];
 
-/* Helpers */
+/* Utils */
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const todayISO=()=>new Date().toISOString().slice(0,10);
 const isOverdue=d=>d && new Date(d+'T23:59:59')<new Date();
@@ -56,16 +56,14 @@ function save(){localStorage.setItem(STORE,JSON.stringify(state));}
 let state=load(); if(!state.areas?.length){state.areas=[makeArea('L2')];save();}
 let ui={q:'',line:'ALL',sector:'ALL',onlyLate:false};
 
-/* DOM */
+/* DOM refs */
 const elAreas=$('#areas'), elKpiAreas=$('#kpiAreas'), elKpiScore=$('#kpiScore'), elKpiLate=$('#kpiLate');
 const elLineFilter=$('#lineFilter'), elQ=$('#q'), elOnlyLate=$('#onlyLate');
 const btnAll=$('#btnAll'), btnFgr=$('#btnFgr'), btnAsm=$('#btnAsm');
 const tplArea=$('#tplArea'), tplItem=$('#tplItem');
 
-/* Guard – templates mancanti */
-if(!tplArea || !tplItem){
-  console.error('Template mancante: assicurati che #tplArea e #tplItem siano in index.html');
-}
+/* Safety: template presenti */
+if(!tplArea||!tplItem){console.error('Manca #tplArea o #tplItem in index.html');}
 
 /* Top bar */
 const btnTheme=$('#btnTheme');
@@ -102,19 +100,16 @@ function computeByS(area,sector){
 }
 function matchFilters(area){
   if(ui.line!=='ALL' && (area.line||'').trim()!==ui.line) return false;
-  if(!ui.q && !ui.onlyLate) return true;
   const secs=ui.sector==='ALL'?['Rettifica','Montaggio']:[ui.sector];
   const q=(ui.q||'').toLowerCase();
-  for(const sec of secs){
-    for(const S of ['1S','2S','3S','4S','5S']){
-      for(const it of (area.sectors[sec][S]||[])){
-        if(ui.onlyLate && !isOverdue(it.due)) continue;
-        const bag=`${it.t||''} ${it.note||''} ${it.resp||''}`.toLowerCase();
-        if(bag.includes(q)) return true;
-      }
-    }
-  }
-  return false;
+  let ok=false;
+  secs.forEach(sec=>['1S','2S','3S','4S','5S'].forEach(S=>(area.sectors[sec][S]||[]).forEach(it=>{
+    if(ui.onlyLate && !isOverdue(it.due)) return;
+    if(!ui.q){ok=true;return;}
+    const bag=`${it.t||''} ${it.note||''} ${it.resp||''}`.toLowerCase();
+    if(bag.includes(q)) ok=true;
+  })));
+  return ok;
 }
 function filteredAreas(){return state.areas.filter(matchFilters);}
 function overallStats(list){
@@ -187,6 +182,7 @@ function renderItem(area,sector,S,idx,it){
   const node=tplItem.content.firstElementChild.cloneNode(true);
   const desc=tplItem.content.children[1].cloneNode(true);
 
+  // metadati per focus
   node.dataset.line=(area.line||'').trim(); node.dataset.sector=sector; node.dataset.s=S; node.dataset.idx=String(idx);
 
   const txt=$('.txt',node), resp=$('.resp',node), due=$('.due',node),
@@ -200,23 +196,16 @@ function renderItem(area,sector,S,idx,it){
   txt.addEventListener('input',()=>{it.t=txt.value;if(it.d){const h=desc.querySelector('h4');h&&(h.textContent=it.t);}save();});
   resp.addEventListener('input',()=>{it.resp=resp.value;save();});
   note.addEventListener('input',()=>{it.note=note.value;save();});
-  due.addEventListener('change',()=>{
-    it.due=due.value; save();
-    node.classList.toggle('late',isOverdue(it.due));
-    updateDashboard();
-  });
+  due.addEventListener('change',()=>{it.due=due.value;save();node.classList.toggle('late',isOverdue(it.due));updateDashboard();});
 
-  dots.forEach(d=>d.addEventListener('click',()=>{
-    it.p=+d.dataset.val; markDots(); save();
-    updateDashboard(); drawAreasChart(); buildLineButtons();
-  }));
+  dots.forEach(d=>d.addEventListener('click',()=>{it.p=+d.dataset.val;markDots();save();updateDashboard();drawAreasChart();buildLineButtons();}));
   info.addEventListener('click',()=>desc.classList.toggle('show'));
   $('.del',node).addEventListener('click',()=>{const arr=area.sectors[sector][S];arr.splice(idx,1);save();render();});
 
   frag.appendChild(node); frag.appendChild(desc); return frag;
 }
 
-/* ===== Dashboard + late list ===== */
+/* Dashboard + elenco late */
 function updateDashboard(list){
   const {score,late}=overallStats(list);
   elKpiAreas&&(elKpiAreas.textContent=(list||filteredAreas()).length);
@@ -248,7 +237,7 @@ function focusLate(x){
   if(item){item.classList.remove('flash');void item.offsetWidth;item.classList.add('flash');}
 }
 
-/* ===== Grafico ===== */
+/* Grafico a barre */
 function drawAreasChart(list){
   const canvas=$('#chartAreas'); if(!canvas) return;
   const ctx=canvas.getContext('2d'); const DPR=devicePixelRatio||1, Hcss=260;
@@ -283,7 +272,7 @@ function drawAreasChart(list){
   });
 }
 
-/* ===== Line buttons ===== */
+/* Bottoni linea */
 function buildLineButtons(){
   const host=$('#lineBtns'); if(!host)return; host.innerHTML='';
   const bAll=document.createElement('button'); bAll.className='line-btn'+(ui.line==='ALL'?' active':''); bAll.textContent='Tutte';
@@ -303,7 +292,12 @@ function buildLineButtons(){
   });
 }
 
+/* Resize/orientation fixes per mobile */
+window.addEventListener('orientationchange', ()=> setTimeout(()=>drawAreasChart(), 250));
+window.addEventListener('resize', ()=> drawAreasChart());
+window.addEventListener('load', ()=> requestAnimationFrame(()=> drawAreasChart()));
+
 /* Init */
-render(); window.addEventListener('resize',()=>drawAreasChart());
+render();
 
 
