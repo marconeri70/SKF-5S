@@ -1,5 +1,5 @@
-/* ====================== SKF 5S – App (v7.10) ====================== */
-const VERSION = 'v7.10';
+/* ====================== SKF 5S – App (v7.11) ====================== */
+const VERSION = 'v7.11';
 
 const COLORS = {
   s1:'#8b60d3', s2:'#e25555', s3:'#f0b62b', s4:'#27a55f', s5:'#3c7bd8',
@@ -29,34 +29,27 @@ const LS_KEY = 'skf5s:data';
 let DATA = load() ?? seed();
 
 function seed(){
-  // dataset minimo di esempio
   return {
     theme:'light',
     zoom:1,
     stacked:true,
-    lines:[
-      makeLine('CH 2'),
-      makeLine('CH 3'),
-    ]
+    lines:[ makeLine('CH 2'), makeLine('CH 3'), makeLine('CH 4') ]
   };
 }
-
 function makeLine(name){
   return {
     name,
-    sector:'rettifica', // default tab aperta
-    // percentuali 1S..5S per ogni settore sono calcolate dalle voci
+    sector:'rettifica',
     rettifica: { items: defaultItems(), collapsed:false },
     montaggio: { items: defaultItems(), collapsed:true }
   };
 }
 function defaultItems(){
-  // ognuna ha: titolo, punti(0/1/3/5), responsabile, scad, note
   return [
-    { title:'1-S Stato', points:0, resp:'', due:'', note:'' },
-    { title:'Sicurezza', points:0, resp:'', due:'', note:'' },
-    { title:'Qualità', points:0, resp:'', due:'', note:'' },
-    { title:'Pulizia', points:0, resp:'', due:'', note:'' },
+    { title:'1-S Stato',    points:0, resp:'', due:'', note:'', desc:'Stato iniziale dell’area e degli strumenti.' },
+    { title:'Sicurezza',    points:0, resp:'', due:'', note:'', desc:'Segnaletica, DPI, percorsi pedonali, ripari.' },
+    { title:'Qualità',      points:0, resp:'', due:'', note:'', desc:'Standard e controlli qualità visibili.' },
+    { title:'Pulizia',      points:0, resp:'', due:'', note:'', desc:'Pulizia costante, rimozione cause dello sporco.' }
   ];
 }
 function save(){ localStorage.setItem(LS_KEY, JSON.stringify(DATA)); }
@@ -79,15 +72,11 @@ function fmt(n, p=0){ return (n||0).toFixed(p); }
 /* ---------- Filtri ---------- */
 let currentFilter = { q:'', line:'all', sector:'all', onlyLate:false };
 function setupFilters(){
-  // options line
   els.selLine.innerHTML = `<option value="all">Tutte</option>` + 
     DATA.lines.map((l,i)=>`<option value="${i}">${l.name}</option>`).join('');
-
-  // chips dinamici
   els.lineChips.innerHTML = `<span class="chip">Tutte</span>` + 
     DATA.lines.map((l,i)=>`<button class="chip" data-i="${i}">${l.name}</button>`).join('');
 
-  // listeners
   els.q.addEventListener('input', e=>{ currentFilter.q = e.target.value.trim().toLowerCase(); render(); });
   els.selLine.addEventListener('change', e=>{ currentFilter.line = e.target.value; render(); });
   els.onlyLate.addEventListener('change', e=>{ currentFilter.onlyLate = e.target.checked; render(); });
@@ -99,7 +88,10 @@ function setupFilters(){
     render();
   });
   els.btnClear.addEventListener('click', ()=>{
-    els.q.value=''; els.selLine.value='all'; currentFilter={q:'', line:'all', sector:getActiveSector(), onlyLate:false};
+    els.q.value=''; els.selLine.value='all';
+    qsa('.pill', els.sectorPills).forEach(p=>p.classList.remove('active'));
+    qs('.pill[data-sector="all"]', els.sectorPills).classList.add('active');
+    currentFilter={q:'', line:'all', sector:'all', onlyLate:false};
     els.onlyLate.checked=false; render();
   });
   els.lineChips.addEventListener('click', e=>{
@@ -108,10 +100,6 @@ function setupFilters(){
     currentFilter.line = b.dataset.i;
     render();
   });
-}
-function getActiveSector(){
-  const a = qs('.pill.active', els.sectorPills);
-  return a ? a.dataset.sector : 'all';
 }
 
 /* ---------- Grafico ---------- */
@@ -135,7 +123,7 @@ function buildChart(datasets, labels){
         tooltip:{ mode:'index', intersect:false },
         datalabels:{
           color:'#fff', anchor:'end', align:'start', clamp:true, formatter:(v)=> v?`${fmt(v)}%`:'',
-          textStrokeColor:'rgba(0,0,0,.5)', textStrokeWidth:2
+          textStrokeColor:'rgba(0,0,0,.6)', textStrokeWidth:2
         }
       }
     },
@@ -157,7 +145,6 @@ function makeDatasetsForChart(lines){
     };
   });
 
-  // Totale per colonna in modalità unstacked (mostra barra unica "Tot")
   if(!els.chkStacked.checked){
     const tot = lines.map(l => avgLine(l, l.sector));
     arr.unshift({
@@ -175,16 +162,12 @@ function itemsFor(line, sector){
   const sec = sector==='montaggio' ? line.montaggio : line.rettifica;
   return sec.items;
 }
+function toPct(p){ return p===0?0 : p===1?20 : p===3?60 : 100; }
 function getSPercent(line, sIndex, sector){
-  // mappo 1S..5S a voci (qui tutte contribuiscono equamente per semplicità)
+  // per questa versione ogni voce pesa uguale su ogni S → media semplice
   const items = itemsFor(line, sector);
-  if(items.length===0) return 0;
-
-  // media dei punti mappati su 0..100 (0,1,3,5 equivalgono a 0%,20%,60%,100%)
-  const toPct = (p)=> p===0?0 : p===1?20 : p===3?60 : 100;
+  if(!items.length) return 0;
   const avg = items.reduce((a,it)=>a+toPct(it.points),0) / items.length;
-  // Per dare "colore" ai 5 segmenti, ripartiamo la media su tutti (esempio didattico)
-  // Se in futuro vuoi pesi diversi per voce → qui.
   return avg;
 }
 function avgLine(line, sector){
@@ -284,63 +267,78 @@ function renderAreas(lines){
     `;
     els.areas.appendChild(area);
   });
+}
 
-  // listeners tab settore
-  qsa('.sector-tabs').forEach(t=>{
-    t.addEventListener('click', e=>{
-      const b = e.target.closest('.tab'); if(!b) return;
-      const i = +t.dataset.idx;
-      DATA.lines[i].sector = b.dataset.s;
-      currentFilter.sector = 'all'; // mantieni filtro dashboard ma apri tab corrente
-      render();
-    });
-  });
-
-  // toolbar area
-  els.areas.addEventListener('click', e=>{
-    const b = e.target.closest('button'); if(!b) return;
-    const idx = +b.dataset.idx;
+/* ---------- Delegation unica per: tab, toolbar, punti, info, inputs, delete item ---------- */
+els.areas.addEventListener('click', e=>{
+  // Tab settore
+  const tab = e.target.closest('.tab');
+  if(tab){
+    const i = +tab.parentElement.dataset.idx;
+    DATA.lines[i].sector = tab.dataset.s;
+    currentFilter.sector = 'all';
+    render();
+    return;
+  }
+  // Toolbar area
+  const btn = e.target.closest('button[data-cmd]');
+  if(btn){
+    const idx = +btn.dataset.idx;
     const line = DATA.lines[idx];
     const sec = getSector(line);
-    if(b.dataset.cmd==='add'){
-      sec.items.push({ title:'Nuova voce', points:0, resp:'', due:'', note:'' });
+    if(btn.dataset.cmd==='add'){
+      sec.items.push({ title:'Nuova voce', points:0, resp:'', due:'', note:'', desc:'Descrizione…' });
       render();
     }
-    if(b.dataset.cmd==='toggle'){
+    if(btn.dataset.cmd==='toggle'){
       sec.collapsed = !sec.collapsed; render();
     }
-    if(b.dataset.cmd==='remove'){
+    if(btn.dataset.cmd==='remove'){
       if(confirm(`Eliminare la linea ${line.name}?`)){
         DATA.lines.splice(idx,1); setupFilters(); render();
       }
     }
-  });
+    return;
+  }
+  // Click sui punti 0/1/3/5
+  const pt = e.target.closest('.p');
+  if(pt){
+    const wrap = pt.closest('.points');
+    const iLine = +wrap.dataset.line, iItem = +wrap.dataset.item;
+    const which = +pt.dataset.pt;
+    const line = DATA.lines[iLine];
+    const sec = getSector(line);
+    sec.items[iItem].points = which;
+    render(); return;
+  }
+  // Info → descrizione
+  const info = e.target.closest('.info');
+  if(info){
+    const item = info.closest('.item');
+    const desc = qs('.item-desc', item);
+    if(desc) desc.classList.toggle('show');
+    return;
+  }
+  // Elimina voce
+  const del = e.target.closest('.item-del');
+  if(del){
+    const bar = del.closest('.item-bar');
+    const iLine = +bar.dataset.line, iItem = +bar.dataset.item;
+    const line = DATA.lines[iLine]; const sec = getSector(line);
+    if(confirm('Eliminare la voce?')){ sec.items.splice(iItem,1); render(); }
+  }
+});
 
-  // punti click
-  qsa('.points').forEach(pWrap=>{
-    pWrap.addEventListener('click', e=>{
-      const p = e.target.closest('.p'); if(!p) return;
-      const iLine = +pWrap.dataset.line, iItem = +pWrap.dataset.item;
-      const which = +p.dataset.pt; // 0/1/3/5
-      const line = DATA.lines[iLine];
-      const sec = getSector(line);
-      sec.items[iItem].points = which;
-      render();
-    });
-  });
-
-  // inputs
-  qsa('.item-bar').forEach(bar=>{
-    bar.addEventListener('input', e=>{
-      const iLine = +bar.dataset.line, iItem = +bar.dataset.item;
-      const line = DATA.lines[iLine]; const sec = getSector(line); const it = sec.items[iItem];
-      if(e.target.name==='resp') it.resp = e.target.value;
-      if(e.target.name==='due') it.due = e.target.value;
-      if(e.target.name==='note') it.note = e.target.value;
-      render();
-    });
-  });
-}
+// input/textarea (delegation)
+els.areas.addEventListener('input', e=>{
+  const bar = e.target.closest('.item-bar'); if(!bar) return;
+  const iLine = +bar.dataset.line, iItem = +bar.dataset.item;
+  const line = DATA.lines[iLine]; const sec = getSector(line); const it = sec.items[iItem];
+  if(e.target.name==='resp') it.resp = e.target.value;
+  if(e.target.name==='due') it.due = e.target.value;
+  if(e.target.name==='note') it.note = e.target.value;
+  render();
+});
 
 function renderItem(it, iLine, iItem){
   const p = (v)=>`<div class="p p${v} ${it.points===v?'active':''}" data-pt="${v}">${v}</div>`;
@@ -348,17 +346,19 @@ function renderItem(it, iLine, iItem){
     <div class="item">
       <div class="item-head">
         <div class="item-title">
-          <div class="info">i</div>
+          <div class="info" title="Mostra descrizione">i</div>
           <div class="title">${it.title}</div>
         </div>
         <div class="points" data-line="${iLine}" data-item="${iItem}">
           ${p(0)}${p(1)}${p(3)}${p(5)}
         </div>
       </div>
+      <div class="item-desc">${it.desc||'Descrizione…'}</div>
       <div class="item-bar" data-line="${iLine}" data-item="${iItem}">
         <input name="resp" placeholder="Responsabile" value="${it.resp||''}">
         <input name="due" type="date" value="${it.due||''}">
         <textarea name="note" placeholder="Note...">${it.note||''}</textarea>
+        <button class="item-del">Elimina voce</button>
       </div>
     </div>
   `;
@@ -367,7 +367,9 @@ function renderItem(it, iLine, iItem){
 /* ---------- Toolbar top ---------- */
 els.btnNew.addEventListener('click', ()=>{
   const n = nextLineNumber();
-  DATA.lines.push(makeLine(`CH ${n}`));
+  const def = `CH ${n}`;
+  const name = (prompt('Nome linea', def) || def).trim();
+  DATA.lines.push(makeLine(name));
   setupFilters(); render();
 });
 function nextLineNumber(){
@@ -376,7 +378,6 @@ function nextLineNumber(){
     .filter(n => !Number.isNaN(n));
   return (nums.length ? Math.max(...nums) : 1) + 1;
 }
-
 els.btnExport.addEventListener('click', ()=>{
   const blob = new Blob([JSON.stringify(DATA,null,2)], {type:'application/json'});
   const a = document.createElement('a');
@@ -384,7 +385,6 @@ els.btnExport.addEventListener('click', ()=>{
   a.download = `SKF-5S-${new Date().toISOString().slice(0,10)}.json`;
   a.click();
 });
-
 els.btnImport.addEventListener('click', ()=>{
   const inp = document.createElement('input'); inp.type='file'; inp.accept='application/json';
   inp.onchange = async ()=> {
@@ -397,7 +397,6 @@ els.btnImport.addEventListener('click', ()=>{
   };
   inp.click();
 });
-
 els.btnPrint.addEventListener('click', ()=>window.print());
 
 /* ---------- Zoom + stacked ---------- */
