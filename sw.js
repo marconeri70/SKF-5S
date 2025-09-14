@@ -1,39 +1,17 @@
-// sw.js – SKF 5S v7.10 (PWA offline)
-const CACHE_NAME = "skf5s-cache-v19";
-const URLS_TO_CACHE = [
-  "./",
-  "index.html",
-  "style.css",
-  "app.js",
-  "manifest.json",
-  "assets/skf-192.png",
-  "assets/skf-512.png",
-  "assets/skf-logo.png",
-  "assets/5s-hero.png"
+// PWA cache minimale
+const CACHE = 'skf5s-cache-v7.10.3';
+const ASSETS = [
+  './','index.html','style.css','app.js','manifest.json',
+  'assets/skf-logo.png','assets/skf-192.png','assets/5s-hero.png'
 ];
-
-self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(URLS_TO_CACHE)));
+self.addEventListener('install',e=>{
+  e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)));
   self.skipWaiting();
 });
-
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.map(k => k!==CACHE_NAME ? caches.delete(k) : undefined)))
-  );
+self.addEventListener('activate',e=>{
+  e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));
   self.clients.claim();
 });
-
-self.addEventListener("fetch", (event) => {
-  event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) return cached;
-      return fetch(event.request).then(resp => {
-        const copy = resp.clone();
-        caches.open(CACHE_NAME).then(c => c.put(event.request, copy));
-        return resp;
-      }).catch(() => cached || Response.error());
-    })
-  );
+self.addEventListener('fetch',e=>{
+  e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)));
 });
-
