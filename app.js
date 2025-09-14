@@ -1,16 +1,15 @@
-/* ===================== SKF 5S – app.js (v7.12.0) =========================
-   - Filtri responsive (select settore su mobile) + sync con bottoni
-   - Nuova linea: proposta CH <prossimo numero libero>
-   - Linea iniziale: CH 2
-   - Pallini punteggi stabili, comprimi/espandi globali, grafico scrollabile
-   - STORE invariato per non perdere dati
+/* ===================== SKF 5S – app.js (v7.13.0) =========================
+   - Filtro rifinito (etichette, select settore su mobile, pill desktop)
+   - Nuova linea: propone CH <numero libero>
+   - Evidenza persistente sull’item richiamato dalle “Azioni in ritardo”
+   - KPI/grafico/score realtime, comprimi/espandi globali, nav linee
 =========================================================================== */
-const VERSION='v7.12.0';
+const VERSION='v7.13.0';
 const STORE='skf.5s.v7.10.3';
 const CHART_STORE=STORE+'.chart';
 const POINTS=[0,1,3,5];
 
-/* --------- Checklist dummy (puoi sostituire con import da Excel) --------- */
+/* ---------- Checklist base (ridotte, sostituibili con import Excel) ------ */
 const VOC_1S=[
   {t:"Zona pedonale pavimento",d:"Area pedonale libera da ostacoli e pericoli di inciampo"},
   {t:"Zona di lavoro (pavimento, macchina)",d:"Solo il necessario per l’ordine in corso"},
@@ -163,7 +162,6 @@ $('#btnExpandAll')?.addEventListener('click',()=>{$$('.area').forEach(a=>a.class
 function render(){
   $('#appVersion')?.replaceChildren(VERSION);
   refreshLineFilter();
-  // sincronia select settore con bottoni (in caso di ripristino pagina)
   sectorSelect.value=ui.sector;
   if(ui.sector==='ALL') setSegBtn('#btnAll');
   if(ui.sector==='Rettifica') setSegBtn('#btnFgr');
@@ -217,7 +215,7 @@ function renderArea(area){
 
   let curSector=(ui.sector==='ALL'?'Rettifica':ui.sector), curS='1S';
   line.value=area.line||''; 
-  line.addEventListener('input',()=>{area.line=line.value.trim(); save(); refreshLineFilter(); buildLineButtons();});
+  line.addEventListener('input',()=>{area.line=line.value.trim(); save(); refreshLineFilter(); buildLineButtons(); drawChart();});
 
   secTabs.forEach(b=>{
     if(b.dataset.sector===curSector) b.classList.add('active');
@@ -293,6 +291,12 @@ function renderItem(area,sector,S,idx,it,onChange){
   $('.info',node).addEventListener('click',()=>{const v=desc.style.display!=='block'; desc.style.display=v?'block':'none';});
   $('.del',node).addEventListener('click',()=>{ const arr=area.sectors[sector][S]; arr.splice(idx,1); save(); render(); });
 
+  /* se l’item viene evidenziato, toglilo quando cambi punteggio o chiudi descrizione */
+  node.addEventListener('click',e=>{
+    if(e.target.classList.contains('dot')) node.classList.remove('highlight');
+  });
+  $('.info',node).addEventListener('click',()=> node.classList.remove('highlight'));
+
   frag.appendChild(node); frag.appendChild(desc); return frag;
 }
 
@@ -336,12 +340,16 @@ function renderLateList(list){
 function focusLate(x){
   const card=[...document.querySelectorAll('.area')].find(a=>a.querySelector('.area-line')?.value.trim()===(x.line||'').trim());
   if(!card) return;
+  card.classList.remove('collapsed');
   const secBtn=[...card.querySelectorAll('.tab.sec')].find(b=>b.dataset.sector===x.sector); secBtn?.click();
   const sBtn=[...card.querySelectorAll('.tab.s')].find(b=>b.dataset.s===x.S); sBtn?.click();
   card.scrollIntoView({behavior:'smooth',block:'start'});
   const panel=card.querySelector(`.panel[data-s="${x.S}"]`);
   const item=panel?.querySelectorAll('.item')[x.idx];
-  if(item){item.classList.remove('flash');void item.offsetWidth;item.classList.add('flash');}
+  if(item){
+    item.classList.add('highlight');    // rimane finché non cambi punteggio/chiudi info
+    item.classList.remove('flash'); void item.offsetWidth; item.classList.add('flash'); // piccolo flash iniziale
+  }
 }
 
 /* -------------------------------- Chart --------------------------------- */
