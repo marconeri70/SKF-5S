@@ -1,15 +1,14 @@
-/* ===================== SKF 5S – app.js (v7.15.0) =========================
-   Novità v7.15.0:
-   - Anti-clip etichette in grafico Stacked
-   - Etichetta “S” su ogni colonna in Non-Stacked (oltre alla %)
-   - Evidenza persistente nel grafico delle S con azioni in ritardo
+/* ===================== SKF 5S – app.js (v7.15.1) =========================
+   Novità v7.15.1:
+   - Etichette “S” su barre non-stacked con contrasto automatico (bianco/blu)
+   - Etichetta di linea (CH n) più in basso e leggermente più grande/semibold
 =========================================================================== */
-const VERSION='v7.15.0';
+const VERSION='v7.15.1';
 const STORE='skf.5s.v7.10.3';
 const CHART_STORE=STORE+'.chart';
 const POINTS=[0,1,3,5];
 
-/* --- Voci di esempio --- */
+/* --- Voci di esempio (uguali) --- */
 const VOC_1S=[{t:"Zona pedonale pavimento",d:"Area pedonale libera da ostacoli e pericoli di inciampo"},
 {t:"Zona di lavoro (pavimento, macchina)",d:"Solo il necessario per l’ordine in corso"},
 {t:"Materiali",d:"Materiale non necessario rimosso/segregato"},
@@ -76,7 +75,7 @@ let ui={q:'',line:'ALL',sector:'ALL',onlyLate:false};
 let chartPref=loadChartPref();
 
 /* Evidenze ritardi da mostrare nel grafico */
-const highlightKeys=new Set();  // chiave: `${line}|${S}`
+const highlightKeys=new Set();
 
 /* DOM */
 const elAreas=$('#areas'), elLineFilter=$('#lineFilter'), elQ=$('#q'), elOnlyLate=$('#onlyLate');
@@ -306,7 +305,7 @@ function renderLateList(list){
     secs.forEach(sec=>['1S','2S','3S','4S','5S'].forEach(S=>(a.sectors[sec][S]||[]).forEach((it,idx)=>{
       if(isOverdue(it.due)){
         arr.push({line:a.line||'—',sector:sec,S,idx,title:it.t||'(senza titolo)',due:it.due});
-        highlightKeys.add(`${a.line||'—'}|${S}`);  // evidenzia anche nel grafico
+        highlightKeys.add(`${a.line||'—'}|${S}`);
       }
     })));
   });
@@ -334,10 +333,10 @@ function focusLate(x){
     item.classList.add('highlight');
     item.classList.remove('flash'); void item.offsetWidth; item.classList.add('flash');
   }
-  highlightKeys.add(`${x.line||'—'}|${x.S}`);  // persistenza evidenza
+  highlightKeys.add(`${x.line||'—'}|${x.S}`);
 }
 
-/* ----------------- CHART (etichette & highlight ritardi) ---------------- */
+/* ----------------- CHART ---------------- */
 function drawChart(list){
   const canvas=$('#chartAreas');
   const wrap=canvas?.closest('.chart-inner');
@@ -367,7 +366,7 @@ function drawChart(list){
     return {line:a.line||'—',byS,tot:t.m?t.s/t.m:0};
   }).sort((a,b)=>a.line.localeCompare(b.line,'it',{numeric:true}));
 
-  const padL=56,padR=16,padT=12,padB=46;
+  const padL=56,padR=16,padT=12,padB=56; // padB più alto per CH più in basso
   const bwBase=14,innerBase=4,gapBase=18;
   const z=chartPref.zoom||1;
   const bw=Math.max(8,bwBase*z),
@@ -425,7 +424,6 @@ function drawChart(list){
         const h=v*plotH; const y=yTop-h;
         ctx.fillStyle=COLORS[key]; ctx.fillRect(x,y,bw,h);
 
-        // etichette anti-clip
         if(v>0){
           const label=Math.round(v*100)+'%';
           const txtColor=textOnBg(COLORS[key],TXT);
@@ -439,7 +437,9 @@ function drawChart(list){
         yTop=y;
       });
       ctx.save(); ctx.fillStyle=TXT; ctx.textAlign='center';
-      ctx.translate(x+bw/2,padT+plotH+16); ctx.rotate(-Math.PI/12); ctx.fillText(g.line,0,0); ctx.restore();
+      ctx.font='600 13px system-ui';
+      ctx.translate(x+bw/2,padT+plotH+30); // più in basso
+      ctx.rotate(-Math.PI/12); ctx.fillText(g.line,0,0); ctx.restore();
       x+=bw+gap;
     });
   }else{
@@ -451,25 +451,34 @@ function drawChart(list){
         const v=(m==='tot'?g.tot:g.byS[m])||0, h=v*plotH, y=padT+plotH-h;
         ctx.fillStyle=COLORS[m]; ctx.fillRect(bx,y,bw,h);
 
-        // % (se h piccolo, appena sopra)
+        // percentuale (fuori o sopra la barra)
         ctx.fillStyle=TXT; ctx.textAlign='center';
-        const yPct = h>18 ? y-4 : padT+plotH-2;
+        const yPct = h>18 ? y-4 : padT+plotH-4;
         ctx.fillText(Math.round(v*100)+'%',bx+bw/2,yPct);
 
-        // etichetta S (tot/1S…5S)
-        const label = m==='tot' ? 'Tot' : m;
-        const yS = Math.max(padT+12, y+12);
-        ctx.fillText(label, bx+bw/2, yS);
+        // etichetta S con contrasto
+        const inside = h>=20;
+        const sTxt = m==='tot' ? 'Tot' : m;
+        if(inside){
+          ctx.fillStyle = textOnBg(COLORS[m],TXT);
+          ctx.fillText(sTxt, bx+bw/2, y+14);
+        }else{
+          ctx.fillStyle = TXT;
+          ctx.fillText(sTxt, bx+bw/2, Math.max(padT+12, y-6));
+        }
 
         drawOutline(bx,y,bw,h, m==='tot' ? `${g.line}|tot` : `${g.line}|${m}`);
         bx+=bw+inner;
       });
       ctx.save(); ctx.fillStyle=TXT; ctx.textAlign='center';
-      ctx.translate(x+groupW/2,padT+plotH+16); ctx.rotate(-Math.PI/12); ctx.fillText(g.line,0,0); ctx.restore();
+      ctx.font='600 13px system-ui';
+      ctx.translate(x+groupW/2,padT+plotH+30); // più in basso e più evidente
+      ctx.rotate(-Math.PI/12); ctx.fillText(g.line,0,0); ctx.restore();
       x+=groupW+gap;
     });
   }
 
+  const scroller=canvas.closest('.chart-scroll');
   if(scroller){
     if(typeof chartPref.scroll==='number') scroller.scrollLeft=chartPref.scroll;
     scroller.addEventListener('scroll',()=>{chartPref.scroll=scroller.scrollLeft; saveChartPref();},{passive:true});
