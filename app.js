@@ -1,427 +1,253 @@
-/* ====================== SKF 5S – App (v7.11) ====================== */
-const VERSION = 'v7.11';
+/* ==========================================================================
+   SKF 5S – v7.9.7  — app.js
+   (base stabile + filtro 5S funzionante e “toggle” + reset su cambio settore)
+   ========================================================================== */
 
-const COLORS = {
-  s1:'#8b60d3', s2:'#e25555', s3:'#f0b62b', s4:'#27a55f', s5:'#3c7bd8',
-  grid:getCss('--chart-grid'), text:getCss('--text')
+/* -------------------------
+   Stato e persistenza
+   ------------------------- */
+const STORAGE_KEY = 'skf5s_v797';
+
+const AppState = {
+  lines: [],              // array di linee { id, name, sector:'rettifica'|'montaggio', items:[{id, s:1..5, title, score:0|1|3|5, ...}] }
+  theme: 'light',         // 'light' | 'dark'
 };
-const S_LABELS = ['1S','2S','3S','4S','5S'];
 
-const els = {
-  q: qs('#q'),
-  selLine: qs('#selLine'),
-  sectorPills: qs('#sectorPills'),
-  onlyLate: qs('#onlyLate'),
-  btnClear: qs('#btnClear'),
-  kpiLines: qs('#kpiLines'), kpiAvg: qs('#kpiAvg'), kpiLate: qs('#kpiLate'),
-  zoomIn: qs('#zoomIn'), zoomOut: qs('#zoomOut'), chkStacked: qs('#chkStacked'),
-  lineChips: qs('#lineChips'),
-  btnCollapseAll: qs('#btnCollapseAll'), btnExpandAll: qs('#btnExpandAll'),
-  areas: qs('#areas'),
-  btnNew: qs('#btnNew'), btnExport: qs('#btnExport'), btnImport: qs('#btnImport'), btnPrint: qs('#btnPrint'),
-  btnTheme: qs('#btnTheme'),
-  ver: qs('#appVersion')
-};
-els.ver.textContent = VERSION;
-
-/* ---------- Stato / Storage ---------- */
-const LS_KEY = 'skf5s:data';
-let DATA = load() ?? seed();
-
-function seed(){
-  return {
-    theme:'light',
-    zoom:1,
-    stacked:true,
-    lines:[ makeLine('CH 2'), makeLine('CH 3'), makeLine('CH 4') ]
-  };
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(AppState));
 }
-function makeLine(name){
-  return {
-    name,
-    sector:'rettifica',
-    rettifica: { items: defaultItems(), collapsed:false },
-    montaggio: { items: defaultItems(), collapsed:true }
-  };
-}
-function defaultItems(){
-  return [
-    { title:'1-S Stato',    points:0, resp:'', due:'', note:'', desc:'Stato iniziale dell’area e degli strumenti.' },
-    { title:'Sicurezza',    points:0, resp:'', due:'', note:'', desc:'Segnaletica, DPI, percorsi pedonali, ripari.' },
-    { title:'Qualità',      points:0, resp:'', due:'', note:'', desc:'Standard e controlli qualità visibili.' },
-    { title:'Pulizia',      points:0, resp:'', due:'', note:'', desc:'Pulizia costante, rimozione cause dello sporco.' }
-  ];
-}
-function save(){ localStorage.setItem(LS_KEY, JSON.stringify(DATA)); }
-function load(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)||''); }catch{ return null; } }
-
-/* ---------- Tema ---------- */
-if (DATA.theme) document.documentElement.setAttribute('data-theme', DATA.theme);
-els.btnTheme.addEventListener('click', ()=>{
-  const t = document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
-  document.documentElement.setAttribute('data-theme', t);
-  DATA.theme = t; save();
-});
-
-/* ---------- UI Helpers ---------- */
-function qs(s,root=document){ return root.querySelector(s); }
-function qsa(s,root=document){ return [...root.querySelectorAll(s)]; }
-function getCss(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
-function fmt(n, p=0){ return (n||0).toFixed(p); }
-
-/* ---------- Filtri ---------- */
-let currentFilter = { q:'', line:'all', sector:'all', onlyLate:false };
-function setupFilters(){
-  els.selLine.innerHTML = `<option value="all">Tutte</option>` + 
-    DATA.lines.map((l,i)=>`<option value="${i}">${l.name}</option>`).join('');
-  els.lineChips.innerHTML = `<span class="chip">Tutte</span>` + 
-    DATA.lines.map((l,i)=>`<button class="chip" data-i="${i}">${l.name}</button>`).join('');
-
-  els.q.addEventListener('input', e=>{ currentFilter.q = e.target.value.trim().toLowerCase(); render(); });
-  els.selLine.addEventListener('change', e=>{ currentFilter.line = e.target.value; render(); });
-  els.onlyLate.addEventListener('change', e=>{ currentFilter.onlyLate = e.target.checked; render(); });
-  els.sectorPills.addEventListener('click', e=>{
-    const b = e.target.closest('.pill'); if(!b) return;
-    qsa('.pill', els.sectorPills).forEach(p=>p.classList.remove('active'));
-    b.classList.add('active');
-    currentFilter.sector = b.dataset.sector;
-    render();
-  });
-  els.btnClear.addEventListener('click', ()=>{
-    els.q.value=''; els.selLine.value='all';
-    qsa('.pill', els.sectorPills).forEach(p=>p.classList.remove('active'));
-    qs('.pill[data-sector="all"]', els.sectorPills).classList.add('active');
-    currentFilter={q:'', line:'all', sector:'all', onlyLate:false};
-    els.onlyLate.checked=false; render();
-  });
-  els.lineChips.addEventListener('click', e=>{
-    const b = e.target.closest('button'); if(!b) return;
-    els.selLine.value = b.dataset.i;
-    currentFilter.line = b.dataset.i;
-    render();
-  });
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) Object.assign(AppState, JSON.parse(raw));
+  } catch(e){ console.warn('loadState', e); }
 }
 
-/* ---------- Grafico ---------- */
-let chart;
-function buildChart(datasets, labels){
-  if(chart){ chart.destroy(); }
-  const stacked = els.chkStacked.checked;
+/* -------------------------
+   Util
+   ------------------------- */
+const $  = (sel, root=document) => root.querySelector(sel);
+const $$ = (sel, root=document) => [...root.querySelectorAll(sel)];
+const uid = () => Math.random().toString(36).slice(2,9);
 
-  chart = new Chart(qs('#chart'), {
-    type:'bar',
-    data:{ labels, datasets },
-    options:{
-      responsive:true,
-      maintainAspectRatio:false,
-      scales:{
-        x:{ stacked, ticks:{ color: COLORS.text, font:{weight:800} }, grid:{ color:COLORS.grid }},
-        y:{ stacked, min:0, max:100, ticks:{ color:COLORS.text, callback:(v)=>v+'%' }, grid:{ color:COLORS.grid }}
-      },
-      plugins:{
-        legend:{ display:false },
-        tooltip:{ mode:'index', intersect:false },
-        datalabels:{
-          color:'#fff', anchor:'end', align:'start', clamp:true, formatter:(v)=> v?`${fmt(v)}%`:'',
-          textStrokeColor:'rgba(0,0,0,.6)', textStrokeWidth:2
-        }
-      }
-    },
-    plugins:[ChartDataLabels]
-  });
-}
-function makeDatasetsForChart(lines){
-  const labels = lines.map(l=>l.name);
-  const sColors = [COLORS.s1, COLORS.s2, COLORS.s3, COLORS.s4, COLORS.s5];
+/* Calcolo punteggi (%) per una linea + breakdown per S */
+function computeLineStats(line){
+  const byS = {1:[],2:[],3:[],4:[],5:[]};
+  line.items.forEach(it => { if(byS[it.s]) byS[it.s].push(it.score||0); });
 
-  const arr = [0,1,2,3,4].map(sIndex=>{
-    return {
-      label:S_LABELS[sIndex],
-      backgroundColor:sColors[sIndex],
-      borderColor:'#fff',
-      borderWidth:1,
-      data: lines.map(l => getSPercent(l, sIndex+1, l.sector)),
-      datalabels:{ display: (ctx)=> ctx.dataset.data[ctx.dataIndex] > 0 }
-    };
-  });
-
-  if(!els.chkStacked.checked){
-    const tot = lines.map(l => avgLine(l, l.sector));
-    arr.unshift({
-      label:'Tot',
-      backgroundColor:'#aabbd3',
-      data: tot,
-      datalabels:{ display:(ctx)=> ctx.dataset.data[ctx.dataIndex]>0 }
-    });
+  const percS = {};
+  for (const s of [1,2,3,4,5]) {
+    const arr = byS[s];
+    const sum = arr.reduce((a,b)=>a+b,0);
+    const max = arr.length * 5;
+    percS[s] = max ? Math.round((sum/max)*100) : 0;
   }
-  return {labels, datasets:arr};
-}
+  // totale medio delle 5S
+  const tot = Math.round((Object.values(percS).reduce((a,b)=>a+b,0))/5) || 0;
 
-/* ---------- Calcoli ---------- */
-function itemsFor(line, sector){
-  const sec = sector==='montaggio' ? line.montaggio : line.rettifica;
-  return sec.items;
-}
-function toPct(p){ return p===0?0 : p===1?20 : p===3?60 : 100; }
-function getSPercent(line, sIndex, sector){
-  // per questa versione ogni voce pesa uguale su ogni S → media semplice
-  const items = itemsFor(line, sector);
-  if(!items.length) return 0;
-  const avg = items.reduce((a,it)=>a+toPct(it.points),0) / items.length;
-  return avg;
-}
-function avgLine(line, sector){
-  const arr = [1,2,3,4,5].map(i=>getSPercent(line,i,sector));
-  return arr.reduce((a,b)=>a+b,0) / arr.length;
-}
-function predominantLabel(line, sector){
-  let best = 1, bestVal = -1;
-  for(let i=1;i<=5;i++){
-    const v = getSPercent(line, i, sector);
-    if(v>bestVal){bestVal=v; best=i;}
+  // predominante
+  let predominantS = 1, predominantV = percS[1];
+  for(const s of [2,3,4,5]){
+    if(percS[s] > predominantV){ predominantS=s; predominantV=percS[s]; }
   }
-  return `${best}S ${fmt(bestVal)}%`;
+  return { tot, percS, predominantS, predominantV };
 }
 
-/* ---------- Rendering principale ---------- */
+/* -------------------------
+   Render (semplificato)
+   ------------------------- */
 function render(){
-  // filtro linee
-  let lines = [...DATA.lines];
-  if(currentFilter.line!=='all') lines = [ DATA.lines[+currentFilter.line] ];
-  // filtro ricerca
-  if(currentFilter.q){
-    const q = currentFilter.q;
-    lines = lines.filter(l=>{
-      const sec= getSector(l);
-      return sec.items.some(it =>
-        it.title.toLowerCase().includes(q) ||
-        (it.resp||'').toLowerCase().includes(q) ||
-        (it.note||'').toLowerCase().includes(q)
-      );
-    });
-  }
-  // solo in ritardo
-  if(currentFilter.onlyLate){
-    const isLate = (it)=> it.due && new Date(it.due) < new Date();
-    lines = lines.filter(l=> getSector(l).items.some(isLate));
-  }
+  const wrap = $('#lines');
+  if (!wrap) return;
 
-  // KPI
-  els.kpiLines.textContent = lines.length;
-  const avg = lines.length ? (lines.map(l=>avgLine(l, l.sector)).reduce((a,b)=>a+b,0) / lines.length) : 0;
-  els.kpiAvg.textContent = `${fmt(avg)}%`;
-  const late = lines.reduce((n,l)=> n + getSector(l).items.filter(it => it.due && new Date(it.due) < new Date()).length, 0);
-  els.kpiLate.textContent = late;
+  wrap.innerHTML = '';
+  AppState.lines.forEach(line => {
+    const stats = computeLineStats(line);
 
-  // Chart
-  const {labels, datasets} = makeDatasetsForChart(lines);
-  buildChart(datasets, labels);
-
-  // Line chips
-  els.lineChips.innerHTML = `<button class="chip main">Tutte</button>` + lines.map(l=>`<span class="chip">${l.name}</span>`).join('');
-
-  // Aree
-  renderAreas(lines);
-
-  save();
-}
-
-function getSector(line){
-  const s = (currentFilter.sector==='all') ? line.sector : currentFilter.sector;
-  return s==='montaggio' ? line.montaggio : line.rettifica;
-}
-
-function renderAreas(lines){
-  els.areas.innerHTML = '';
-  lines.forEach((line, idx)=>{
-    const sector = (currentFilter.sector==='all') ? line.sector : currentFilter.sector;
-    const secObj = sector==='montaggio' ? line.montaggio : line.rettifica;
-
-    const area = document.createElement('div');
-    area.className = 'area';
-    area.innerHTML = `
-      <div class="area-head">
-        <span class="name">${line.name}</span>
-        <div class="badges">
-          ${[1,2,3,4,5].map(i=>`<span class="badge s${i}">${i}S ${fmt(getSPercent(line,i,sector))}%</span>`).join('')}
-          <span class="badge main">Punteggio: ${fmt(avgLine(line,sector))}%</span>
-          <span class="badge">Predominante: ${predominantLabel(line,sector)}</span>
+    const card = document.createElement('section');
+    card.className = 'card line-card';
+    card.dataset.lineId = line.id;
+    card.innerHTML = `
+      <div class="card-header">
+        <strong>${line.name}</strong>
+        <div class="sector-bar" style="margin-left:auto">
+          <button class="sector-btn ${line.sector==='rettifica'?'active':''}" data-sector="rettifica">Rettifica</button>
+          <button class="sector-btn ${line.sector==='montaggio'?'active':''}" data-sector="montaggio">Montaggio</button>
         </div>
       </div>
-
-      <div class="area-toolbar">
-        <div class="sector-tabs" data-idx="${idx}">
-          <button class="tab ${sector==='rettifica'?'active':''}" data-s="rettifica">Rettifica</button>
-          <button class="tab ${sector==='montaggio'?'active':''}" data-s="montaggio">Montaggio</button>
+      <div class="card-body">
+        <div class="s-pills" style="margin-bottom:10px">
+          <span class="s-pill" data-s="1">1S <strong>${stats.percS[1]}%</strong></span>
+          <span class="s-pill" data-s="2">2S <strong>${stats.percS[2]}%</strong></span>
+          <span class="s-pill" data-s="3">3S <strong>${stats.percS[3]}%</strong></span>
+          <span class="s-pill" data-s="4">4S <strong>${stats.percS[4]}%</strong></span>
+          <span class="s-pill" data-s="5">5S <strong>${stats.percS[5]}%</strong></span>
         </div>
-        <div class="row gap">
-          <button class="btn" data-cmd="add" data-idx="${idx}">+ Voce</button>
-          <button class="btn" data-cmd="toggle" data-idx="${idx}">${secObj.collapsed ? 'Espandi' : 'Comprimi'}</button>
-          <button class="btn" data-cmd="remove" data-idx="${idx}">Elimina</button>
-        </div>
-      </div>
 
-      <div class="voc" data-idx="${idx}" style="${secObj.collapsed?'display:none':''}">
-        ${secObj.items.map((it,i)=>renderItem(it, idx, i)).join('')}
+        <div class="kpi-row" style="margin-bottom:12px">
+          <div class="kpi"><div class="t">Punteggio</div><div class="v">${stats.tot}%</div></div>
+          <div class="kpi"><div class="t">Predominante</div><div class="v">${stats.predominantS}S ${stats.predominantV}%</div></div>
+          <div class="kpi"><div class="t">Voci</div><div class="v">${line.items.length}</div></div>
+        </div>
+
+        ${line.items.map(it => `
+          <div class="item item-row s${it.s}" data-id="${it.id}" data-s="${it.s}">
+            <div class="title">${it.title}</div>
+            <div class="row">
+              <div class="score">
+                <span class="score-dot ${it.score===0?'active':''}" data-p="0">0</span>
+                <span class="score-dot ${it.score===1?'active':''}" data-p="1" style="color:var(--s1)">1</span>
+                <span class="score-dot ${it.score===3?'active':''}" data-p="3" style="color:var(--s3)">3</span>
+                <span class="score-dot ${it.score===5?'active':''}" data-p="5" style="color:var(--s4)">5</span>
+              </div>
+            </div>
+          </div>
+        `).join('')}
       </div>
     `;
-    els.areas.appendChild(area);
+    wrap.appendChild(card);
   });
 }
 
-/* ---------- Delegation unica per: tab, toolbar, punti, info, inputs, delete item ---------- */
-els.areas.addEventListener('click', e=>{
-  // Tab settore
-  const tab = e.target.closest('.tab');
-  if(tab){
-    const i = +tab.parentElement.dataset.idx;
-    DATA.lines[i].sector = tab.dataset.s;
-    currentFilter.sector = 'all';
+/* -------------------------
+   Eventi (punteggio + settore)
+   ------------------------- */
+function bindEvents(){
+  const root = document;
+
+  // assegna punteggio 0/1/3/5
+  root.addEventListener('click', e=>{
+    const dot = e.target.closest('.score-dot');
+    if(!dot) return;
+    const row = dot.closest('.item');
+    const card = dot.closest('.line-card');
+    const lineId = card?.dataset.lineId;
+    const itemId = row?.dataset.id;
+    const p = Number(dot.dataset.p||0);
+
+    const line = AppState.lines.find(l=>l.id===lineId);
+    const it = line?.items.find(i=>i.id===itemId);
+    if(!it) return;
+
+    it.score = p;
+    saveState();
+    render(); // ricalcolo percentuali + refresh UI
+  });
+
+  // cambia settore
+  root.addEventListener('click', e=>{
+    const b = e.target.closest('.sector-btn');
+    if(!b) return;
+    const card = b.closest('.line-card');
+    const line = AppState.lines.find(l=>l.id===card.dataset.lineId);
+    if(!line) return;
+
+    line.sector = b.dataset.sector;
+    saveState();
+    // clear filtro 5S (se attivo) nella card
+    if (card.dataset.activeS) window.filterSInCard(card, null);
     render();
-    return;
-  }
-  // Toolbar area
-  const btn = e.target.closest('button[data-cmd]');
-  if(btn){
-    const idx = +btn.dataset.idx;
-    const line = DATA.lines[idx];
-    const sec = getSector(line);
-    if(btn.dataset.cmd==='add'){
-      sec.items.push({ title:'Nuova voce', points:0, resp:'', due:'', note:'', desc:'Descrizione…' });
-      render();
-    }
-    if(btn.dataset.cmd==='toggle'){
-      sec.collapsed = !sec.collapsed; render();
-    }
-    if(btn.dataset.cmd==='remove'){
-      if(confirm(`Eliminare la linea ${line.name}?`)){
-        DATA.lines.splice(idx,1); setupFilters(); render();
-      }
-    }
-    return;
-  }
-  // Click sui punti 0/1/3/5
-  const pt = e.target.closest('.p');
-  if(pt){
-    const wrap = pt.closest('.points');
-    const iLine = +wrap.dataset.line, iItem = +wrap.dataset.item;
-    const which = +pt.dataset.pt;
-    const line = DATA.lines[iLine];
-    const sec = getSector(line);
-    sec.items[iItem].points = which;
-    render(); return;
-  }
-  // Info → descrizione
-  const info = e.target.closest('.info');
-  if(info){
-    const item = info.closest('.item');
-    const desc = qs('.item-desc', item);
-    if(desc) desc.classList.toggle('show');
-    return;
-  }
-  // Elimina voce
-  const del = e.target.closest('.item-del');
-  if(del){
-    const bar = del.closest('.item-bar');
-    const iLine = +bar.dataset.line, iItem = +bar.dataset.item;
-    const line = DATA.lines[iLine]; const sec = getSector(line);
-    if(confirm('Eliminare la voce?')){ sec.items.splice(iItem,1); render(); }
-  }
-});
-
-// input/textarea (delegation)
-els.areas.addEventListener('input', e=>{
-  const bar = e.target.closest('.item-bar'); if(!bar) return;
-  const iLine = +bar.dataset.line, iItem = +bar.dataset.item;
-  const line = DATA.lines[iLine]; const sec = getSector(line); const it = sec.items[iItem];
-  if(e.target.name==='resp') it.resp = e.target.value;
-  if(e.target.name==='due') it.due = e.target.value;
-  if(e.target.name==='note') it.note = e.target.value;
-  render();
-});
-
-function renderItem(it, iLine, iItem){
-  const p = (v)=>`<div class="p p${v} ${it.points===v?'active':''}" data-pt="${v}">${v}</div>`;
-  return `
-    <div class="item">
-      <div class="item-head">
-        <div class="item-title">
-          <div class="info" title="Mostra descrizione">i</div>
-          <div class="title">${it.title}</div>
-        </div>
-        <div class="points" data-line="${iLine}" data-item="${iItem}">
-          ${p(0)}${p(1)}${p(3)}${p(5)}
-        </div>
-      </div>
-      <div class="item-desc">${it.desc||'Descrizione…'}</div>
-      <div class="item-bar" data-line="${iLine}" data-item="${iItem}">
-        <input name="resp" placeholder="Responsabile" value="${it.resp||''}">
-        <input name="due" type="date" value="${it.due||''}">
-        <textarea name="note" placeholder="Note...">${it.note||''}</textarea>
-        <button class="item-del">Elimina voce</button>
-      </div>
-    </div>
-  `;
+  });
 }
 
-/* ---------- Toolbar top ---------- */
-els.btnNew.addEventListener('click', ()=>{
-  const n = nextLineNumber();
-  const def = `CH ${n}`;
-  const name = (prompt('Nome linea', def) || def).trim();
-  DATA.lines.push(makeLine(name));
-  setupFilters(); render();
-});
-function nextLineNumber(){
-  const nums = DATA.lines
-    .map(l => +(l.name.replace('CH','').trim()))
-    .filter(n => !Number.isNaN(n));
-  return (nums.length ? Math.max(...nums) : 1) + 1;
-}
-els.btnExport.addEventListener('click', ()=>{
-  const blob = new Blob([JSON.stringify(DATA,null,2)], {type:'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `SKF-5S-${new Date().toISOString().slice(0,10)}.json`;
-  a.click();
-});
-els.btnImport.addEventListener('click', ()=>{
-  const inp = document.createElement('input'); inp.type='file'; inp.accept='application/json';
-  inp.onchange = async ()=> {
-    const txt = await inp.files[0].text();
-    try{
-      const obj = JSON.parse(txt);
-      if(!obj.lines) throw Error('Formato non valido');
-      DATA = obj; setupFilters(); render();
-    }catch(e){ alert('File non valido'); }
-  };
-  inp.click();
-});
-els.btnPrint.addEventListener('click', ()=>window.print());
-
-/* ---------- Zoom + stacked ---------- */
-els.zoomIn.addEventListener('click', ()=>{ DATA.zoom=Math.min(2, (DATA.zoom||1)+.1); qs('.chart-wrap').style.scale = DATA.zoom; save(); });
-els.zoomOut.addEventListener('click', ()=>{ DATA.zoom=Math.max(.8, (DATA.zoom||1)-.1); qs('.chart-wrap').style.scale = DATA.zoom; save(); });
-els.chkStacked.checked = !!DATA.stacked;
-els.chkStacked.addEventListener('change', ()=>{ DATA.stacked = els.chkStacked.checked; render(); });
-
-/* ---------- Comprimi / Espandi tutto ---------- */
-els.btnCollapseAll.addEventListener('click', ()=>{
-  getVisibleLines().forEach(l=>{ getSector(l).collapsed = true; });
-  render();
-});
-els.btnExpandAll.addEventListener('click', ()=>{
-  getVisibleLines().forEach(l=>{ getSector(l).collapsed = false; });
-  render();
-});
-function getVisibleLines(){
-  let lines = [...DATA.lines];
-  if(currentFilter.line!=='all') lines = [ DATA.lines[+currentFilter.line] ];
-  return lines;
+/* -------------------------
+   Dati demo se è vuoto
+   ------------------------- */
+function seedIfEmpty(){
+  if (AppState.lines.length) return;
+  AppState.lines = [
+    {
+      id: uid(), name:'CH 2', sector:'rettifica',
+      items: [
+        {id:uid(), s:1, title:'1-S Stato', score:0},
+        {id:uid(), s:2, title:'Sicurezza', score:0},
+        {id:uid(), s:3, title:'Qualità',  score:0},
+        {id:uid(), s:4, title:'Pulizia',  score:0},
+        {id:uid(), s:5, title:'Audit/Standard', score:0},
+      ]
+    }
+  ];
 }
 
-/* ---------- Avvio ---------- */
-setupFilters();
-els.chkStacked.checked = DATA.stacked ?? true;
-qs('.chart-wrap').style.scale = DATA.zoom || 1;
-render();
+/* -------------------------
+   Boot
+   ------------------------- */
+function init(){
+  loadState();
+  seedIfEmpty();
+  render();
+  bindEvents();
+}
+document.addEventListener('DOMContentLoaded', init);
+
+/* =====================================================================
+   5S filter — HOTFIX v7.9.7 (badge 1S–5S filtrano/defiltrano le righe)
+   ===================================================================== */
+(function () {
+  const root = document;
+
+  // Estrae il valore S (1..5) da: data-s, classi s1..s5, oppure testo "1S"
+  function readS(el) {
+    if (!el) return null;
+    if (el.dataset && el.dataset.s) return String(el.dataset.s);
+    const cls = (el.className || '').match(/\bs([1-5])\b/i);
+    if (cls) return cls[1];
+    const txt = (el.textContent || '').trim().toUpperCase();
+    const m = txt.match(/\b([1-5])S\b/);
+    return m ? m[1] : null;
+  }
+
+  function lineCardFrom(el) {
+    return el.closest('.line-card, .area-card, .card.line, .card-area');
+  }
+  function findRows(card) {
+    return card ? card.querySelectorAll('.item, .item-row, .list-item') : [];
+  }
+  function rowS(row) {
+    if (!row) return null;
+    if (row.dataset && row.dataset.s) return String(row.dataset.s);
+    const cls = (row.className || '').match(/\bs([1-5])\b/i);
+    return cls ? cls[1] : null;
+  }
+
+  function applySFilter(card, s) {
+    if (!card) return;
+    const prev = card.dataset.activeS || '';
+    const next = (s && s === prev) ? '' : (s || '');
+    card.dataset.activeS = next;
+
+    // evidenzia badge attivo
+    card.querySelectorAll('.s-pill, .s-badge, .tab-s').forEach(b => {
+      const bs = readS(b);
+      b.classList.toggle('active', next && bs === next);
+    });
+
+    // mostra/nasconde righe
+    findRows(card).forEach(row => {
+      const rs = rowS(row);
+      const show = !next || (rs === next);
+      row.classList.toggle('is-hidden', !show);
+    });
+  }
+
+  // Click su badge/tabs 5S
+  root.addEventListener('click', (e) => {
+    const btn = e.target.closest('.s-pill, .s-badge, .tab-s');
+    if (!btn) return;
+    const s = readS(btn);
+    if (!s) return;
+    const card = lineCardFrom(btn);
+    applySFilter(card, s);
+  });
+
+  // Cambio settore ⇒ reset filtro 5S nella stessa card
+  root.addEventListener('click', (e) => {
+    const t = e.target.closest('.sector-btn, .btn-settore, .settore-toggle');
+    if (!t) return;
+    const card = lineCardFrom(t);
+    if (card && card.dataset.activeS) applySFilter(card, null);
+  });
+
+  // Esponi l’API (utile se in futuro lo vuoi richiamare altrove)
+  window.filterSInCard = applySFilter;
+})();
