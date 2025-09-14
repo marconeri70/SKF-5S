@@ -1,4 +1,4 @@
-/* ================= SKF 5S – Light & Dark (v7.10.4) ================= */
+/* ================= SKF 5S – Light & Dark (v7.11.0) ================= */
 :root{
   --bg:#ffffff; --text:#003366; --muted:#5c6f82;
   --card:#f3f7fa; --panel:#ffffff; --panel-alt:#eef4f8;
@@ -9,27 +9,31 @@
 :root.dark{
   --bg:#0f1a36; --text:#eaf0ff; --muted:#9bb0c5;
   --card:#182544; --panel:#1e2d4f; --panel-alt:#223a56;
-  --outline:#3a4ab6; --accent:#4b88ff; --desc:#74a0f2; --kpi-bg:#1b2b40;
+  --outline:#3a4ab6; --accent:#4b88ff; --desc:#9bc2ff; --kpi-bg:#1b2b40;
 }
 
 *{box-sizing:border-box}
 body{margin:0;font:16px/1.45 system-ui,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
 h1,h2,h3{margin:0 0 8px;font-weight:600}
+a{color:var(--accent)}
 
 .app-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 16px;background:var(--panel);border-bottom:2px solid var(--accent)}
 .logo{display:flex;align-items:center;gap:10px}.logo img{height:38px}
 .actions{display:flex;gap:6px;flex-wrap:wrap}
 
-.btn{padding:6px 12px;border-radius:10px;border:1px solid var(--accent);background:var(--panel);color:var(--accent);font-weight:600;cursor:pointer}
-.btn:hover{background:var(--accent);color:#fff}.btn.ghost{background:#fff;color:var(--accent)}
-.btn.danger{background:#f44767;border-color:#f44767;color:#fff}.btn.danger:hover{background:#c53a54}
-.btn.tiny{padding:4px 8px;border-radius:8px}
+.btn{padding:6px 12px;border-radius:10px;border:1px solid var(--accent);background:var(--panel);color:var(--accent);font-weight:600;cursor:pointer;transition:.15s}
+.btn:hover{background:var(--accent);color:#fff}.btn:focus{outline:2px solid var(--accent-alt);outline-offset:2px}
+.btn.ghost{background:#fff;color:var(--accent)} .btn.danger{background:#f44767;border-color:#f44767;color:#fff}
+.btn.danger:hover{background:#c53a54}.btn.tiny{padding:4px 8px;border-radius:8px}
 .tab{padding:6px 12px;border:1px solid var(--outline);border-radius:20px;cursor:pointer;transition:.15s}
-.tab:hover{background:var(--accent);color:#fff}.tab.active{background:var(--accent);color:#fff}
+.tab:hover{box-shadow:0 0 0 3px rgba(0,149,217,.12) inset}
+.tab.active{background:var(--accent);color:#fff}
 
 .card{margin:16px auto;padding:16px;background:var(--panel);border-radius:16px;box-shadow:0 0 8px rgba(0,0,0,.08);border:1px solid var(--outline)}
-.intro-grid{display:grid;grid-template-columns:280px 1fr;gap:18px;align-items:center;background:linear-gradient(180deg,#f6fbff 0%,#ffffff 100%);border-radius:18px}
-.hero-img{max-width:100%;height:auto;border-radius:12px}
+.intro-grid{display:grid;grid-template-columns:280px 1fr;gap:18px;align-items:center;border-radius:18px;
+  background:linear-gradient(180deg,#f6fbff 0%,#ffffff 100%)}
+:root.dark .intro-grid{background:linear-gradient(180deg,#102347 0%,#1b2f5a 100%)}
+.hero-img{max-width:100%;height:auto;border-radius:12px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.1))}
 .legend5s .tag{display:inline-block;padding:2px 10px;border-radius:999px;font-weight:600;margin:2px;color:#fff}
 .tag[data-s="1S"]{background:var(--c1)} .tag[data-s="2S"]{background:var(--c2)}
 .tag[data-s="3S"]{background:var(--c3)} .tag[data-s="4S"]{background:var(--c4)}
@@ -51,7 +55,10 @@ h1,h2,h3{margin:0 0 8px;font-weight:600}
 
 .line-buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .line-btn{padding:6px 10px;border-radius:999px;cursor:pointer;border:2px solid var(--accent);color:var(--accent);background:#fff;font-weight:600}
-.line-btn:hover{background:var(--accent);color:#fff}.line-btn.active{background:var(--accent);color:#fff;box-shadow:0 0 0 3px rgba(0,149,217,.12) inset}
+.line-btn:hover{background:var(--accent);color:#fff}
+.line-btn.active{background:var(--accent);color:#fff;box-shadow:0 0 0 3px rgba(0,149,217,.12) inset}
+
+.global-toggle{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
 
 .score-legend{display:flex;gap:12px;align-items:center;margin:10px 0;color:var(--muted);font-weight:600}
 .score-legend span{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;border:2px solid var(--outline)}
@@ -81,11 +88,17 @@ h1,h2,h3{margin:0 0 8px;font-weight:600}
 .item .resp,.item .due,.item .note{padding:6px;border:1px solid var(--outline);border-radius:6px}
 .item .del{color:#f44767;cursor:pointer;font-weight:700;text-align:center}.item .del:hover{color:#fff;background:#f44767;border-radius:6px}
 
+/* Pallini punteggio — classi fisse + stato active */
 .points-dots{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
-.points-dots .dot{width:28px;height:28px;line-height:28px;text-align:center;border-radius:50%;border:2px solid var(--outline);font-weight:700;cursor:pointer;transition:.12s}
-.dot[data-v="0"]{border-color:#666;color:#666}.dot[data-v="1"]{border-color:var(--c1);color:var(--c1)}
-.dot[data-v="3"]{border-color:var(--c3);color:var(--c3)}.dot[data-v="5"]{border-color:var(--c4);color:var(--c4)}
-.points-dots .dot.active{background:currentColor !important;color:#fff !important;border-color:currentColor !important}
+.dot{width:28px;height:28px;line-height:28px;text-align:center;border-radius:50%;border:2px solid var(--outline);font-weight:700;cursor:pointer;transition:.12s;color:var(--muted);background:#fff}
+.dot.v0{border-color:#666;color:#666}
+.dot.v1{border-color:var(--c1);color:var(--c1)}
+.dot.v3{border-color:var(--c3);color:var(--c3)}
+.dot.v5{border-color:var(--c4);color:var(--c4)}
+.dot.v0.active{background:#666;color:#fff;border-color:#666}
+.dot.v1.active{background:var(--c1);color:#fff;border-color:var(--c1)}
+.dot.v3.active{background:var(--c3);color:#fff;border-color:var(--c3)}
+.dot.v5.active{background:var(--c4);color:#fff;border-color:var(--c4)}
 
 .desc-show{background:#4a90e2;color:#fff;padding:12px;border-radius:10px;margin-top:8px;font-size:.9rem}
 .item.flash{animation:flash 1.2s ease 1}
