@@ -1,14 +1,13 @@
-/* ===================== SKF 5S – app.js (v7.15.1) =========================
-   Novità v7.15.1:
-   - Etichette “S” su barre non-stacked con contrasto automatico (bianco/blu)
-   - Etichetta di linea (CH n) più in basso e leggermente più grande/semibold
+/* ===================== SKF 5S – app.js (v7.15.2) =========================
+   Fix: rimosso doppio 'const scroller' in drawChart() che rompeva tutto.
+   Restyling etichette S e CH rimane come nella 7.15.1.
 =========================================================================== */
-const VERSION='v7.15.1';
+const VERSION='v7.15.2';
 const STORE='skf.5s.v7.10.3';
 const CHART_STORE=STORE+'.chart';
 const POINTS=[0,1,3,5];
 
-/* --- Voci di esempio (uguali) --- */
+/* --- Voci di esempio --- */
 const VOC_1S=[{t:"Zona pedonale pavimento",d:"Area pedonale libera da ostacoli e pericoli di inciampo"},
 {t:"Zona di lavoro (pavimento, macchina)",d:"Solo il necessario per l’ordine in corso"},
 {t:"Materiali",d:"Materiale non necessario rimosso/segregato"},
@@ -58,7 +57,7 @@ const nextCH=()=>{
 };
 const hex2rgb=h=>{const s=h.replace('#','');return {r:parseInt(s.substr(0,2),16),g:parseInt(s.substr(2,2),16),b:parseInt(s.substr(4,2),16)};}
 const luminance=c=>0.2126*c.r+0.7152*c.g+0.0722*c.b;
-const textOnBg=(hex,txt)=> luminance(hex2rgb(hex))>150 ? txt : '#ffffff';
+const textOnBg=(hex,txt)=> (0.2126*hex2rgb(hex).r+0.7152*hex2rgb(hex).g+0.0722*hex2rgb(hex).b)>150 ? txt : '#ffffff';
 
 /* --------- State helpers ---------- */
 function makeS(v){return {"1S":v[0].map(c=>({...c,p:0,resp:"",due:"",note:""})),"2S":v[1].map(c=>({...c,p:0,resp:"",due:"",note:""})),"3S":v[2].map(c=>({...c,p:0,resp:"",due:"",note:""})),"4S":v[3].map(c=>({...c,p:0,resp:"",due:"",note:""})),"5S":v[4].map(c=>({...c,p:0,resp:"",due:"",note:""}))};}
@@ -138,7 +137,7 @@ $('#toggleStacked')?.addEventListener('change',e=>{chartPref.stacked=e.target.ch
 $('#btnCollapseAll')?.addEventListener('click',()=>{$$('.area').forEach(a=>a.classList.add('collapsed'));});
 $('#btnExpandAll')?.addEventListener('click',()=>{$$('.area').forEach(a=>a.classList.remove('collapsed'));});
 
-/* Render base */
+/* Render */
 function render(){
   $('#appVersion')?.replaceChildren(VERSION);
   refreshLineFilter();
@@ -340,7 +339,7 @@ function focusLate(x){
 function drawChart(list){
   const canvas=$('#chartAreas');
   const wrap=canvas?.closest('.chart-inner');
-  const scroller=canvas?.closest('.chart-scroll');
+  const scroller=canvas?.closest('.chart-scroll'); // <— unica dichiarazione!
   if(!canvas||!wrap) return;
 
   $('#toggleStacked').checked=!!chartPref.stacked;
@@ -366,7 +365,7 @@ function drawChart(list){
     return {line:a.line||'—',byS,tot:t.m?t.s/t.m:0};
   }).sort((a,b)=>a.line.localeCompare(b.line,'it',{numeric:true}));
 
-  const padL=56,padR=16,padT=12,padB=56; // padB più alto per CH più in basso
+  const padL=56,padR=16,padT=12,padB=56;
   const bwBase=14,innerBase=4,gapBase=18;
   const z=chartPref.zoom||1;
   const bw=Math.max(8,bwBase*z),
@@ -438,7 +437,7 @@ function drawChart(list){
       });
       ctx.save(); ctx.fillStyle=TXT; ctx.textAlign='center';
       ctx.font='600 13px system-ui';
-      ctx.translate(x+bw/2,padT+plotH+30); // più in basso
+      ctx.translate(x+bw/2,padT+plotH+30);
       ctx.rotate(-Math.PI/12); ctx.fillText(g.line,0,0); ctx.restore();
       x+=bw+gap;
     });
@@ -451,12 +450,10 @@ function drawChart(list){
         const v=(m==='tot'?g.tot:g.byS[m])||0, h=v*plotH, y=padT+plotH-h;
         ctx.fillStyle=COLORS[m]; ctx.fillRect(bx,y,bw,h);
 
-        // percentuale (fuori o sopra la barra)
         ctx.fillStyle=TXT; ctx.textAlign='center';
         const yPct = h>18 ? y-4 : padT+plotH-4;
         ctx.fillText(Math.round(v*100)+'%',bx+bw/2,yPct);
 
-        // etichetta S con contrasto
         const inside = h>=20;
         const sTxt = m==='tot' ? 'Tot' : m;
         if(inside){
@@ -472,13 +469,12 @@ function drawChart(list){
       });
       ctx.save(); ctx.fillStyle=TXT; ctx.textAlign='center';
       ctx.font='600 13px system-ui';
-      ctx.translate(x+groupW/2,padT+plotH+30); // più in basso e più evidente
+      ctx.translate(x+groupW/2,padT+plotH+30);
       ctx.rotate(-Math.PI/12); ctx.fillText(g.line,0,0); ctx.restore();
       x+=groupW+gap;
     });
   }
 
-  const scroller=canvas.closest('.chart-scroll');
   if(scroller){
     if(typeof chartPref.scroll==='number') scroller.scrollLeft=chartPref.scroll;
     scroller.addEventListener('scroll',()=>{chartPref.scroll=scroller.scrollLeft; saveChartPref();},{passive:true});
