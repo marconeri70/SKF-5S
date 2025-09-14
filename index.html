@@ -25,7 +25,6 @@
     </div>
   </header>
 
-  <!-- Intro -->
   <section class="card intro-grid">
     <img src="assets/5s-hero.png" class="hero-img" alt="Diagramma 5S" loading="lazy" decoding="async" />
     <div>
@@ -41,7 +40,6 @@
     </div>
   </section>
 
-  <!-- Filtri -->
   <section class="card controls">
     <div class="filters">
       <label class="field f-q">
@@ -54,7 +52,6 @@
         <select id="lineFilter" title="Linea"></select>
       </label>
 
-      <!-- Bottoni settore (desktop) -->
       <div class="field f-seg">
         <span class="field-label">Settore (rapido)</span>
         <div class="sector-toggles">
@@ -64,7 +61,6 @@
         </div>
       </div>
 
-      <!-- Select settore (mobile / fallback) -->
       <label class="field f-seg-select">
         <span class="field-label">Settore</span>
         <select id="sectorFilter" title="Settore">
@@ -86,7 +82,6 @@
     </div>
   </section>
 
-  <!-- Cruscotto + grafico -->
   <section class="card">
     <div class="kpis">
       <div class="kpi"><div>Linee</div><div id="kpiAreas">0</div></div>
@@ -117,20 +112,16 @@
       <span class="dot5">5</span> Conforme
     </div>
 
-    <!-- NAV Linee -->
     <div id="areasList" class="line-buttons"></div>
 
-    <!-- Global expand/collapse -->
     <div class="global-toggle">
       <button id="btnCollapseAll" class="btn ghost">Comprimi tutto</button>
       <button id="btnExpandAll" class="btn ghost">Espandi tutto</button>
     </div>
   </section>
 
-  <!-- Schede -->
   <section id="areas"></section>
 
-  <!-- Template area -->
   <template id="tplArea">
     <div class="card area">
       <div class="area-head">
@@ -172,7 +163,6 @@
     </div>
   </template>
 
-  <!-- Template item -->
   <template id="tplItem">
     <div class="item">
       <button class="btn tiny info" title="Dettaglio">i</button>
