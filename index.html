@@ -25,6 +25,7 @@
     </div>
   </header>
 
+  <!-- Intro: ora con contrasto corretto anche in dark -->
   <section class="card intro-grid">
     <img src="assets/5s-hero.png" class="hero-img" alt="Diagramma 5S" loading="lazy" decoding="async" />
     <div>
@@ -40,6 +41,7 @@
     </div>
   </section>
 
+  <!-- Filtri -->
   <section class="card controls">
     <div class="filters">
       <input id="q" placeholder="🔎 Cerca in descrizione / note / responsabile…" />
@@ -54,6 +56,7 @@
     </div>
   </section>
 
+  <!-- Cruscotto + grafico -->
   <section class="card">
     <div class="kpis">
       <div class="kpi"><div>Linee</div><div id="kpiAreas">0</div></div>
@@ -84,11 +87,20 @@
       <span class="dot5">5</span> Conforme
     </div>
 
+    <!-- NAV Linee -->
     <div id="areasList" class="line-buttons"></div>
+
+    <!-- Nuovi pulsanti globali -->
+    <div class="global-toggle">
+      <button id="btnCollapseAll" class="btn ghost">Comprimi tutto</button>
+      <button id="btnExpandAll" class="btn ghost">Espandi tutto</button>
+    </div>
   </section>
 
+  <!-- Schede linee -->
   <section id="areas"></section>
 
+  <!-- Template area -->
   <template id="tplArea">
     <div class="card area">
       <div class="area-head">
@@ -130,15 +142,16 @@
     </div>
   </template>
 
+  <!-- Template item -->
   <template id="tplItem">
     <div class="item">
       <button class="btn tiny info" title="Dettaglio">i</button>
       <input class="txt" placeholder="Titolo…" />
       <div class="points-dots" role="radiogroup" aria-label="Punteggio">
-        <button class="dot" data-val="0" data-v="0" title="0">0</button>
-        <button class="dot" data-val="1" data-v="1" title="1">1</button>
-        <button class="dot" data-val="3" data-v="3" title="3">3</button>
-        <button class="dot" data-val="5" data-v="5" title="5">5</button>
+        <button class="dot v0" data-val="0" title="0">0</button>
+        <button class="dot v1" data-val="1" title="1">1</button>
+        <button class="dot v3" data-val="3" title="3">3</button>
+        <button class="dot v5" data-val="5" title="5">5</button>
       </div>
       <input class="resp" placeholder="Responsabile" />
       <input class="due" type="date" title="Scadenza" />
