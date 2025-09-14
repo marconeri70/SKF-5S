@@ -9,7 +9,7 @@
   <title>SKF 5S</title>
   <link rel="stylesheet" href="style.css" />
 
-  <!-- Chart.js + Datalabels (CDN) -->
+  <!-- Chart.js + Datalabels -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 </head>
@@ -28,7 +28,8 @@
 
   <section class="intro card">
     <div class="intro__media">
-      <img src="assets/5S.png" alt="5S" />
+      <!-- FALLBACK se 5S.png manca -->
+      <img src="assets/5S.png" alt="5S" onerror="this.src='assets/skf-512.png';this.style.objectFit='contain';" />
     </div>
     <div class="intro__text">
       <h2>Cosa è 5S</h2>
@@ -98,11 +99,10 @@
   <section id="areas" class="areas"></section>
 
   <footer class="footer">
-    <small>© SKF — PWA offline • <span id="appVersion">v7.9.6</span></small>
+    <small>© SKF — PWA offline • <span id="appVersion">v7.9.6a</span></small>
   </footer>
 
   <script src="app.js"></script>
-
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
