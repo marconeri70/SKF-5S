@@ -1,261 +1,390 @@
-/* ============== SKF 5S – App logic (v7.9.6) ============== */
+/* ================= SKF 5S – App (v7.9.7) ================= */
+const APP_VERSION = 'v7.9.7';
 
-const APP_VERSION = 'v7.9.6';
-document.getElementById('appVersion').textContent = APP_VERSION;
-
-// Chart può non essere disponibile (offline prima apertura / CDN bloccato)
-const CHART_OK = typeof window.Chart !== 'undefined';
-if (!CHART_OK) {
-  // mostra fallback e continua: il resto dell’app funziona
-  document.getElementById('chartFallback').style.display = 'block';
-}
-
-if (CHART_OK) {
-  // plugin per etichette
-  Chart.register(ChartDataLabels);
-}
-
-const COLORS = {
-  s1: css('--s1'), s2: css('--s2'), s3: css('--s3'), s4: css('--s4'), s5: css('--s5'), text: css('--text')
+/* ---------- Stato ---------- */
+const state = {
+  areas: [],              // [{id,line,sector,items[],collapsed,activeS}]
+  filter: { search:'', line:'Tutte', sector:'all', onlyLate:false, stacked:false },
+  chart: { inst:null, zoom:1 },
 };
-function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
 
-const LS_KEY = 'skf5s.v2';
-let state = load() || seed();
-
-function seed(){
-  return { theme:'light', lines:[ mkArea('CH 2'), mkArea('CH 3') ] };
-}
-function mkArea(name){
-  return { id:crypto.randomUUID(), name, sector:'rettifica', items:[
-    mkItem('1-S Stato'), mkItem('Sicurezza'), mkItem('Qualità'), mkItem('Pulizia')
-  ], collapsed:false };
-}
-function mkItem(title){ return { id:crypto.randomUUID(), title, points:0, responsible:'', due:'', note:'', s:guessS(title) }; }
-function guessS(t){
-  t=t.toLowerCase();
-  if (t.includes('selez')||t.includes('stato')) return 1;
-  if (t.includes('sistem')||t.includes('posto')) return 2;
-  if (t.includes('puliz')||t.includes('splend')) return 3;
-  if (t.includes('standard')||t.includes('regole')) return 4;
-  if (t.includes('sosten')||t.includes('discipl')) return 5;
-  return 1;
-}
-function save(){ localStorage.setItem(LS_KEY, JSON.stringify(state)); }
-function load(){ try{return JSON.parse(localStorage.getItem(LS_KEY))}catch{return null} }
-
-const elSelLinea = document.getElementById('selLinea');
-const elChkStacked = document.getElementById('chkStacked');
-const elChkLate = document.getElementById('chkLate');
-const elSearch = document.getElementById('txtSearch');
-const elAreas = document.getElementById('areas');
-const elBadgesRow = document.getElementById('badgesRow');
-
-let chart;
-renderAll();
-
-function renderAll(){ renderFilters(); renderDashboard(); renderAreaCards(); }
-
-function renderFilters(){
-  elSelLinea.innerHTML = '<option value="all">Linea: Tutte</option>' +
-    state.lines.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
-  elBadgesRow.innerHTML='';
-  ['Tutte',...state.lines.map(a=>a.name)].forEach((label,i)=>{
-    const b=document.createElement('button');
-    b.className='badge'+(i===0?' active':''); b.textContent=label; b.dataset.filter=i===0?'all':label;
-    b.addEventListener('click',()=>{
-      document.querySelectorAll('.badges-row .badge').forEach(x=>x.classList.remove('active'));
-      b.classList.add('active');
-      elSelLinea.value = i===0?'all':(state.lines.find(x=>x.name===label)?.id||'all');
-      renderDashboard(); renderAreaCards();
-    });
-    elBadgesRow.appendChild(b);
-  });
-}
-
-function applyFilters(lines){
-  const term = elSearch.value.trim().toLowerCase();
-  const id = elSelLinea.value;
-  let res=[...lines];
-  if (id!=='all') res=res.filter(a=>a.id===id);
-  if (term){
-    res=res.filter(a=>a.items.some(i=> i.title.toLowerCase().includes(term) ||
-      i.note.toLowerCase().includes(term) || i.responsible.toLowerCase().includes(term)));
-  }
-  if (elChkLate.checked){ res=res.filter(a=> areaStats(a).late>0); }
-  const activeSector = document.querySelector('.filter-chips .chip.active')?.dataset?.sector || 'all';
-  if (activeSector!=='all') res=res.filter(a=>a.sector===activeSector);
-  return res;
-}
-
-function renderDashboard(){
-  const lines = applyFilters(state.lines);
-  document.getElementById('kpiLines').textContent = lines.length;
-  const gs = globalStats(lines);
-  document.getElementById('kpiAvg').textContent = gs.avg + '%';
-  document.getElementById('kpiLate').textContent = gs.late;
-
-  if (!CHART_OK){
-    // senza Chart non provo a disegnare
-    return;
-  }
-
-  const labels = lines.map(a=>a.name);
-  const byS = [1,2,3,4,5].map(s=> lines.map(a=>areaStats(a).byS[s]));
-  const stacked = elChkStacked.checked;
-
-  const datasets = [
-    {label:'1S', data:byS[0], backgroundColor:COLORS.s1},
-    {label:'2S', data:byS[1], backgroundColor:COLORS.s2},
-    {label:'3S', data:byS[2], backgroundColor:COLORS.s3},
-    {label:'4S', data:byS[3], backgroundColor:COLORS.s4},
-    {label:'5S', data:byS[4], backgroundColor:COLORS.s5}
+/* ---------- Dataset demo minimo (puoi poi importare i tuoi) ---------- */
+function demoAreas(){
+  return [
+    mkArea('CH 2','rettifica'),
+    mkArea('CH 3','montaggio'),
   ];
+}
+function mkArea(line, sector){
+  // 4 voci d’esempio, una per ciascuna S
+  const items = [
+    { s:'1S', title:'1-S Stato', points:null, resp:'', due:'', note:'' },
+    { s:'2S', title:'Sicurezza', points:null, resp:'', due:'', note:'' },
+    { s:'3S', title:'Qualità', points:null, resp:'', due:'', note:'' },
+    { s:'5S', title:'Pulizia', points:null, resp:'', due:'', note:'' },
+  ];
+  return { id:crypto.randomUUID(), line, sector, items, collapsed:false, activeS:'ALL' };
+}
 
-  const ctx = document.getElementById('chartAreas').getContext('2d');
-  if (chart) chart.destroy();
-  chart = new Chart(ctx,{
-    type:'bar',
-    data:{labels, datasets},
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      plugins:{
-        legend:{display:false},
-        datalabels:{
-          color:'#fff', font:{weight:800, size:11},
-          formatter:v=> v>0? v+'%':'',
-          anchor:'end', align:'end', clamp:true, offset: stacked?2:-12, padding:2
-        },
-        tooltip:{callbacks:{title:i=>i[0].label, label:c=>`${c.dataset.label}: ${c.formattedValue}%`}}
-      },
-      scales:{
-        x:{stacked:stacked, ticks:{color:COLORS.text, autoSkip:false, padding:10}},
-        y:{stacked:stacked, beginAtZero:true, max:100, ticks:{color:COLORS.text, callback:v=>v+'%'}}
-      },
-      layout:{padding:{top: stacked?14:6}}
+/* ---------- Utilità ---------- */
+const S_COLORS = { '1S':'#7d5bd6','2S':'#e64a45','3S':'#f1b11a','4S':'#23a35a','5S':'#4597ff' };
+const S_LIST = ['1S','2S','3S','4S','5S'];
+
+function percent(n){ return isFinite(n)? Math.round(n) : 0; }
+function byId(id){ return document.getElementById(id); }
+function qs(sel,root=document){ return root.querySelector(sel); }
+function qsa(sel,root=document){ return Array.from(root.querySelectorAll(sel)); }
+
+/* ---------- Storage ---------- */
+const LS_KEY = 'skf5s-data-v2';
+function load(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(!raw){ state.areas = demoAreas(); save(); return; }
+    state.areas = JSON.parse(raw);
+  }catch{ state.areas = demoAreas(); save(); }
+}
+function save(){ localStorage.setItem(LS_KEY, JSON.stringify(state.areas)); }
+
+/* ---------- Score ---------- */
+function computeAreaStats(area){
+  const byS = { '1S':[], '2S':[], '3S':[], '4S':[], '5S':[] };
+  area.items.forEach(it => byS[it.s]?.push(it.points ?? 0));
+
+  const sPct = {};
+  for(const s of S_LIST){
+    const arr = byS[s];
+    const max = arr.length*5 || 1;
+    const sum = arr.reduce((a,b)=>a+(b||0),0);
+    sPct[s] = 100 * (sum/max);
+  }
+  const all = Object.values(sPct);
+  const avg = all.length ? all.reduce((a,b)=>a+b,0)/all.length : 0;
+
+  // predominante
+  let predS='1S', predV=-1;
+  for(const s of S_LIST){ if(sPct[s]>predV){ predV=sPct[s]; predS=s; } }
+
+  // ritardi
+  const now = new Date().setHours(0,0,0,0);
+  const late = area.items.some(it => it.due && new Date(it.due).setHours(0,0,0,0)<now && (it.points??0)<5);
+
+  return { sPct, avg, predS, predV, late };
+}
+
+/* ---------- Filtri ---------- */
+function applyFilters(){
+  const {search,line,sector,onlyLate} = state.filter;
+  const text = search.trim().toLowerCase();
+
+  return state.areas.filter(a=>{
+    if(line!=='Tutte' && a.line!==line) return false;
+    if(sector!=='all' && a.sector!==sector) return false;
+
+    const st = computeAreaStats(a);
+    if(onlyLate && !st.late) return false;
+
+    if(text){
+      const t = [a.line,a.sector, ...a.items.map(i=>`${i.title} ${i.note??''} ${i.resp??''}`)].join(' ').toLowerCase();
+      if(!t.includes(text)) return false;
     }
+    return true;
   });
 }
 
-function renderAreaCards(){
-  const lines = applyFilters(state.lines);
-  elAreas.innerHTML='';
-  lines.forEach(a=>{
-    const st = areaStats(a);
-    const card=document.createElement('div');
-    card.className='area';
-    card.innerHTML=`
-      <div class="area__head">
-        <div class="area__title">
-          <input data-id="${a.id}" class="inpName" value="${a.name}" />
-          <span class="pill">Settore:
-            <select data-id="${a.id}" class="selSector">
-              <option value="rettifica" ${a.sector==='rettifica'?'selected':''}>Rettifica</option>
-              <option value="montaggio" ${a.sector==='montaggio'?'selected':''}>Montaggio</option>
-            </select>
-          </span>
-        </div>
-        <div class="pills">
-          <span class="pill score">Punteggio: <b>${st.avg}%</b></span>
-          <span class="pill predom">Predominante: <b>${st.predom.s}S ${st.predom.val}%</b></span>
-          <button class="btn" data-act="add" data-id="${a.id}">+ Voce</button>
-          <button class="btn" data-act="toggle" data-id="${a.id}">${a.collapsed?'Espandi':'Comprimi'}</button>
-          <button class="btn" data-act="del" data-id="${a.id}" style="background:#ff4d6d;color:#fff;border-color:#ff4d6d">Elimina</button>
-        </div>
-      </div>
-      <div class="area__body" ${a.collapsed?'style="display:none"':''}>
-        ${renderItems(a)}
-        ${renderSBadges(a)}
-      </div>`;
-    elAreas.appendChild(card);
+/* ---------- Render Dashboard ---------- */
+function renderDashboard(){
+  // drop e ricostruisci linea select + chip linee
+  const lines = [...new Set(state.areas.map(a=>a.line))].sort((a,b)=>{
+    const na=parseInt(a.replace(/\D/g,'')); const nb=parseInt(b.replace(/\D/g,'')); return na-nb;
+  });
+  const sel = byId('selLinea');
+  sel.innerHTML = `<option value="Tutte">Linea: Tutte</option>` + lines.map(l=>`<option>${l}</option>`).join('');
+  sel.value = state.filter.line;
+
+  const filtered = applyFilters();
+
+  // KPI
+  byId('kpiLines').textContent = filtered.length;
+  const avgs = filtered.map(a=>computeAreaStats(a).avg);
+  byId('kpiAvg').textContent = (avgs.length?percent(avgs.reduce((a,b)=>a+b,0)/avgs.length):0) + '%';
+  const lateCount = filtered.filter(a=>computeAreaStats(a).late).length;
+  byId('kpiLate').textContent = lateCount;
+
+  // badge linee
+  const row = byId('badgesRow');
+  row.innerHTML = '';
+  if(lines.length){
+    const all = document.createElement('button');
+    all.className='chip'+(state.filter.line==='Tutte'?' active':'');
+    all.textContent='Tutte';
+    all.onclick=()=>{state.filter.line='Tutte'; renderAll();};
+    row.appendChild(all);
+  }
+  lines.forEach(l=>{
+    const b = document.createElement('button');
+    b.className='chip'+(state.filter.line===l?' active':'');
+    b.textContent=l;
+    b.onclick=()=>{ state.filter.line = l; renderAll(); };
+    row.appendChild(b);
   });
 
-  elAreas.querySelectorAll('.inpName').forEach(i=>i.addEventListener('change',e=>{
-    const a=state.lines.find(x=>x.id===e.target.dataset.id); a.name=e.target.value; save(); renderAll();
+  renderChart(filtered);
+}
+
+/* ---------- Chart ---------- */
+function renderChart(areas){
+  const el = byId('chartAreas');
+  const fb = byId('chartFallback');
+  if(!(window.Chart && window.ChartDataLabels)){
+    el.style.display='none'; fb.style.display='block'; return;
+  }
+  el.style.display='block'; fb.style.display='none';
+
+  // dati per linee
+  const labels = areas.map(a=>a.line);
+  const dataByS = {};
+  S_LIST.forEach(s=>dataByS[s]=areas.map(a=>computeAreaStats(a).sPct[s]));
+
+  // distruggi precedente
+  if(state.chart.inst){ state.chart.inst.destroy(); state.chart.inst=null; }
+
+  const stacked = state.filter.stacked;
+  const datasets = S_LIST.map(s=>({
+    label:s, data:dataByS[s],
+    backgroundColor:S_COLORS[s],
+    borderColor:S_COLORS[s],
+    borderWidth:1,
+    datalabels:{
+      color:'#fff', clamp:true, anchor: stacked?'center':'end', align: stacked?'center':'end',
+      formatter:(v)=> v?`${percent(v)}%`:''
+    }
   }));
-  elAreas.querySelectorAll('.selSector').forEach(i=>i.addEventListener('change',e=>{
-    const a=state.lines.find(x=>x.id===e.target.dataset.id); a.sector=e.target.value; save(); renderDashboard();
-  }));
-  elAreas.querySelectorAll('button[data-act]').forEach(b=>b.addEventListener('click',e=>{
-    const id=e.currentTarget.dataset.id; const a=state.lines.find(x=>x.id===id); const act=e.currentTarget.dataset.act;
-    if (act==='add') a.items.push(mkItem('Nuova voce'));
-    if (act==='toggle') a.collapsed=!a.collapsed;
-    if (act==='del'){ if(confirm('Eliminare la linea?')) state.lines=state.lines.filter(x=>x.id!==id); }
+
+  const cfg = {
+    type:'bar',
+    data:{ labels, datasets },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      scales:{
+        x:{ stacked, ticks:{
+          callback:(val,idx)=> labels[idx], // CH
+        }},
+        y:{ stacked, beginAtZero:true, max:100 }
+      },
+      plugins:{
+        legend:{ display:true },
+        datalabels:{ textStrokeColor:'rgba(0,0,0,.35)', textStrokeWidth:2 }
+      }
+    },
+    plugins:[ChartDataLabels]
+  };
+  state.chart.inst = new Chart(el.getContext('2d'), cfg);
+
+  // abbassa leggermente l’etichetta CH
+  state.chart.inst.options.scales.x.ticks.padding = 10;
+  state.chart.inst.update();
+}
+
+/* ---------- Render Aree (schede) ---------- */
+function renderAreas(){
+  const wr = byId('areas');
+  wr.innerHTML='';
+  const list = applyFilters();
+
+  list.forEach(area=>{
+    const st = computeAreaStats(area);
+
+    const box = document.createElement('div');
+    box.className='area';
+    if(st.late) box.style.boxShadow = '0 0 0 3px rgba(231,76,60,.25)';
+
+    /* HEAD */
+    const head = document.createElement('div');
+    head.className='area__head';
+
+    const title = document.createElement('div');
+    title.className='area__line';
+    title.textContent = area.line;
+    head.appendChild(title);
+
+    // settore chips
+    const sectors = document.createElement('div');
+    sectors.className='sector-chips';
+    ['rettifica','montaggio'].forEach(sec=>{
+      const b=document.createElement('button');
+      b.className='chip'+(area.sector===sec?' active':'');
+      b.textContent=sec[0].toUpperCase()+sec.slice(1);
+      b.onclick=()=>{ area.sector=sec; save(); renderAll(); };
+      sectors.appendChild(b);
+    });
+    head.appendChild(sectors);
+
+    // stats pill
+    const stats = document.createElement('div');
+    stats.className='area__stats';
+    const pTot = document.createElement('div');
+    pTot.className='stat-pill';
+    pTot.innerHTML = `Punteggio: <b>${percent(st.avg)}%</b>`;
+    const pPred = document.createElement('div');
+    pPred.className='stat-pill';
+    pPred.innerHTML = `Predominante: <span class="muted">${st.predS}</span> <b>${percent(st.predV)}%</b>`;
+    stats.appendChild(pTot); stats.appendChild(pPred);
+
+    const btnAdd = document.createElement('button'); btnAdd.className='btn'; btnAdd.textContent='+ Voce';
+    btnAdd.onclick=()=>{ addItem(area); };
+    const btnToggle = document.createElement('button'); btnToggle.className='btn';
+    btnToggle.textContent= area.collapsed?'Espandi':'Comprimi';
+    btnToggle.onclick=()=>{ area.collapsed=!area.collapsed; save(); renderAll(); };
+
+    stats.appendChild(btnAdd); stats.appendChild(btnToggle);
+    head.appendChild(stats);
+    box.appendChild(head);
+
+    /* TABS 5S */
+    const tabs = document.createElement('div'); tabs.className='area__tabs';
+    const tabAll = mkTab('ALL','Tutte', null, area);
+    tabs.appendChild(tabAll);
+    S_LIST.forEach(s=>{
+      const t = mkTab(s, s, percent(st.sPct[s])+'%', area, s);
+      tabs.appendChild(t);
+    });
+    box.appendChild(tabs);
+
+    /* BODY */
+    const body = document.createElement('div'); body.className='area__body';
+    if(area.collapsed) body.style.display='none';
+
+    const visibleS = area.activeS==='ALL'? null : area.activeS;
+    area.items.forEach((it,idx)=>{
+      if(visibleS && it.s!==visibleS) return;
+
+      const row = document.createElement('div'); row.className='item';
+      if(isLate(it)) row.classList.add('late');
+
+      const info = document.createElement('div'); info.className='info'; info.textContent='i';
+      row.appendChild(info);
+
+      const title = document.createElement('div'); title.textContent = it.title; row.appendChild(title);
+
+      const pts = document.createElement('div'); pts.className='points';
+      [0,1,3,5].forEach(v=>{
+        const p=document.createElement('div'); p.className='pt'; p.dataset.v=v; p.textContent=v;
+        if(it.points===v) p.classList.add('active');
+        p.onclick=()=>{ it.points=v; save(); renderAll(); };
+        pts.appendChild(p);
+      });
+      row.appendChild(pts);
+
+      const resp = document.createElement('input'); resp.placeholder='Responsabile'; resp.value=it.resp||''; resp.className='mono';
+      resp.oninput=()=>{ it.resp=resp.value; save(); };
+      row.appendChild(resp);
+
+      const due = document.createElement('input'); due.type='date'; due.value=it.due||'';
+      due.onchange=()=>{ it.due=due.value; save(); renderAll(); };
+      row.appendChild(due);
+
+      const note = document.createElement('input'); note.placeholder='Note…'; note.className='note'; note.value=it.note||'';
+      note.oninput=()=>{ it.note=note.value; save(); };
+      row.appendChild(note);
+
+      body.appendChild(row);
+    });
+    box.appendChild(body);
+
+    wr.appendChild(box);
+  });
+
+  function mkTab(kind, label, pct, area, s){
+    const b = document.createElement('button');
+    b.className = 'tab' + (s?(' '+s.toLowerCase()):'');
+    if(area.activeS===kind) b.classList.add('active');
+    b.innerHTML = (s?label:label) + (pct? ` <span class="pct">${pct}</span>` : '');
+    b.onclick=()=>{ area.activeS=kind; save(); renderAll(); };
+    return b;
+  }
+
+  function isLate(it){
+    if(!it.due) return false;
+    const d = new Date(it.due).setHours(0,0,0,0);
+    return d < new Date().setHours(0,0,0,0) && (it.points??0) < 5;
+  }
+}
+
+function addItem(area){
+  area.items.push({ s:'1S', title:'Nuova voce', points:null, resp:'', due:'', note:'' });
+  save(); renderAll();
+}
+
+/* ---------- Render All ---------- */
+function renderAll(){
+  byId('appVersion').textContent = APP_VERSION;
+  renderDashboard();
+  renderAreas();
+}
+
+/* ---------- Eventi UI ---------- */
+function bindUI(){
+  byId('btnTheme').onclick = ()=> document.documentElement.classList.toggle('dark');
+
+  byId('txtSearch').oninput = e=>{ state.filter.search=e.target.value; renderAll(); };
+  byId('selLinea').onchange = e=>{ state.filter.line=e.target.value; renderAll(); };
+  byId('chkLate').onchange = e=>{ state.filter.onlyLate=e.target.checked; renderAll(); };
+
+  // sector chips (filtri globali)
+  qsa('#chipsSector .chip').forEach(ch=>{
+    ch.onclick = ()=>{
+      qsa('#chipsSector .chip').forEach(c=>c.classList.remove('active'));
+      ch.classList.add('active');
+      state.filter.sector = ch.dataset.sector;
+      renderAll();
+    };
+  });
+
+  byId('btnClear').onclick = ()=>{
+    state.filter = { search:'', line:'Tutte', sector:'all', onlyLate:false, stacked: state.filter.stacked };
+    byId('txtSearch').value=''; byId('selLinea').value='Tutte'; byId('chkLate').checked=false;
+    qsa('#chipsSector .chip').forEach((c,i)=> c.classList.toggle('active', i===0));
+    renderAll();
+  };
+
+  byId('btnZoomIn').onclick = ()=>{ state.chart.zoom=Math.min(2,state.chart.zoom+0.1); renderAll(); };
+  byId('btnZoomOut').onclick = ()=>{ state.chart.zoom=Math.max(0.6,state.chart.zoom-0.1); renderAll(); };
+  byId('chkStacked').onchange = e=>{ state.filter.stacked=e.target.checked; renderAll(); };
+
+  byId('btnCollapseAll').onclick = ()=>{ applyFilters().forEach(a=>a.collapsed=true); save(); renderAll(); };
+  byId('btnExpandAll').onclick = ()=>{ applyFilters().forEach(a=>a.collapsed=false); save(); renderAll(); };
+
+  byId('btnNew').onclick = ()=>{
+    // crea CH successiva
+    const nums = state.areas.map(a=>parseInt(a.line.replace(/\D/g,''))||0);
+    const next = Math.max(0,...nums)+1;
+    state.areas.push(mkArea(`CH ${next}`,'rettifica'));
     save(); renderAll();
-  }));
+  };
 
-  elAreas.querySelectorAll('.dot').forEach(d=>d.addEventListener('click',e=>{
-    const aId=e.currentTarget.dataset.aid, iId=e.currentTarget.dataset.iid, val=+e.currentTarget.dataset.v;
-    const a=state.lines.find(x=>x.id===aId), it=a.items.find(x=>x.id===iId);
-    it.points=val; save(); renderDashboard(); renderAreaCards();
-  }));
-  elAreas.querySelectorAll('.item input, .item textarea').forEach(el=>el.addEventListener('change',e=>{
-    const wrap=e.target.closest('.item'); const aId=wrap.dataset.aid; const iId=wrap.dataset.iid;
-    const a=state.lines.find(x=>x.id===aId), it=a.items.find(x=>x.id===iId);
-    if (e.target.name==='responsible') it.responsible=e.target.value;
-    if (e.target.name==='due') it.due=e.target.value;
-    if (e.target.name==='note') it.note=e.target.value;
-    save(); renderDashboard();
-  }));
+  byId('btnExport').onclick = ()=>{
+    const blob = new Blob([JSON.stringify(state.areas,null,2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download='skf5s-export.json'; a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),2000);
+  };
+  byId('btnImport').onclick = ()=>{
+    const inp = document.createElement('input'); inp.type='file'; inp.accept='application/json';
+    inp.onchange = ()=> {
+      const f = inp.files[0]; if(!f) return;
+      const r=new FileReader(); r.onload=()=>{
+        try{ state.areas=JSON.parse(r.result); save(); renderAll(); }
+        catch{ alert('File non valido'); }
+      }; r.readAsText(f);
+    };
+    inp.click();
+  };
+  byId('btnPrint').onclick = ()=> window.print();
 }
 
-function renderItems(a){
-  return a.items.map(it=>{
-    const circle=v=>`<span class="dot ${it.points===v?'active':''}" data-aid="${a.id}" data-iid="${it.id}" data-v="${v}">${v}</span>`;
-    return `
-    <div class="item" data-aid="${a.id}" data-iid="${it.id}">
-      <div class="item__row">
-        <div class="item__title">${it.title}</div>
-        <div class="points">${circle(0)} ${circle(1)} ${circle(3)} ${circle(5)}</div>
-        <div class="item__meta">
-          <input type="text" name="responsible" placeholder="Responsabile" value="${it.responsible||''}" />
-          <input type="date" name="due" value="${it.due||''}" />
-        </div>
-        <div class="item__meta" style="width:100%">
-          <input type="text" name="note" style="width:100%" placeholder="Note…" value="${it.note||''}" />
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-}
-function renderSBadges(a){
-  const st=areaStats(a); const mk=s=>`<span class="badge s${s} ${st.predom.s===s?'active':''}">${s}S <b>${st.byS[s]}%</b></span>`;
-  return `<div class="pills">${mk(1)}${mk(2)}${mk(3)}${mk(4)}${mk(5)}</div>`;
-}
-
-function areaStats(area){
-  const perS={1:[],2:[],3:[],4:[],5:[]}; for (const it of area.items) perS[it.s].push(it.points);
-  const res={byS:{}, avg:0, predom:{s:1,val:0}, late:0}; let all=[];
-  for (let s=1;s<=5;s++){ const arr=perS[s], sum=arr.reduce((a,b)=>a+b,0), max=(arr.length*5)||1; res.byS[s]=Math.round((sum/max)*100); all=all.concat(arr); }
-  const sumAll=all.reduce((a,b)=>a+b,0), maxAll=(area.items.length*5)||1; res.avg=Math.round((sumAll/maxAll)*100);
-  let best=0,bS=1; for(let s=1;s<=5;s++){ if(res.byS[s]>best){best=res.byS[s]; bS=s;} } res.predom={s:bS,val:best};
-  const now=new Date().toISOString().slice(0,10); res.late=area.items.filter(i=>i.due && i.due<now && i.points<5).length;
-  return res;
-}
-function globalStats(lines){ if(!lines.length) return {avg:0,late:0}; let sum=0,late=0; for(const a of lines){ const s=areaStats(a); sum+=s.avg; late+=s.late; } return {avg:Math.round(sum/lines.length), late}; }
-
-// eventi globali
-document.getElementById('btnNew').addEventListener('click',()=>{ const n=nextName(); state.lines.push(mkArea(n)); save(); renderAll(); });
-function nextName(){ let i=2; while(state.lines.some(a=>a.name==='CH '+i)) i++; return 'CH '+i; }
-document.getElementById('btnExport').addEventListener('click',()=>{
-  const blob=new Blob([JSON.stringify(state)],{type:'application/json'}); const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob); a.download='SKF-5S-data.json'; a.click();
-});
-document.getElementById('btnImport').addEventListener('click',()=>{
-  const i=document.createElement('input'); i.type='file'; i.accept='application/json';
-  i.onchange=()=>{ const f=i.files[0]; if(!f) return; const r=new FileReader(); r.onload=e=>{ state=JSON.parse(e.target.result); save(); renderAll(); }; r.readAsText(f); };
-  i.click();
-});
-document.getElementById('btnPrint').addEventListener('click',()=>window.print());
-document.getElementById('btnTheme').addEventListener('click',()=>{ document.documentElement.classList.toggle('force-dark'); renderDashboard(); });
-document.getElementById('btnClear').addEventListener('click',()=>{ elSearch.value=''; elSelLinea.value='all'; elChkLate.checked=false; document.querySelectorAll('.filter-chips .chip').forEach(c=>c.classList.toggle('active', c.dataset.sector==='all')); renderAll(); });
-document.querySelectorAll('.filter-chips .chip').forEach(c=>c.addEventListener('click',()=>{ document.querySelectorAll('.filter-chips .chip').forEach(x=>x.classList.remove('active')); c.classList.add('active'); renderDashboard(); renderAreaCards(); }));
-elSearch.addEventListener('input',()=>{ renderDashboard(); renderAreaCards(); });
-elSelLinea.addEventListener('change',()=>{ renderDashboard(); renderAreaCards(); });
-elChkLate.addEventListener('change',()=>{ renderDashboard(); renderAreaCards(); });
-elChkStacked.addEventListener('change',()=>{ renderDashboard(); });
-document.getElementById('btnZoomIn').addEventListener('click',()=>zoom(1.1));
-document.getElementById('btnZoomOut').addEventListener('click',()=>zoom(0.9));
-function zoom(m){ const c=document.getElementById('chartAreas'); const h=c.height||220; c.height=Math.max(160, Math.min(460, h*m)); chart?.resize(); }
-document.getElementById('btnCollapseAll').addEventListener('click',()=>{ state.lines.forEach(a=>a.collapsed=true); save(); renderAreaCards(); });
-document.getElementById('btnExpandAll').addEventListener('click',()=>{ state.lines.forEach(a=>a.collapsed=false); save(); renderAreaCards(); });
+/* ---------- Avvio ---------- */
+load();
+bindUI();
+renderAll();
