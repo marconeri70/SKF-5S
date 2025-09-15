@@ -14,5 +14,3 @@ PWA per audit/checklist 5S (Rettifica & Montaggio, Linee multiple).
 1. Cambia i file.
 2. Bump `CACHE_NAME` in `sw.js`.
 3. DevTools → Application → **Unregister** + **Clear site data** → ricarica (Ctrl+F5).
-
-
