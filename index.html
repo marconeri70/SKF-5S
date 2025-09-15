@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="assets/skf-192.png">
   <meta name="theme-color" content="#0b5ed7">
 
-  <link rel="stylesheet" href="style.css?v=7.15.4">
+  <link rel="stylesheet" href="style.css?v=7.15.5">
 </head>
 <body>
   <header class="topbar">
@@ -65,15 +65,20 @@
       <div class="kpi"><div class="kpi-title">Azioni in ritardo</div><div id="kpiLate" class="kpi-value">0</div></div>
     </div>
 
-    <div class="chartbar">
-      <div class="zoom">
-        <button id="zoomOut" class="btn icon">−</button>
-        <button id="zoomIn" class="btn icon">+</button>
+    <div class="chart-controls">
+      <div class="left">
+        <div class="zoom">
+          <button id="zoomOut" class="btn icon" title="Zoom out">−</button>
+          <button id="zoomIn" class="btn icon" title="Zoom in">+</button>
+        </div>
       </div>
-      <label class="chk"><input id="stacked" type="checkbox" checked> Stacked</label>
-      <div class="chart-scroll">
-        <canvas id="chart" height="240"></canvas>
+      <div class="right">
+        <label class="chk"><input id="stacked" type="checkbox" checked> Stacked</label>
       </div>
+    </div>
+
+    <div class="chart-scroll">
+      <canvas id="chart" height="240"></canvas>
     </div>
 
     <div id="legend-badges" class="chart-legend"></div>
@@ -92,7 +97,7 @@
   <main id="areas"></main>
 
   <footer class="footer">
-    <small>© SKF — PWA offline · <span id="version">v7.15.4</span></small>
+    <small>© SKF — PWA offline · <span id="version">v7.15.5</span></small>
   </footer>
 
   <!-- Dialog info item -->
@@ -106,6 +111,6 @@
 
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
-  <script defer src="app.js?v=7.15.4"></script>
+  <script defer src="app.js?v=7.15.5"></script>
 </body>
 </html>
