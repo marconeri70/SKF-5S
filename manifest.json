@@ -1,12 +1,11 @@
 {
   "name": "SKF 5S",
   "short_name": "SKF 5S",
-  "start_url": "./",
   "display": "standalone",
+  "start_url": "./",
   "background_color": "#ffffff",
-  "theme_color": "#0b63ff",
+  "theme_color": "#0095d9",
   "icons": [
-    {"src":"assets/skf-192.png","sizes":"192x192","type":"image/png"},
-    {"src":"assets/skf-512.png","sizes":"512x512","type":"image/png"}
+    { "src": "assets/skf-192.png", "sizes": "192x192", "type": "image/png" }
   ]
 }
