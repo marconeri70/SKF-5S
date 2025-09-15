@@ -1,11 +1,10 @@
-/* ================== SKF 5S – v7.15.4 ================== */
-const VERSION = '7.15.4';
+/* ================== SKF 5S – v7.15.5 ================== */
+const VERSION = '7.15.5';
 document.getElementById('version').textContent = `v${VERSION}`;
 
 /* ---------- PWA / Tema ---------- */
 (() => {
   if ('serviceWorker' in navigator) {
-    // aggiorna eventuali SW vecchi
     navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.update()));
     navigator.serviceWorker.register('sw.js?v='+VERSION).catch(()=>{});
   }
@@ -72,7 +71,7 @@ function escapeAttr(s){return (s||'').replace(/"/g,'&quot;')}
 const selLine = $('#selLine'), areasEl = $('#areas'), tabList = $('#tabList');
 function renderAll(){
   selLine.innerHTML = `<option value="">Linea: Tutte</option>` + state.lines.map(l=>`<option value="${l.id}">${l.name}</option>`).join('');
-  tabList.innerHTML = `<button class="tab active" data-tab="">Tutte</button>` + state.lines.map(l=>`<button class="tab" data-tab="${l.id}">${l.name}</button>`).join('');
+  tabList.innerHTML = `<button class="tab ${selLine.value===''?'active':''}" data-tab="">Tutte</button>` + state.lines.map(l=>`<button class="tab" data-tab="${l.id}">${l.name}</button>`).join('');
 
   const q = $('#q').value.toLowerCase();
   const lf = selLine.value;
@@ -137,7 +136,7 @@ function renderItem(i){
       <span class="tag tag-${i.s}s">${i.s}S</span>
       <div class="item-title">${escapeHtml(i.title)}</div>
       <div class="dots">
-        ${[0,1,3,5].map(v=>`<div class="dot" role="button" tabindex="0" data-v="${v}" title="Punteggio ${v}">${v}</div>`).join('')}
+        ${[0,1,3,5].map(v=>`<div class="dot ${i.v===v?'on':''}" role="button" tabindex="0" data-v="${v}" title="Punteggio ${v}">${v}</div>`).join('')}
       </div>
     </div>
     <div class="item-body">
@@ -168,13 +167,14 @@ function updateKpiChart(){
   const labels = lines.map(l=>l.name);
   const stacked = $('#stacked').checked;
 
-  const datasets = stacked
-    ? [1,2,3,4,5].map(s=>({label:`${s}S`, backgroundColor:sColor(s), data:lines.map(l=>percS(l,s)), borderWidth:0}))
-    : [{label:'Totale', backgroundColor:'#8893a8', data:lines.map(l=>percOk(l)), borderWidth:0}];
+  const datasets = [1,2,3,4,5].map(s=>({
+    label:`${s}S`, backgroundColor:sColor(s), data:lines.map(l=>percS(l,s)), borderWidth:0,
+    stack: stacked ? 'S' : undefined
+  }));
 
   // larghezza canvas dinamica
-  const minBar = stacked ? 80 : 70;
-  const w = Math.max(520, labels.length * minBar);
+  const minBar = stacked ? 80 : 120; // affiancate = più larghe
+  const w = Math.max(560, labels.length * minBar);
   const canvas = document.getElementById('chart');
   canvas.style.width = w + 'px';
 
@@ -199,13 +199,15 @@ function updateKpiChart(){
           legend:{position:'top', labels:{color:axisColor}},
           tooltip:{enabled:true, callbacks:{label:(ctx)=>`${ctx.dataset.label}: ${ctx.raw}%`}},
           datalabels:{
-            formatter:(v)=> (v>= (stacked?8:5)) ? `${v}%` : '',
+            formatter:(v)=> v>=7 ? `${v}%` : '',
             anchor:(ctx)=> stacked?'center':'end',
             align:(ctx)=> stacked?'center':'end',
             offset:(ctx)=> stacked?0:2,
             color:(ctx)=>{
-              if(!stacked) return themeDark ? '#e6edf6' : '#0b2540';
-              return ctx.dataset.label.startsWith('3S') ? '#222' : '#fff';
+              const label = ctx.dataset.label;
+              // 3S e 4S testo scuro, altri bianco
+              if(label.startsWith('3S')||label.startsWith('4S')) return '#222';
+              return '#fff';
             },
             font:{weight:'700'}
           }
@@ -220,15 +222,16 @@ function updateKpiChart(){
     chart.update();
   }
 
-  // badge elenco linee
-  $('#legend-badges').innerHTML = lines.map(l=>`<span class="badge">${l.name}</span>`).join('');
+  // badge linee cliccabili
+  const legend = $('#legend-badges');
+  legend.innerHTML = lines.map(l=>`<span class="badge" data-goto="${l.id}">${l.name}</span>`).join('');
 }
 
 /* ---------- Eventi globali ---------- */
 $('#btnNew').addEventListener('click', ()=>{
   const name = prompt('Nome linea (es. CH 4):','CH '+(state.lines.length+2));
   if(!name) return;
-  state.lines.push(seedLine(name));
+  state.lines.push(seedLine(name.trim()));
   Store.save(state); renderAll();
 });
 $('#btnExport').addEventListener('click', ()=>{
@@ -251,7 +254,7 @@ $('#btnClear').addEventListener('click', ()=>{
 });
 
 $('#q').addEventListener('input', renderAll);
-selLine.addEventListener('change', renderAll);
+selLine.addEventListener('change', ()=>{ renderAll(); setTimeout(()=>scrollToLine(selLine.value),0); });
 $$('.segmented .seg').forEach(b=>b.addEventListener('click',()=>{
   $$('.segmented .seg').forEach(x=>x.classList.remove('active'));
   b.classList.add('active'); renderAll();
@@ -268,7 +271,24 @@ function zoom(k){
 $('#btnCollapseAll').addEventListener('click', ()=>{ state.lines.forEach(l=>l.collapsed=true); Store.save(state); renderAll(); });
 $('#btnExpandAll').addEventListener('click',   ()=>{ state.lines.forEach(l=>l.collapsed=false); Store.save(state); renderAll(); });
 
+/* badge linee cliccabili sotto al grafico */
+document.addEventListener('click',(e)=>{
+  const b = e.target.closest('.chart-legend .badge');
+  if(!b) return;
+  const id = b.dataset.goto;
+  selLine.value = id;
+  renderAll();
+  setTimeout(()=>scrollToLine(id),0);
+});
+
+function scrollToLine(id){
+  if(!id) return;
+  const el = document.querySelector(`.area[data-id="${id}"]`);
+  if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
 /* Delegation aree */
+const areasEl = $('#areas');
 areasEl.addEventListener('click',(e)=>{
   const area=e.target.closest('.area'); if(!area) return;
   const line=state.lines.find(l=>l.id===area.dataset.id);
