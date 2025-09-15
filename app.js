@@ -68,6 +68,91 @@ function save(){localStorage.setItem(STORE,JSON.stringify(state))}
 function loadChartPref(){try{return JSON.parse(localStorage.getItem(CHART_STORE))||{zoom:1,stacked:false,scroll:0}}catch{return{zoom:1,stacked:false,scroll:0}}}
 function saveChartPref(){localStorage.setItem(CHART_STORE,JSON.stringify(chartPref))}
 
+/* === Dashboard labels plugin (anti-overlap, contrast, stacked/non-stacked) === */
+const BarLabelsPlugin = {
+  id: 'barLabels',
+  afterDatasetsDraw(chart, _args, opts) {
+    const {ctx, chartArea, options, data} = chart;
+    const stacked = options.scales?.y?.stacked === true;
+    const fmt = (v)=> (v == null ? '' : Math.round(v) + '%');
+
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = (Chart.helpers?.toFont(options.plugins?.barLabels?.font || {size: 11})).string;
+
+    const datasets = chart.getDatasetMeta(0).controller.chart.data.datasets;
+    // per calcolare le altezze cumulative nello stacked
+    const cumByIndex = {};
+
+    chart.getSortedVisibleDatasetMetas().forEach(meta => {
+      const ds = datasets[meta.index];
+      const color = ds?.backgroundColor;
+      meta.data.forEach((bar, i) => {
+        const raw = ds.data[i];
+        if (raw == null || isNaN(raw)) return;
+
+        const v = Number(raw);
+        // posizione: stacked -> centro del segmento; non-stacked -> sopra la colonna
+        let x = bar.x;
+        let y = bar.y;
+
+        if (stacked) {
+          // centro del segmento
+          const props = bar.getProps(['x','y','base'], true);
+          y = (props.y + props.base) / 2;
+        } else {
+          // sopra la colonna più alta (una sola dataset visible in non-stacked), sposta leggermente su
+          y = bar.y - 12;
+        }
+
+        // contrasto automatico per il testo sul segmento
+        const bg = Array.isArray(color) ? color[i] : color;
+        const txtColor = stacked
+          ? getContrastOn(bg)
+          : (options.plugins?.barLabels?.color || '#0b1324');
+
+        ctx.fillStyle = txtColor;
+        ctx.fillText(fmt(v), x, y);
+      });
+    });
+
+    // Etichetta “CH n” più bassa per non toccare i numeri delle 5S
+    if (options.plugins?.barLabels?.drawXLabels === true) {
+      ctx.font = (Chart.helpers?.toFont({size: 12, weight: '600'})).string;
+      ctx.fillStyle = options.plugins?.barLabels?.xLabelColor || '#0b1324';
+      const scaleX = chart.scales.x;
+      scaleX.ticks.forEach((t, i) => {
+        const x = scaleX.getPixelForTick(i);
+        const y = chartArea.bottom + 18; // abbasso un po’ l’etichetta
+        ctx.fillText(t.label, x, y);
+      });
+    }
+
+    ctx.restore();
+
+    function getContrastOn(hexOrRgb) {
+      // funzione robusta per contrasto automatico
+      let r,g,b;
+      if (!hexOrRgb) return '#000';
+      if (typeof hexOrRgb === 'string' && hexOrRgb.startsWith('#')) {
+        const c = hexOrRgb.replace('#','');
+        r = parseInt(c.substring(0,2),16);
+        g = parseInt(c.substring(2,4),16);
+        b = parseInt(c.substring(4,6),16);
+      } else if (typeof hexOrRgb === 'string' && hexOrRgb.startsWith('rgb')) {
+        const m = hexOrRgb.match(/rgb[a]?\((\d+),\s*(\d+),\s*(\d+)/i);
+        r = m ? +m[1] : 0; g = m ? +m[2] : 0; b = m ? +m[3] : 0;
+      } else {
+        return '#000';
+      }
+      // luminanza per contrasto
+      const yiq = (r*299 + g*587 + b*114) / 1000;
+      return yiq >= 140 ? '#0b1324' : '#fff';
+    }
+  }
+};
+
 /* -------- State -------- */
 let state=load(); if(!state.areas?.length){state.areas=[makeArea('CH 2')]; save();}
 let ui={q:'',line:'ALL',sector:'ALL',onlyLate:false};
