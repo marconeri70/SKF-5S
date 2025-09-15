@@ -1,8 +1,7 @@
-/* ===================== SKF 5S – app.js (v7.15.2) =========================
-   Fix: rimosso doppio 'const scroller' in drawChart() che rompeva tutto.
-   Restyling etichette S e CH rimane come nella 7.15.1.
+/* ===================== SKF 5S – app.js (v7.15.3) =========================
+   Fix: Corretto il TypeError "Cannot read properties of undefined".
 =========================================================================== */
-const VERSION='v7.15.2';
+const VERSION='v7.15.3';
 const STORE='skf.5s.v7.10.3';
 const CHART_STORE=STORE+'.chart';
 const POINTS=[0,1,3,5];
@@ -205,6 +204,12 @@ function render(){
       VOC[s].forEach((item,i)=>{
         const itemEl=tplItem.content.cloneNode(true);
         const itemCard=itemEl.querySelector('.item');
+        
+        // Fix: Ensure area.scores[s] exists before accessing i
+        if (!area.scores[s]) {
+          area.scores[s] = {};
+        }
+
         const itemData=area.scores[s][i]||{};
         itemData.v=itemData.v||0;
         
