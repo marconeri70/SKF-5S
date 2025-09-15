@@ -36,7 +36,20 @@ const S_ORDER = ['1S','2S','3S','4S','5S'];
 /* --------- Voci default (estratto sintetico) --------- */
 const VOC = {
   '1S': [
-    {t:'1-S Stato', d:'Selezione del necessario. Superfluo rimosso.  Area libera da ostacoli/pericoli di inciampo. Materiali buoni separati dagli scarti. Punto di raccolta/ordini definito.'},
+    {t:'1-S Selezionare', d:'1) L'area pedonale è esente da congestione/ostacoli (area libera) e da pericoli di inciampo.  
+       Area libera da ostacoli/pericoli di inciampo. 
+       2.Nel pavimento non sono stati trovati materiali, strumenti, materiali di consumo non identificati. 
+       3. Nell'area sono presenti solo i materiali di consumo, gli strumenti, le attrezzature, i mobili necessari. 
+       Tutti gli elementi non necessari (non richiesti o richiesti con una frequenza molto minore) sono stati rimossi o contrassegnati per la rimozione. 
+       4. Nell'area è presente solo il materiale necessario per il lavoro in corso. Materiali obsoleti o non necessari, l'inventario viene rimosso. 
+       (ad es. Buono/ Rilavorazione/ Scarto, nessuna possibilità di confusione,viene conservato solo un materiale in esecuzione). 
+       5. Nell'area sono presenti in buone condizioni solo i documenti, gli espositori, le visualizzazioni, le bacheche, i poster necessari e pertinenti per il lavoro in corso. 
+       6. Sono definiti l'area etichetta rossa, il processo e il team. 
+       7. Il processo del tag rosso funziona bene. 
+       8.Lavagna 5S esiste per mostrare il piano, i miglioramenti fatti (Foto Prima & Dopo), punteggio audit, SPL ed è gestito bene.
+       9. Esistono prove per garantire che 1S sia sostenibile in quest'area (lista di controllo/piano per lo smistamento periodico/piano per l'audit periodico). 
+       10. Il concetto generale di 5S & 1S in dettaglio è ben compreso dai membri e la responsabilità è definita. 
+       11. Tutti i membri sono coinvolti e partecipano all'attività nella loro area.'},
   ],
   '2S': [
     {t:'Postazioni', d:'Tutto al suo posto, segnaletica chiara. Ombre/etichette per posizioni a terra o quota.'},
