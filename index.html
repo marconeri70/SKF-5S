@@ -2,228 +2,110 @@
 <html lang="it">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>SKF 5S</title>
-
   <link rel="manifest" href="manifest.json" />
-  <link rel="icon" sizes="192x192" href="assets/skf-192.png" />
-  <link rel="apple-touch-icon" href="assets/skf-192.png" />
-
+  <link rel="icon" href="assets/skf-192.png" />
   <link rel="stylesheet" href="style.css" />
-  <meta name="theme-color" content="#0b66ff" />
 </head>
 <body>
-<header class="topbar">
-  <div class="brand">
-    <img src="assets/skf-192.png" alt="SKF" />
-    <span>SKF 5S</span>
-    <small id="appVersion"></small>
-  </div>
+  <header class="app-header">
+    <div class="logo">
+      <img src="assets/skf-logo.png" alt="SKF" />
+      <h1>SKF 5S</h1>
+    </div>
+    <div class="actions">
+      <button id="btnNewArea" class="btn">+ Nuova linea</button>
+      <button id="btnExport" class="btn ghost">Esporta</button>
+      <label for="fileImport" class="btn ghost">Importa</label>
+      <input id="fileImport" type="file" accept="application/json" hidden />
+      <button id="btnPrint" class="btn ghost">Stampa</button>
+      <button id="btnTheme" class="btn ghost">🌞 Tema</button>
+    </div>
+  </header>
 
-  <div class="tools">
-    <button id="btnNewArea" class="btn primary">+ Nuova linea</button>
-    <button id="btnExport" class="btn">Esporta</button>
-    <label class="btn file">
-      <input id="fileImport" type="file" accept="application/json" hidden>
-      <span>Importa</span>
-    </label>
-    <button id="btnPrint" class="btn">Stampa</button>
-    <button id="btnTheme" class="btn ghost">🌓 Tema</button>
-  </div>
-</header>
-
-<main class="container">
-  <!-- Intro / Spiegazione -->
-  <section class="intro card">
-    <img class="hero" src="assets/5s-hero.png" alt="5S hero">
-    <div class="text">
-      <h2>Cosa è 5S</h2>
-      <ul class="bullets">
-        <li><span class="pill s1">1S Selezionare</span> — Avere solo ciò che serve, eliminare il superfluo.</li>
-        <li><span class="pill s2">2S Sistemare</span> — Un posto per tutto e tutto al suo posto.</li>
-        <li><span class="pill s3">3S Splendere</span> — Pulire e rimuovere le cause dello sporco.</li>
-        <li><span class="pill s4">4S Standardizzare</span> — Regole e segnali visivi chiari.</li>
-        <li><span class="pill s5">5S Sostenere</span> — Disciplina, abitudine e miglioramento continuo.</li>
-      </ul>
+  <section class="card intro-grid">
+    <img src="assets/5s-hero.png" class="hero-img" alt="Diagramma 5S" loading="lazy" decoding="async" />
+    <div>
+      <h2>Audit 5S</h2>
+      <p>PWA per audit e checklist 5S (Rettifica & Montaggio, Linee multiple).</p>
+      <p>
+        <label>Seleziona linea:</label>
+        <select id="lineFilter">
+          <option value="ALL">Tutte</option>
+        </select>
+      </p>
+      <p>
+        <label>Punteggio attuale:</label>
+        <span id="globalScore" class="score">0%</span>
+      </p>
     </div>
   </section>
 
-  <!-- Filtri -->
-  <section class="filters card">
-    <div class="row">
-      <input id="q" placeholder="Cerca in descrizione / note / responsabile…" />
-      <select id="lineFilter"></select>
-
-      <div class="seg">
-        <button id="btnAll" class="seg-btn active">Tutti</button>
-        <button id="btnFgr" class="seg-btn">Rettifica</button>
-        <button id="btnAsm" class="seg-btn">Montaggio</button>
-        <select id="sectorFilter" class="hide"></select>
-      </div>
-
-      <label class="chk">
-        <input id="onlyLate" type="checkbox" />
-        <span>Solo in ritardo</span>
-      </label>
-
-      <button id="btnClearFilters" class="btn ghost">Pulisci</button>
+  <section class="card chart-section">
+    <h2 class="chip-h">Punteggi per linea</h2>
+    <div class="chart-wrapper">
+      <canvas id="chart"></canvas>
     </div>
   </section>
 
-  <!-- Cruscotto -->
-  <section class="dashboard card">
-    <div class="kpis">
-      <div class="kpi"><div class="kpi-title">Linee</div><div id="kpiAreas" class="kpi-value">0</div></div>
-      <div class="kpi"><div class="kpi-title">Punteggio medio</div><div id="kpiScore" class="kpi-value">0%</div></div>
-      <div class="kpi"><div class="kpi-title">Azioni in ritardo</div><div id="kpiLate" class="kpi-value">0</div></div>
+  <section id="areas" class="areas-section"></section>
 
-      <div class="zoom">
-        <button id="zoomOut" class="mini">–</button>
-        <button id="zoomIn" class="mini">+</button>
-        <label class="chk stack">
-          <input id="toggleStacked" type="checkbox">
-          <span>Stacked</span>
-        </label>
-      </div>
-    </div>
-
-    <div class="chart-wrap">
-      <div class="chart-scroll">
-        <div class="chart-inner">
-          <canvas id="chartAreas"></canvas>
+  <template id="tplArea">
+    <div class="area card">
+      <div class="area-header">
+        <input class="area-line" placeholder="Nome linea (es. Linea 1)" />
+        <div class="area-actions">
+          <button class="btn ghost delete" title="Elimina area">🗑️</button>
+          <button class="btn ghost print" title="Stampa area">🖨️</button>
         </div>
       </div>
-      <div id="areasList" class="lines"></div>
-    </div>
 
-    <div class="legend chips">
-      <span class="chip s1">1S</span>
-      <span class="chip s2">2S</span>
-      <span class="chip s3">3S</span>
-      <span class="chip s4">4S</span>
-      <span class="chip s5">5S</span>
-    </div>
-
-    <div id="lateList" class="late-list" style="display:none;"></div>
-
-    <div class="fold-all">
-      <button id="btnCollapseAll" class="btn ghost">Comprimi tutto</button>
-      <button id="btnExpandAll" class="btn ghost">Espandi tutto</button>
-    </div>
-  </section>
-
-  <!-- Liste -->
-  <section id="areas"></section>
-</main>
-
-<!-- Template Linea -->
-<template id="tplArea">
-  <article class="area card">
-    <header class="area-hd">
-      <input class="area-line" placeholder="CH n" />
-      <div class="score">
-        <span class="score-pill s1"><b>1S</b> <span class="score-1S">0%</span></span>
-        <span class="score-pill s2"><b>2S</b> <span class="score-2S">0%</span></span>
-        <span class="score-pill s3"><b>3S</b> <span class="score-3S">0%</span></span>
-        <span class="score-pill s4"><b>4S</b> <span class="score-4S">0%</span></span>
-        <span class="score-pill s5"><b>5S</b> <span class="score-5S">0%</span></span>
+      <div class="tabs">
+        <button class="tab s active" data-s="1S">1S <span class="badge-s score-1S" data-s="1S">0%</span></button>
+        <button class="tab s" data-s="2S">2S <span class="badge-s score-2S" data-s="2S">0%</span></button>
+        <button class="tab s" data-s="3S">3S <span class="badge-s score-3S" data-s="3S">0%</span></button>
+        <button class="tab s" data-s="4S">4S <span class="badge-s score-4S" data-s="4S">0%</span></button>
+        <button class="tab s" data-s="5S">5S <span class="badge-s score-5S" data-s="5S">0%</span></button>
       </div>
-      <div class="sum">
-        <span class="badge">Punteggio: <b class="score-val">0%</b></span>
-        <span class="badge dom">Predominante: <b class="doms">—</b></span>
-      </div>
-      <div class="hd-actions">
-        <button class="btn ghost collapse">Comprimi</button>
-        <button class="btn danger delete-area">Elimina</button>
-      </div>
-    </header>
 
-    <!-- Selettori settore -->
-    <nav class="tabs">
-      <button class="tab sec active" data-sector="Rettifica">Rettifica</button>
-      <button class="tab sec" data-sector="Montaggio">Montaggio</button>
-    </nav>
-
-    <!-- Pannelli 1S…5S (tutti visibili; i pulsanti in alto portano a focus) -->
-    <div class="panels">
-      <section class="panel" data-s="1S">
-        <h4 id="s-1">1S — Selezionare (Seiri)</h4>
-        <p class="s-desc">Eliminare ciò che non serve. Rimuovi tutto ciò che è inutile e crea un'area di lavoro essenziale, ordinata e sicura.</p>
-        <div class="items"></div>
-        <div class="panel-actions">
-          <button class="btn add-item">+ Voce</button>
-        </div>
-      </section>
-
-      <section class="panel" data-s="2S">
-        <h4 id="s-2">2S — Sistemare (Seiton)</h4>
-        <p class="s-desc">Ogni cosa al suo posto. Organizza gli strumenti e i materiali in modo che siano facili da trovare, usare e riporre.</p>
-        <div class="items"></div>
-        <div class="panel-actions">
-          <button class="btn add-item">+ Voce</button>
-        </div>
-      </section>
-
-      <section class="panel" data-s="3S">
-        <h4 id="s-3">3S — Splendere (Seiso)</h4>
-        <p class="s-desc">Pulire è ispezionare. Mantieni pulito il posto di lavoro e, mentre lo pulisci, cerca e risolvi le cause dello sporco o dei problemi.</p>
-        <div class="items"></div>
-        <div class="panel-actions">
-          <button class="btn add-item">+ Voce</button>
-        </div>
-      </section>
-
-      <section class="panel" data-s="4S">
-        <h4 id="s-4">4S — Standardizzare (Seiketsu)</h4>
-        <p class="s-desc">Rendere l'ordine una routine. Stabilisci regole e standard visivi chiari (come etichette e colori) che tutti devono seguire.</p>
-        <div class="items"></div>
-        <div class="panel-actions">
-          <button class="btn add-item">+ Voce</button>
-        </div>
-      </section>
-
-      <section class="panel" data-s="5S">
-        <h4 id="s-5">5S — Sostenere (Shitsuke)</h4>
-        <p class="s-desc">Non smettere mai di migliorare. Rendi le prime 4S un'abitudine quotidiana per tutti e promuovi il miglioramento continuo.</p>
-        <div class="items"></div>
-        <div class="panel-actions">
-          <button class="btn add-item">+ Voce</button>
-        </div>
-      </section>
-    </div>
-  </article>
-</template>
-
-<!-- Template Voce -->
-<template id="tplItem">
-  <div class="item">
-    <div class="item-hd">
-      <button class="info">i</button>
-      <input class="txt" placeholder="Titolo voce…" />
-      <div class="points-dots">
-        <button class="dot" data-val="0">0</button>
-        <button class="dot" data-val="1">1</button>
-        <button class="dot" data-val="3">3</button>
-        <button class="dot" data-val="5">5</button>
+      <div class="s-panels">
+        <div class="panel active" data-s="1S"></div>
+        <div class="panel" data-s="2S"></div>
+        <div class="panel" data-s="3S"></div>
+        <div class="panel" data-s="4S"></div>
+        <div class="panel" data-s="5S"></div>
       </div>
     </div>
-    <div class="item-row">
+  </template>
+
+  <template id="tplItem">
+    <div class="item">
+      <button class="btn tiny info" title="Dettaglio">i</button>
+      <input class="txt" placeholder="Titolo…" />
+      <div class="points-dots" role="radiogroup" aria-label="Punteggio">
+        <button class="dot v0" data-val="0" title="0">0</button>
+        <button class="dot v1" data-val="1" title="1">1</button>
+        <button class="dot v3" data-val="3" title="3">3</button>
+        <button class="dot v5" data-val="5" title="5">5</button>
+      </div>
       <input class="resp" placeholder="Responsabile" />
-      <input class="due" type="date" />
+      <input class="due" type="date" title="Scadenza" />
       <input class="note" placeholder="Note…" />
+      <button class="btn ghost close" title="Chiudi dettaglio">✕</button>
     </div>
-    <div class="item-actions">
-      <button class="del danger">Elimina voce</button>
-    </div>
-  </div>
+  </template>
 
-  <div class="item-desc"></div>
-</template>
-
-<footer class="foot">
-  <small>© SKF – PWA offline</small>
-</footer>
-
-<script src="app.js"></script>
+  <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(reg => console.log('SW registrato!', reg))
+          .catch(err => console.log('SW fallito', err));
+      });
+    }
+  </script>
 </body>
 </html>
