@@ -18,6 +18,7 @@ body{margin:0;background:var(--bg);color:var(--text);font:16px/1.35 ui-sans-seri
 .btn{border:1px solid var(--outline);background:var(--panel);color:var(--text);border-radius:12px;padding:8px 12px;cursor:pointer}
 .btn.primary{background:var(--accent);color:#fff;border-color:transparent}
 .btn.icon{width:36px}
+.btn.danger{background:#e84b5b;color:#fff;border-color:transparent}
 
 /* blocchi */
 .card{background:var(--panel);border:1px solid var(--outline);border-radius:16px;margin:14px;padding:14px}
@@ -40,11 +41,12 @@ body{margin:0;background:var(--bg);color:var(--text);font:16px/1.35 ui-sans-seri
 .kpi{background:var(--pill);border:1px solid var(--outline);border-radius:14px;padding:10px}
 .kpi-title{color:var(--muted);font-size:14px}
 .kpi-value{font-size:26px;font-weight:800}
-.chartbar{position:relative}
-.zoom{position:absolute;left:8px;top:8px;display:flex;gap:6px}
+
+.chart-controls{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+.zoom{display:flex;gap:6px}
 .chart-legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-.badge{border-radius:999px;padding:2px 8px;border:2px solid var(--outline);font-size:12px}
-.badge.s1{border-color:var(--s1)} .badge.s2{border-color:var(--s2)} .badge.s3{border-color:var(--s3)} .badge.s4{border-color:var(--s4)} .badge.s5{border-color:var(--s5)}
+.badge{border-radius:999px;padding:2px 8px;border:2px solid var(--outline);font-size:12px;cursor:pointer}
+.badge.active{background:var(--accent);color:#fff;border-color:transparent}
 .chart-scroll{overflow-x:auto;overflow-y:hidden;padding-bottom:6px}
 
 /* tabs + aree */
@@ -70,7 +72,8 @@ body{margin:0;background:var(--bg);color:var(--text);font:16px/1.35 ui-sans-seri
 .item-head{display:flex;align-items:center;gap:10px}
 .item-title{flex:1;font-weight:700}
 .dots{display:flex;gap:10px;margin-left:auto}
-.dot{width:32px;height:32px;border-radius:999px;border:2px solid var(--outline);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.dot{width:32px;height:32px;border-radius:999px;border:2px solid var(--outline);display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:.35;transition:opacity .15s, box-shadow .15s}
+.dot.on{opacity:1;box-shadow:0 0 0 3px rgba(11,94,215,.25)}
 .dot[data-v="0"]{background:#eef2f7;color:#607083}
 .dot[data-v="1"]{background:var(--s1);color:#fff}
 .dot[data-v="3"]{background:var(--s3);color:#000}
