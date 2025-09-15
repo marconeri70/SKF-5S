@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="assets/skf-192.png">
   <meta name="theme-color" content="#0b5ed7">
 
-  <link rel="stylesheet" href="style.css?v=7.15.3">
+  <link rel="stylesheet" href="style.css?v=7.15.4">
 </head>
 <body>
   <header class="topbar">
@@ -70,9 +70,7 @@
         <button id="zoomOut" class="btn icon">−</button>
         <button id="zoomIn" class="btn icon">+</button>
       </div>
-      <label class="chk"><input id="stacked" type="checkbox"> Stacked</label>
-
-      <!-- contenitore scrollabile -->
+      <label class="chk"><input id="stacked" type="checkbox" checked> Stacked</label>
       <div class="chart-scroll">
         <canvas id="chart" height="240"></canvas>
       </div>
@@ -94,11 +92,20 @@
   <main id="areas"></main>
 
   <footer class="footer">
-    <small>© SKF — PWA offline · <span id="version">v7.15.3</span></small>
+    <small>© SKF — PWA offline · <span id="version">v7.15.4</span></small>
   </footer>
+
+  <!-- Dialog info item -->
+  <dialog id="infoDlg" class="dlg">
+    <h3 style="margin-top:0">Dettaglio</h3>
+    <div id="infoText"></div>
+    <div style="text-align:right;margin-top:12px">
+      <button id="infoClose" class="btn primary">OK</button>
+    </div>
+  </dialog>
 
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
-  <script defer src="app.js?v=7.15.3"></script>
+  <script defer src="app.js?v=7.15.4"></script>
 </body>
 </html>
