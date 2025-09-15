@@ -139,3 +139,33 @@ footer{text-align:center;padding:12px;font-size:.85rem;color:var(--muted)}
   .item .txt{grid-area:title}.item .resp{grid-area:resp}.item .due{grid-area:due}.item .note{grid-area:note}.item .del{grid-area:del;justify-self:end}
   .points-dots{grid-area:points}.points-dots .dot{width:24px;height:24px;line-height:24px;font-size:.85rem}
 }
+
+/* Dashboard – margini e pulsanti zoom/stacked */
+.kpi-row { gap: 12px; }
+.chart-wrap { position: relative; }
+.chart-wrap .chart-toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.chart-wrap .chart-toolbar .zoom {
+  display: inline-flex;
+  gap: 6px;
+}
+.chart-wrap .chart-toolbar .zoom .btn {
+  width: 28px; height: 28px; line-height: 28px;
+  padding: 0; text-align: center;
+}
+
+/* Togli sovrapposizioni tra asse X e label percentuali */
+#chartAreas { block-size: 320px; }
+
+/* Migliore spaziatura label “CH n” disegnate dal plugin */
+.canvas-holder { padding-bottom: 18px; }
+
+/* Leggibilità badge % nel riquadro delle 5S (sopra le schede linea) */
+.badge-s {
+  border-width: 2px !important;
+  font-weight: 700;
+}
