@@ -4,47 +4,33 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>SKF 5S</title>
-
-  <!-- PWA -->
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#1167d8" />
-  <link rel="icon" href="assets/skf-192.png" sizes="192x192">
+  <link rel="icon" href="assets/skf-192.png">
   <link rel="apple-touch-icon" href="assets/skf-192.png">
+  <link rel="stylesheet" href="style.css?v=7.16.0">
 
-  <!-- UI -->
-  <link rel="stylesheet" href="style.css?v=7.15.3" />
-
-  <!-- Chart -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- Chart.js + datalabels -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 </head>
 <body>
-<header class="brand">
-  <div class="brand__left">
-    <img class="brand__logo" src="assets/skf-192.png" alt="SKF">
-    <h1 class="brand__title">SKF 5S <small class="muted">v7.15.3</small></h1>
-  </div>
-  <div class="brand__actions">
-    <button id="btnNew" class="btn btn-primary">+ Nuova linea</button>
-    <button id="btnExport" class="btn">Esporta</button>
-    <label class="btn">
-      Importa <input id="fileImport" type="file" accept="application/json" hidden>
-    </label>
-    <button id="btnPrint" class="btn">Stampa</button>
-    <button id="btnTheme" class="btn btn-ghost" title="Tema">🟡 Tema</button>
-  </div>
-</header>
+  <header class="brand">
+    <img src="assets/skf-logo.png" alt="SKF" class="logo">
+    <h1>SKF 5S</h1>
+    <div class="actions">
+      <button id="btnNew" class="btn primary">+ Nuova linea</button>
+      <button id="btnExport" class="btn">Esporta</button>
+      <button id="btnImport" class="btn">Importa</button>
+      <button id="btnPrint" class="btn">Stampa</button>
+    </div>
+  </header>
 
-<main class="container">
-
-  <!-- Intro / 5S legend -->
+  <!-- Intro 5S (immutato nei testi) -->
   <section class="intro card">
-    <img class="intro__img" src="assets/5S.png" alt="diagramma 5S">
-    <div class="intro__text">
+    <img class="hero" src="assets/5S.png" alt="Grafica 5S">
+    <div class="intro-text">
       <h2>Cosa è 5S</h2>
-      <p>
-        5S è un metodo per fornire un posto di lavoro <b>sicuro</b>, <b>ben organizzato</b> e <b>pulito</b>,
-        per fare il nostro lavoro facilmente e correttamente la prima volta.
-      </p>
+      <p>5S è un metodo per fornire un posto di lavoro <b>sicuro, ben organizzato e pulito</b>, per fare il nostro lavoro facilmente e correttamente la prima volta.</p>
       <ul class="legend5s">
         <li><span class="pill s1">1S Selezionare</span> — Avere solo ciò che serve, eliminare il superfluo.</li>
         <li><span class="pill s2">2S Sistemare</span> — Un posto per tutto e tutto al suo posto.</li>
@@ -55,150 +41,108 @@
     </div>
   </section>
 
-  <!-- Filtri -->
-  <section class="controls card" id="controls">
-    <div class="controls__row">
-      <div class="control">
-        <input id="txtSearch" class="input" type="search" placeholder="Cerca in descrizione / note / responsabile…" />
+  <!-- FILTRI -->
+  <section class="controls card">
+    <input id="q" class="input" placeholder="Cerca in descrizione / note / responsabile…">
+    <select id="selLine" class="input"></select>
+    <div class="seg-toggle">
+      <button class="btn seg active" data-seg="all">Tutti</button>
+      <button class="btn seg" data-seg="rett">Rettifica</button>
+      <button class="btn seg" data-seg="mont">Montaggio</button>
+    </div>
+    <label class="chk"><input type="checkbox" id="onlyLate"> Solo in ritardo</label>
+    <button id="btnClear" class="btn">Pulisci</button>
+  </section>
+
+  <!-- KPI -->
+  <section class="kpi card">
+    <div class="kbox"><div class="kval" id="kLines">0</div><div class="kcap">Linee</div></div>
+    <div class="kbox"><div class="kval" id="kAvg">0%</div><div class="kcap">Punteggio medio</div></div>
+    <div class="kbox"><div class="kval" id="kLate">0</div><div class="kcap">Azioni in ritardo</div></div>
+
+    <div class="chart-ctrl">
+      <div class="zoom">
+        <button id="zoomOut" class="btn circle">−</button>
+        <button id="zoomIn"  class="btn circle">+</button>
       </div>
-      <div class="control">
-        <select id="selLine" class="select">
-          <option value="*">Linea: Tutte</option>
-        </select>
-      </div>
-      <div class="control control--seg">
-        <div class="seg" id="segSector">
-          <button data-sector="all" class="seg__btn active">Tutti</button>
-          <button data-sector="rettifica" class="seg__btn">Rettifica</button>
-          <button data-sector="montaggio" class="seg__btn">Montaggio</button>
-        </div>
-      </div>
-      <div class="control">
-        <label class="chk"><input id="chkLate" type="checkbox"> Solo in ritardo</label>
-      </div>
-      <div class="control">
-        <button id="btnClear" class="btn btn-ghost">Pulisci</button>
-      </div>
+      <label class="chk"><input type="checkbox" id="stacked"> Stacked</label>
+    </div>
+
+    <div class="legend-mini">
+      <span class="dot s1">1S</span><span class="dot s2">2S</span>
+      <span class="dot s3">3S</span><span class="dot s4">4S</span>
+      <span class="dot s5">5S</span><span class="dot tot">Tot</span>
+    </div>
+
+    <canvas id="chart" height="110"></canvas>
+    <div id="chips" class="chips"></div>
+
+    <div class="row gap">
+      <button id="btnCollapseAll" class="btn">Comprimi tutto</button>
+      <button id="btnExpandAll" class="btn">Espandi tutto</button>
     </div>
   </section>
 
-  <!-- KPI + grafico -->
-  <section class="dashboard card">
-    <div class="kpis">
-      <div class="kpi">
-        <div class="kpi__label">Linee</div>
-        <div class="kpi__value" id="kpiLines">0</div>
-      </div>
-      <div class="kpi">
-        <div class="kpi__label">Punteggio medio</div>
-        <div class="kpi__value" id="kpiAvg">0%</div>
-      </div>
-      <div class="kpi">
-        <div class="kpi__label">Azioni in ritardo</div>
-        <div class="kpi__value" id="kpiLate">0</div>
-      </div>
-      <div class="kpi kpi--right">
-        <div class="zoom">
-          <button id="btnZoomOut" class="btn btn-ghost" title="−">−</button>
-          <button id="btnZoomIn" class="btn btn-ghost" title="+">+</button>
-        </div>
-        <label class="chk"><input id="chkStacked" type="checkbox"> Stacked</label>
-      </div>
-    </div>
+  <!-- LISTA LINEE -->
+  <section id="areas"></section>
 
-    <div class="chart-wrap">
-      <canvas id="chart" height="180"></canvas>
-    </div>
+  <footer class="foot">© SKF – PWA offline · <span id="ver">v7.16.0</span></footer>
 
-    <div class="chart-legend" id="linePills">
-      <!-- dinamico: pill CH -->
-    </div>
-
-    <div class="batch-btns">
-      <button id="btnCollapseAll" class="btn btn-ghost">Comprimi tutto</button>
-      <button id="btnExpandAll" class="btn btn-ghost">Espandi tutto</button>
-    </div>
-  </section>
-
-  <!-- Aree -->
-  <section id="areas" class="areas">
-    <!-- Cards generate JS -->
-  </section>
-
-</main>
-
-<footer class="footer">
-  <small>© SKF — PWA offline • <span id="appVer">v7.15.3</span></small>
-</footer>
-
-<!-- Template scheda area -->
-<template id="tpl-area">
-  <article class="area card" data-line="">
-    <header class="area__head">
-      <div class="area__left">
-        <input class="area__name input input--inline" />
-        <div class="seg seg--tiny area__sector">
-          <button data-sector="rettifica" class="seg__btn">Rettifica</button>
-          <button data-sector="montaggio" class="seg__btn">Montaggio</button>
+  <!-- Template card linea -->
+  <template id="tplArea">
+    <div class="area card" data-line="">
+      <div class="area-hd">
+        <input class="area-name input">
+        <div class="badges">
+          <span class="badge s1">1S 0%</span>
+          <span class="badge s2">2S 0%</span>
+          <span class="badge s3">3S 0%</span>
+          <span class="badge s4">4S 0%</span>
+          <span class="badge s5">5S 0%</span>
+          <span class="badge tot">Punteggio: 0%</span>
+          <span class="badge pred">Predominante: 1S 0%</span>
         </div>
       </div>
-      <div class="area__right">
-        <div class="score-badges">
-          <span class="pill s1" data-badge="1S">1S <b>0%</b></span>
-          <span class="pill s2" data-badge="2S">2S <b>0%</b></span>
-          <span class="pill s3" data-badge="3S">3S <b>0%</b></span>
-          <span class="pill s4" data-badge="4S">4S <b>0%</b></span>
-          <span class="pill s5" data-badge="5S">5S <b>0%</b></span>
-        </div>
-        <div class="score-line">
-          <span class="badge badge--blue">Punteggio: <b class="js-score">0%</b></span>
-          <span class="badge badge--outline">Predominante: <b class="js-dom">—</b></span>
-        </div>
-        <div class="head-actions">
-          <button class="btn btn-ghost js-add">+ Voce</button>
-          <button class="btn btn-ghost js-toggle">Comprimi</button>
-          <button class="btn btn-danger js-del">Elimina</button>
-        </div>
+
+      <div class="seg-toggle compact">
+        <button class="btn seg active" data-seg="rett">Rettifica</button>
+        <button class="btn seg" data-seg="mont">Montaggio</button>
       </div>
-    </header>
 
-    <div class="items">
-      <!-- voci -->
+      <div class="area-actions">
+        <button class="btn ghost add">+ Voce</button>
+        <button class="btn ghost collapse">Comprimi</button>
+        <button class="btn danger del">Elimina</button>
+      </div>
+
+      <div class="items"></div>
     </div>
-  </article>
-</template>
+  </template>
 
-<!-- Template voce -->
-<template id="tpl-item">
-  <div class="item">
-    <div class="item__head">
-      <button class="info" title="Mostra descrizione">i</button>
-      <input class="item__title input" placeholder="Titolo…" />
-      <div class="points">
-        <button class="dot dot0" data-pt="0">0</button>
-        <button class="dot dot1" data-pt="1">1</button>
-        <button class="dot dot3" data-pt="3">3</button>
-        <button class="dot dot5" data-pt="5">5</button>
+  <!-- Template item -->
+  <template id="tplItem">
+    <div class="item">
+      <button class="info" title="Mostra/nascondi descrizione">i</button>
+      <div class="title"></div>
+      <div class="score">
+        <button class="pt" data-pt="0">0</button>
+        <button class="pt" data-pt="1">1</button>
+        <button class="pt" data-pt="3">3</button>
+        <button class="pt" data-pt="5">5</button>
+      </div>
+      <div class="desc hide"></div>
+      <div class="extras">
+        <input class="resp input" placeholder="Responsabile">
+        <div class="datebox">
+          <input class="due input" type="date">
+          <button class="btn cal">📅</button>
+        </div>
+        <input class="note input" placeholder="Note…">
+        <button class="btn danger del-item">Elimina voce</button>
       </div>
     </div>
-    <div class="item__desc">—</div>
-    <div class="item__meta">
-      <input class="input input--sm resp" placeholder="Responsabile" />
-      <input class="input input--sm date" placeholder="gg / mm / aaaa" />
-      <input class="input note" placeholder="Note…" />
-      <button class="btn btn-danger btn--sm js-remove">Elimina voce</button>
-    </div>
-  </div>
-</template>
+  </template>
 
-<script src="app.js?v=7.15.3"></script>
-<script>
-  // SW register (solo se disponibile)
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js');
-    });
-  }
-</script>
+  <script src="app.js?v=7.16.0"></script>
 </body>
 </html>
