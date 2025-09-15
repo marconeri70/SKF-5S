@@ -1,229 +1,175 @@
 <!doctype html>
 <html lang="it">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>SKF 5S</title>
-
-  <link rel="manifest" href="manifest.json" />
-  <link rel="icon" sizes="192x192" href="assets/skf-192.png" />
-  <link rel="apple-touch-icon" href="assets/skf-192.png" />
-
-  <link rel="stylesheet" href="style.css" />
-  <meta name="theme-color" content="#0b66ff" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SKF 5S v7 – Audit & Checklist</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0b1324">
 </head>
 <body>
-<header class="topbar">
+<header class="app-header">
   <div class="brand">
-    <img src="assets/skf-192.png" alt="SKF" />
-    <span>SKF 5S</span>
-    <small id="appVersion"></small>
+    <img src="assets/skf-logo.png" class="logo" alt="SKF">
+    <h1>SKF 5S <small class="ver">v7</small></h1>
   </div>
-
-  <div class="tools">
-    <button id="btnNewArea" class="btn primary">+ Nuova linea</button>
+  <div class="actions">
+    <button id="btnNewArea" class="btn primary" title="Crea area con tutte le voci">+ Nuova area</button>
     <button id="btnExport" class="btn">Esporta</button>
-    <label class="btn file">
-      <input id="fileImport" type="file" accept="application/json" hidden>
-      <span>Importa</span>
-    </label>
+    <label class="btn file">Importa <input id="fileImport" type="file" accept="application/json" hidden></label>
     <button id="btnPrint" class="btn">Stampa</button>
-    <button id="btnTheme" class="btn ghost">🌓 Tema</button>
   </div>
 </header>
 
-<main class="container">
-  <!-- Intro / Spiegazione -->
-  <section class="intro card">
-    <img class="hero" src="assets/5s-hero.png" alt="5S hero">
-    <div class="text">
+<section class="intro5s card">
+  <div class="intro-grid">
+    <!-- Grafico a torta stile brochure -->
+    <svg class="pie5s" viewBox="0 0 220 220" aria-label="Cosa è 5S">
+      <!-- cerchio di base -->
+      <circle cx="110" cy="110" r="100" fill="var(--bgSoft)"/>
+      <!-- 5S (blu) semicerchio esterno -->
+      <path d="M110,10
+               A100,100 0 0,1 210,110
+               L180,110
+               A70,70 0 0,0 110,40 Z" fill="var(--c5)"/>
+      <!-- 4S (verde) -->
+      <path d="M210,110
+               A100,100 0 0,1 110,210
+               L110,180
+               A70,70 0 0,0 180,110 Z" fill="var(--c4)"/>
+      <!-- 3S (arancio) -->
+      <path d="M110,210
+               A100,100 0 0,1 10,110
+               L40,110
+               A70,70 0 0,0 110,180 Z" fill="var(--c3)"/>
+      <!-- 2S (rosso) -->
+      <path d="M10,110
+               A100,100 0 0,1 110,10
+               L110,40
+               A70,70 0 0,0 40,110 Z" fill="var(--c2)"/>
+      <!-- 1S (viola) piccolo spicchio -->
+      <path d="M110,40
+               A70,70 0 0,1 140,110
+               L125,110
+               A55,55 0 0,0 110,55 Z" fill="var(--c1)"/>
+      <!-- foro centrale per effetto “spicchi” -->
+      <circle cx="110" cy="110" r="35" fill="var(--bg)"/>
+      <!-- Etichette S -->
+      <text x="165" y="70" class="pie-label">5S</text>
+      <text x="150" y="160" class="pie-label">4S</text>
+      <text x="70"  y="185" class="pie-label">3S</text>
+      <text x="30"  y="120" class="pie-label">2S</text>
+      <text x="118" y="95"  class="pie-label">1S</text>
+    </svg>
+
+    <!-- Testo a destra come nella brochure -->
+    <div class="intro-copy">
       <h2>Cosa è 5S</h2>
-      <ul class="bullets">
-        <li><span class="pill s1">1S Selezionare</span> — Avere solo ciò che serve, eliminare il superfluo.</li>
-        <li><span class="pill s2">2S Sistemare</span> — Un posto per tutto e tutto al suo posto.</li>
-        <li><span class="pill s3">3S Splendere</span> — Pulire e rimuovere le cause dello sporco.</li>
-        <li><span class="pill s4">4S Standardizzare</span> — Regole e segnali visivi chiari.</li>
-        <li><span class="pill s5">5S Sostenere</span> — Disciplina, abitudine e miglioramento continuo.</li>
+      <p>5S è un metodo per fornire un posto di lavoro <b>sicuro</b>, <b>ben organizzato</b> e <b>pulito</b>,
+      per fare il nostro lavoro facilmente e correttamente la prima volta.</p>
+
+      <ul class="legend5s">
+        <li><span class="dot" style="background:var(--c1)"></span>
+            <b class="tag s1">1S Selezionare</b> – Avere solo ciò che serve, eliminare il superfluo.</li>
+        <li><span class="dot" style="background:var(--c2)"></span>
+            <b class="tag s2">2S Sistemare</b> – Un posto per ogni cosa, tutto al suo posto.</li>
+        <li><span class="dot" style="background:var(--c3)"></span>
+            <b class="tag s3">3S Splendere</b> – Pulizia e rimozione delle fonti di sporco.</li>
+        <li><span class="dot" style="background:var(--c4)"></span>
+            <b class="tag s4">4S Standardizzare</b> – Regole e segnali visivi per mantenere l’ordine.</li>
+        <li><span class="dot" style="background:var(--c5)"></span>
+            <b class="tag s5">5S Sostenere</b> – Disciplina e miglioramento continuo.</li>
       </ul>
     </div>
-  </section>
-
-  <!-- Filtri -->
-  <section class="filters card">
-    <div class="row">
-      <input id="q" placeholder="Cerca in descrizione / note / responsabile…" />
-      <select id="lineFilter"></select>
-
-      <div class="seg">
-        <button id="btnAll" class="seg-btn active">Tutti</button>
-        <button id="btnFgr" class="seg-btn">Rettifica</button>
-        <button id="btnAsm" class="seg-btn">Montaggio</button>
-        <select id="sectorFilter" class="hide"></select>
-      </div>
-
-      <label class="chk">
-        <input id="onlyLate" type="checkbox" />
-        <span>Solo in ritardo</span>
-      </label>
-
+  </div>
+</section>
+    
+<main>
+  <section class="controls card">
+    <div class="filters">
+      <input id="q" placeholder="🔎 Cerca in descrizione / note / responsabile…">
+      <select id="sev" title="Filtra per severità">
+        <option value="ALL">Severità: tutte</option>
+        <option value="CRIT">CRIT</option>
+        <option value="MAJ">MAJ</option>
+        <option value="MIN">MIN</option>
+        <option value="OK">OK</option>
+      </select>
+      <label class="onlylate"><input type="checkbox" id="onlyLate"> Solo in ritardo</label>
       <button id="btnClearFilters" class="btn ghost">Pulisci</button>
     </div>
   </section>
 
-  <!-- Cruscotto -->
-  <section class="dashboard card">
-    <div class="kpis">
-      <div class="kpi"><div class="kpi-title">Linee</div><div id="kpiAreas" class="kpi-value">0</div></div>
-      <div class="kpi"><div class="kpi-title">Punteggio medio</div><div id="kpiScore" class="kpi-value">0%</div></div>
-      <div class="kpi"><div class="kpi-title">Azioni in ritardo</div><div id="kpiLate" class="kpi-value">0</div></div>
-
-      <div class="zoom">
-        <button id="zoomOut" class="mini">–</button>
-        <button id="zoomIn" class="mini">+</button>
-        <label class="chk stack">
-          <input id="toggleStacked" type="checkbox">
-          <span>Stacked</span>
-        </label>
+  <section id="dashboard" class="card dash">
+    <div class="dash-head">
+      <h2>Cruscotto</h2>
+      <div class="kpis">
+        <div class="kpi"><div>Totale aree</div><div id="kpiAreas">0</div></div>
+        <div class="kpi"><div>Punteggio medio</div><div id="kpiScore">0%</div></div>
+        <div class="kpi"><div>Azioni in ritardo</div><div id="kpiLate">0</div></div>
       </div>
     </div>
-
-    <div class="chart-wrap">
-      <div class="chart-scroll">
-        <div class="chart-inner">
-          <canvas id="chartAreas"></canvas>
-        </div>
-      </div>
-      <div id="areasList" class="lines"></div>
-    </div>
-
-    <div class="legend chips">
-      <span class="chip s1">1S</span>
-      <span class="chip s2">2S</span>
-      <span class="chip s3">3S</span>
-      <span class="chip s4">4S</span>
-      <span class="chip s5">5S</span>
-    </div>
-
-    <div id="lateList" class="late-list" style="display:none;"></div>
-
-    <div class="fold-all">
-      <button id="btnCollapseAll" class="btn ghost">Comprimi tutto</button>
-      <button id="btnExpandAll" class="btn ghost">Espandi tutto</button>
-    </div>
+    <canvas id="chartAreas" height="180" aria-label="Punteggio per area"></canvas>
+    <p class="muted">Il punteggio è la percentuale di completamento ponderata: OK=1, MIN=1, MAJ=2, CRIT=3.</p>
   </section>
 
-  <!-- Liste -->
   <section id="areas"></section>
 </main>
 
-<!-- Template Linea -->
 <template id="tplArea">
-  <article class="area card">
-    <header class="area-hd">
-      <input class="area-line" placeholder="CH n" />
-      <div class="score">
-        <span class="score-pill s1"><b>1S</b> <span class="score-1S">0%</span></span>
-        <span class="score-pill s2"><b>2S</b> <span class="score-2S">0%</span></span>
-        <span class="score-pill s3"><b>3S</b> <span class="score-3S">0%</span></span>
-        <span class="score-pill s4"><b>4S</b> <span class="score-4S">0%</span></span>
-        <span class="score-pill s5"><b>5S</b> <span class="score-5S">0%</span></span>
-      </div>
-      <div class="sum">
-        <span class="badge">Punteggio: <b class="score-val">0%</b></span>
-        <span class="badge dom">Predominante: <b class="doms">—</b></span>
-      </div>
-      <div class="hd-actions">
+  <div class="area card">
+    <div class="area-head">
+      <input class="area-name" placeholder="Nome area (es. Rettifica)">
+      <div class="score">Punteggio: <span class="score-val">0%</span></div>
+      <div class="area-actions">
+        <button class="btn ghost add-item" title="Aggiungi voce alla S selezionata">+ Voce</button>
         <button class="btn ghost collapse">Comprimi</button>
         <button class="btn danger delete-area">Elimina</button>
       </div>
-    </header>
-
-    <!-- Selettori settore -->
-    <nav class="tabs">
-      <button class="tab sec active" data-sector="Rettifica">Rettifica</button>
-      <button class="tab sec" data-sector="Montaggio">Montaggio</button>
-    </nav>
-
-    <!-- Pannelli 1S…5S (tutti visibili; i pulsanti in alto portano a focus) -->
-    <div class="panels">
-      <section class="panel" data-s="1S">
-        <h4 id="s-1">1S — Selezionare (Seiri)</h4>
-        <p class="s-desc">Eliminare ciò che non serve. Rimuovi tutto ciò che è inutile e crea un'area di lavoro essenziale, ordinata e sicura.</p>
-        <div class="items"></div>
-        <div class="panel-actions">
-          <button class="btn add-item">+ Voce</button>
-        </div>
-      </section>
-
-      <section class="panel" data-s="2S">
-        <h4 id="s-2">2S — Sistemare (Seiton)</h4>
-        <p class="s-desc">Ogni cosa al suo posto. Organizza gli strumenti e i materiali in modo che siano facili da trovare, usare e riporre.</p>
-        <div class="items"></div>
-        <div class="panel-actions">
-          <button class="btn add-item">+ Voce</button>
-        </div>
-      </section>
-
-      <section class="panel" data-s="3S">
-        <h4 id="s-3">3S — Splendere (Seiso)</h4>
-        <p class="s-desc">Pulire è ispezionare. Mantieni pulito il posto di lavoro e, mentre lo pulisci, cerca e risolvi le cause dello sporco o dei problemi.</p>
-        <div class="items"></div>
-        <div class="panel-actions">
-          <button class="btn add-item">+ Voce</button>
-        </div>
-      </section>
-
-      <section class="panel" data-s="4S">
-        <h4 id="s-4">4S — Standardizzare (Seiketsu)</h4>
-        <p class="s-desc">Rendere l'ordine una routine. Stabilisci regole e standard visivi chiari (come etichette e colori) che tutti devono seguire.</p>
-        <div class="items"></div>
-        <div class="panel-actions">
-          <button class="btn add-item">+ Voce</button>
-        </div>
-      </section>
-
-      <section class="panel" data-s="5S">
-        <h4 id="s-5">5S — Sostenere (Shitsuke)</h4>
-        <p class="s-desc">Non smettere mai di migliorare. Rendi le prime 4S un'abitudine quotidiana per tutti e promuovi il miglioramento continuo.</p>
-        <div class="items"></div>
-        <div class="panel-actions">
-          <button class="btn add-item">+ Voce</button>
-        </div>
-      </section>
     </div>
-  </article>
-</template>
 
-<!-- Template Voce -->
-<template id="tplItem">
-  <div class="item">
-    <div class="item-hd">
-      <button class="info">i</button>
-      <input class="txt" placeholder="Titolo voce…" />
-      <div class="points-dots">
-        <button class="dot" data-val="0">0</button>
-        <button class="dot" data-val="1">1</button>
-        <button class="dot" data-val="3">3</button>
-        <button class="dot" data-val="5">5</button>
-      </div>
+    <div class="s-tabs">
+      <button data-s="1S" class="tab active">1S <span class="pill score-1S">0%</span></button>
+      <button data-s="2S" class="tab">2S <span class="pill score-2S">0%</span></button>
+      <button data-s="3S" class="tab">3S <span class="pill score-3S">0%</span></button>
+      <button data-s="4S" class="tab">4S <span class="pill score-4S">0%</span></button>
+      <button data-s="5S" class="tab">5S <span class="pill score-5S">0%</span></button>
     </div>
-    <div class="item-row">
-      <input class="resp" placeholder="Responsabile" />
-      <input class="due" type="date" />
-      <input class="note" placeholder="Note…" />
-    </div>
-    <div class="item-actions">
-      <button class="del danger">Elimina voce</button>
+
+    <div class="s-panels">
+      <div class="panel active" data-s="1S"></div>
+      <div class="panel" data-s="2S"></div>
+      <div class="panel" data-s="3S"></div>
+      <div class="panel" data-s="4S"></div>
+      <div class="panel" data-s="5S"></div>
     </div>
   </div>
-
-  <div class="item-desc"></div>
 </template>
 
-<footer class="foot">
-  <small>© SKF – PWA offline</small>
+<template id="tplItem">
+  <div class="item">
+    <input type="checkbox" class="chk" title="Completata">
+    <input class="txt" placeholder="Descrizione…">
+    <select class="sev" title="Severità">
+      <option>OK</option><option>MIN</option><option>MAJ</option><option>CRIT</option>
+    </select>
+    <input class="resp" placeholder="Responsabile">
+    <input type="date" class="due" title="Scadenza">
+    <input class="note" placeholder="Note…">
+    <button class="btn tiny del" title="Elimina">×</button>
+  </div>
+</template>
+
+<footer>
+  <p>© SKF – Funziona offline, installabile come app (PWA)</p>
 </footer>
 
 <script src="app.js"></script>
+<script>
+  if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
+</script>
 </body>
 </html>
+
+

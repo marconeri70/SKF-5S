@@ -1,495 +1,381 @@
-/* ===================== SKF 5S – app.js (v7.16.0) =========================
-   - Etichette grafico più chiare (no overlap, CH più in basso)
-   - Pillole 1S–5S sopra la linea: cliccabili → focus sulla sezione
-   - Scheda con 5 sezioni fisse (descrizioni ufficiali)
-   - Fix responsive pulsante "Elimina voce"
-=========================================================================== */
-const VERSION='v7.16.0';
-const STORE='skf.5s.v7.16';
-const CHART_STORE=STORE+'.chart';
-const POINTS=[0,1,3,5];
+/* SKF 5S – v7: UI + grafico cruscotto (TOT + 1S..5S) + filtri + "Nuova area" con template */
+const elAreas = document.getElementById('areas');
+const elKpiAreas = document.getElementById('kpiAreas');
+const elKpiScore = document.getElementById('kpiScore');
+const elKpiLate = document.getElementById('kpiLate');
+const elQ = document.getElementById('q');
+const elSev = document.getElementById('sev');
+const elOnlyLate = document.getElementById('onlyLate');
+const elBtnClear = document.getElementById('btnClearFilters');
+const tplArea = document.getElementById('tplArea');
+const tplItem = document.getElementById('tplItem');
+const storeKey = 'skf.fiveS.v7';
 
-/* Descrizioni ufficiali */
-const DESCR = {
-  "1S":"Eliminare ciò che non serve. Rimuovi tutto ciò che è inutile e crea un'area di lavoro essenziale, ordinata e sicura.",
-  "2S":"Ogni cosa al suo posto. Organizza gli strumenti e i materiali in modo che siano facili da trovare, usare e riporre.",
-  "3S":"Pulire è ispezionare. Mantieni pulito il posto di lavoro e, mentre lo pulisci, cerca e risolvi le cause dello sporco o dei problemi.",
-  "4S":"Rendere l'ordine una routine. Stabilisci regole e standard visivi chiari (come etichette e colori) che tutti devono seguire.",
-  "5S":"Non smettere mai di migliorare. Rendi le prime 4S un'abitudine quotidiana per tutti e promuovi il miglioramento continuo."
+const WEIGHTS = { OK:1, MIN:1, MAJ:2, CRIT:3 };
+
+/* ---- TEMPLATE iniziale (modificalo come vuoi) ---- */
+const DEFAULTS = {
+  areas: [
+    {
+      name: "Rettifica",
+      S: {
+        "1S": [
+          {t:"Rimuovere utensili non usati negli ultimi 30 gg", sev:"MIN", done:false, note:"", resp:"", due:""},
+          {t:"Separare ricambi buoni da scarti", sev:"MAJ", done:false, note:"", resp:"", due:""}
+        ],
+        "2S": [
+          {t:"Ombre a terra/etichette per posizioni attrezzi", sev:"MIN", done:false, note:"", resp:"", due:""},
+          {t:"Kanban min/max consumabili", sev:"MAJ", done:false, note:"", resp:"", due:""}
+        ],
+        "3S": [
+          {t:"Ispezione perdite olio/coolant (tubi/valvole)", sev:"CRIT", done:false, note:"", resp:"", due:""},
+          {t:"Pulizia area pavimento/macchina", sev:"MIN", done:false, note:"", resp:"", due:""},
+          {t:"Azione causa radice perdite ricorrenti", sev:"MAJ", done:false, note:"", resp:"", due:""}
+        ],
+        "4S": [
+          {t:"SPL: cambio mola & check livelli", sev:"MAJ", done:false, note:"", resp:"", due:""},
+          {t:"Colori standard tubi/valvole", sev:"MIN", done:false, note:"", resp:"", due:""}
+        ],
+        "5S": [
+          {t:"Audit settimanale con punteggio", sev:"MIN", done:false, note:"", resp:"", due:""},
+          {t:"Brief 5’ inizio turno (sicurezza+5S)", sev:"MIN", done:false, note:"", resp:"", due:""}
+        ]
+      }
+    }
+  ]
 };
 
-/* Voci di default (una per S come punto di partenza; espandibili) */
-const DEFAULT_VOCI = {
-  "1S":[{t:"Selezione del necessario",d:DESCR["1S"],p:0,resp:"",due:"",note:""}],
-  "2S":[{t:"Organizzazione posto di lavoro",d:DESCR["2S"],p:0,resp:"",due:"",note:""}],
-  "3S":[{t:"Pulizia e ispezione",d:DESCR["3S"],p:0,resp:"",due:"",note:""}],
-  "4S":[{t:"Standard visivi e regole",d:DESCR["4S"],p:0,resp:"",due:"",note:""}],
-  "5S":[{t:"Sostenere e migliorare",d:DESCR["5S"],p:0,resp:"",due:"",note:""}]
-};
+/* Crea una nuova area già piena copiando il template */
+function cloneDefaultArea(name = "Nuova area") {
+  const tpl = DEFAULTS.areas[0]
+    ? structuredClone(DEFAULTS.areas[0])
+    : { name:"", S:{ "1S":[], "2S":[], "3S":[], "4S":[], "5S":[] } };
+  tpl.name = name;
+  for (const s of ["1S","2S","3S","4S","5S"]) {
+    tpl.S[s] = (tpl.S[s] || []).map(it => ({
+      ...it, done:false, resp:"", due:"", note: it.note || ""
+    }));
+  }
+  return tpl;
+}
 
-/* Utils */
-const $=(s,r=document)=>r.querySelector(s);
-const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
-const todayISO=()=>new Date().toISOString().slice(0,10);
-const isOverdue=d=>d && new Date(d+'T23:59:59')<new Date();
-const pct=n=>Math.round((n||0)*100)+'%';
-const nextCH=()=>{
-  const nums=(state.areas||[]).map(a=>((a.line||'').match(/^CH\s*(\d+)/i)||[])[1]).filter(Boolean).map(n=>+n).sort((a,b)=>a-b);
-  const last=nums.length?nums[nums.length-1]:1; return `CH ${last+1}`;
-};
+let state = load();
+let ui = { q:"", sev:"ALL", onlyLate:false };
 
-/* State helpers */
-function makeSectorSet(){return JSON.parse(JSON.stringify(DEFAULT_VOCI));}
-function makeArea(line){return{line,sectors:{Rettifica:makeSectorSet(),Montaggio:makeSectorSet()}};}
-function load(){try{const raw=localStorage.getItem(STORE);return raw?JSON.parse(raw):{areas:[makeArea('CH 2')]}}catch{return{areas:[makeArea('CH 2')]}}}
-function save(){localStorage.setItem(STORE,JSON.stringify(state))}
-function loadChartPref(){try{return JSON.parse(localStorage.getItem(CHART_STORE))||{zoom:1,stacked:false,scroll:0}}catch{return{zoom:1,stacked:false,scroll:0}}}
-function saveChartPref(){localStorage.setItem(CHART_STORE,JSON.stringify(chartPref))}
+render();
+updateDashboard();
 
-/* State */
-let state=load();
-let ui={q:'',line:'ALL',sector:'ALL',onlyLate:false};
-let chartPref=loadChartPref();
-const highlightKeys=new Set();
+/* ---- Storage ---- */
+function load(){
+  try{
+    const raw = localStorage.getItem(storeKey);
+    return raw ? JSON.parse(raw) : structuredClone(DEFAULTS);
+  }catch(e){ console.warn(e); return structuredClone(DEFAULTS); }
+}
+function save(){ localStorage.setItem(storeKey, JSON.stringify(state)); }
 
-/* DOM */
-const elAreas=$('#areas'), elLineFilter=$('#lineFilter'), elQ=$('#q'), elOnlyLate=$('#onlyLate');
-const tplArea=$('#tplArea'), tplItem=$('#tplItem');
-const elKpiAreas=$('#kpiAreas'), elKpiScore=$('#kpiScore'), elKpiLate=$('#kpiLate');
-const sectorSelect=$('#sectorFilter');
+/* ---- Filtri ---- */
+function applyFilters(item){
+  const q = ui.q.trim().toLowerCase();
+  if (ui.sev !== 'ALL' && item.sev !== ui.sev) return false;
+  if (q){
+    const bag = `${item.t||''} ${item.note||''} ${item.resp||''}`.toLowerCase();
+    if (!bag.includes(q)) return false;
+  }
+  if (ui.onlyLate && (!isOverdue(item.due) || item.done)) return false;
+  return true;
+}
 
-/* Tema */
-const btnTheme=$('#btnTheme');
-if(localStorage.getItem('theme')==='dark') document.documentElement.classList.add('dark');
-btnTheme?.addEventListener('click',()=>{
-  const root=document.documentElement;
-  root.classList.toggle('dark');
-  localStorage.setItem('theme',root.classList.contains('dark')?'dark':'light');
-});
-
-/* Toolbar */
-$('#btnNewArea')?.addEventListener('click',()=>{
-  const proposal=nextCH();
-  const line=(prompt('Nuova linea? (es. CH 3)',proposal)||proposal).trim();
-  if(!line) return;
-  state.areas.push(makeArea(line)); save(); render();
-});
-$('#btnExport')?.addEventListener('click',()=>{
-  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
-  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:`SKF_5S_${todayISO()}.json`});
-  document.body.appendChild(a); a.click(); a.remove();
-});
-$('#fileImport')?.addEventListener('change',async e=>{
-  const f=e.target.files[0]; if(!f) return;
-  try{ state=JSON.parse(await f.text()); save(); render(); }catch{ alert('File non valido'); }
-});
-$('#btnPrint')?.addEventListener('click',()=>window.print());
-
-function setSegBtn(sel){['#btnAll','#btnFgr','#btnAsm'].forEach(s=>$(s)?.classList.remove('active')); $(sel)?.classList.add('active');}
-$('#btnAll')?.addEventListener('click',()=>{ui.sector='ALL'; setSegBtn('#btnAll'); sectorSelect.value='ALL'; render();});
-$('#btnFgr')?.addEventListener('click',()=>{ui.sector='Rettifica'; setSegBtn('#btnFgr'); sectorSelect.value='Rettifica'; render();});
-$('#btnAsm')?.addEventListener('click',()=>{ui.sector='Montaggio'; setSegBtn('#btnAsm'); sectorSelect.value='Montaggio'; render();});
-sectorSelect?.addEventListener('change',()=>{
-  ui.sector=sectorSelect.value;
-  if(ui.sector==='ALL') setSegBtn('#btnAll');
-  if(ui.sector==='Rettifica') setSegBtn('#btnFgr');
-  if(ui.sector==='Montaggio') setSegBtn('#btnAsm');
-  render();
-});
-
-elQ?.addEventListener('input',()=>{ui.q=elQ.value; render();});
-elOnlyLate?.addEventListener('change',()=>{ui.onlyLate=elOnlyLate.checked; render();});
-$('#btnClearFilters')?.addEventListener('click',()=>{
-  ui={q:'',line:'ALL',sector:'ALL',onlyLate:false};
-  elQ.value=''; elOnlyLate.checked=false; elLineFilter.value='ALL'; setSegBtn('#btnAll'); sectorSelect.value='ALL'; render();
-});
-elLineFilter?.addEventListener('change',()=>{ui.line=elLineFilter.value; render();});
-
-$('#zoomIn')?.addEventListener('click',()=>{chartPref.zoom=Math.min(2.5, +(chartPref.zoom+0.1).toFixed(2)); saveChartPref(); drawChart();});
-$('#zoomOut')?.addEventListener('click',()=>{chartPref.zoom=Math.max(0.6, +(chartPref.zoom-0.1).toFixed(2)); saveChartPref(); drawChart();});
-$('#toggleStacked')?.addEventListener('change',e=>{chartPref.stacked=e.target.checked; saveChartPref(); drawChart();});
-
-$('#btnCollapseAll')?.addEventListener('click',()=>{$$('.area').forEach(a=>a.classList.add('collapsed'));});
-$('#btnExpandAll')?.addEventListener('click',()=>{$$('.area').forEach(a=>a.classList.remove('collapsed'));});
-
-/* Render */
+/* ---- Rendering ---- */
 function render(){
-  $('#appVersion')?.replaceChildren(VERSION);
-  refreshLineFilter();
-
-  sectorSelect.value=ui.sector;
-  if(ui.sector==='ALL') setSegBtn('#btnAll');
-  if(ui.sector==='Rettifica') setSegBtn('#btnFgr');
-  if(ui.sector==='Montaggio') setSegBtn('#btnAsm');
-
-  const list=filteredAreas();
-  elAreas.innerHTML='';
-  list.forEach(a=>elAreas.appendChild(renderArea(a)));
-  updateDashboard(list);
-  drawChart(list);
-  buildLineButtons(list);
+  elAreas.innerHTML = '';
+  state.areas.forEach((area, idx) => elAreas.appendChild(renderArea(area, idx)));
+  updateDashboard();
+  drawAreasChart();
 }
-function refreshLineFilter(){
-  const lines=Array.from(new Set(state.areas.map(a=>(a.line||'').trim()).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'it',{numeric:true}));
-  elLineFilter.innerHTML=`<option value="ALL">Linea: Tutte</option>` + lines.map(l=>`<option value="${l}">${l}</option>`).join('');
-  if(!lines.includes(ui.line)) ui.line='ALL'; elLineFilter.value=ui.line;
-}
-function filteredAreas(){
-  const q=(ui.q||'').toLowerCase();
-  const secs=ui.sector==='ALL'?['Rettifica','Montaggio']:[ui.sector];
-  return state.areas.filter(a=>{
-    if(ui.line!=='ALL' && (a.line||'').trim()!==ui.line) return false;
-    if(!q && !ui.onlyLate) return true;
-    let ok=false;
-    secs.forEach(sec=>['1S','2S','3S','4S','5S'].forEach(S=>(a.sectors[sec][S]||[]).forEach(it=>{
-      if(ui.onlyLate && !isOverdue(it.due)) return;
-      if(!q){ ok=true; return; }
-      const bag=`${it.t||''} ${it.note||''} ${it.resp||''}`.toLowerCase();
-      if(bag.includes(q)) ok=true;
-    })));
-    return ok;
-  });
-}
-function computeByS(area,sector){
-  const secs=sector==='ALL'?['Rettifica','Montaggio']:[sector];
-  const perS={"1S":{s:0,m:0},"2S":{s:0,m:0},"3S":{s:0,m:0},"4S":{s:0,m:0},"5S":{s:0,m:0}};
-  let sum=0,max=0;
-  secs.forEach(sec=>['1S','2S','3S','4S','5S'].forEach(S=>(area.sectors[sec][S]||[]).forEach(it=>{
-    perS[S].s+=(+it.p||0); perS[S].m+=5; sum+=(+it.p||0); max+=5;
-  })));
-  const byS={}; Object.keys(perS).forEach(S=>byS[S]=perS[S].m?perS[S].s/perS[S].m:0);
-  const domKey=Object.keys(byS).reduce((a,b)=> byS[a]>=byS[b]?a:b, '1S');
-  return {byS, total:max?sum/max:0, dom:{S:domKey, v:byS[domKey]||0}};
-}
+function renderArea(area, idx){
+  const node = tplArea.content.firstElementChild.cloneNode(true);
+  const name = node.querySelector('.area-name');
+  const scoreArea = node.querySelector('.score-val');
+  const pills = {
+    "1S": node.querySelector('.score-1S'),
+    "2S": node.querySelector('.score-2S'),
+    "3S": node.querySelector('.score-3S'),
+    "4S": node.querySelector('.score-4S'),
+    "5S": node.querySelector('.score-5S'),
+  };
 
-/* Render Area */
-function renderArea(area){
-  const node=tplArea.content.firstElementChild.cloneNode(true);
-  const line=$('.area-line',node), scoreEl=$('.score-val',node), domEl=$('.doms',node);
-  const secTabs=$$('.tab.sec',node);
-  const scorePills=$$('.score-pill',node);
+  name.value = area.name;
+  name.addEventListener('input', () => { state.areas[idx].name = name.value; save(); drawAreasChart(); });
 
-  let curSector=(ui.sector==='ALL'?'Rettifica':ui.sector);
-
-  line.value=area.line||''; 
-  line.addEventListener('input',()=>{area.line=line.value.trim(); save(); refreshLineFilter(); buildLineButtons(); drawChart();});
-
-  // settore
-  secTabs.forEach(b=>{
-    if(b.dataset.sector===curSector) b.classList.add('active');
-    b.addEventListener('click',()=>{secTabs.forEach(x=>x.classList.remove('active')); b.classList.add('active'); curSector=b.dataset.sector; refill(); updateScore();});
-  });
-
-  // pillole 1S..5S → focus sezione
-  scorePills.forEach(p=>{
-    p.addEventListener('click',()=>{
-      scorePills.forEach(x=>x.classList.remove('active'));
-      p.classList.add('active');
-      const s=p.textContent.trim().slice(0,2);
-      const target=$(`.panel[data-s="${s}"]`,node);
-      target?.scrollIntoView({behavior:'smooth',block:'center'});
+  // Tabs
+  node.querySelectorAll('.tab').forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      node.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+      tab.classList.add('active');
+      node.querySelectorAll('.panel').forEach(p=>{
+        p.classList.toggle('active', p.dataset.s===tab.dataset.s);
+      });
     });
   });
 
-  // bottone comprimi scheda
-  const btnCol=$('.collapse',node);
-  const setCol=()=>{btnCol.textContent=node.classList.contains('collapsed')?'Espandi':'Comprimi';};
-  btnCol.addEventListener('click',()=>{node.classList.toggle('collapsed'); setCol();});
-  setCol();
-
-  // elimina linea
-  $('.delete-area',node).addEventListener('click',()=>{
-    if(!confirm('Eliminare la linea?')) return;
-    state.areas.splice(state.areas.indexOf(area),1); save(); render();
+  // Pannelli + items (con filtri)
+  node.querySelectorAll('.panel').forEach(panel=>{
+    const s = panel.dataset.s;
+    panel.innerHTML = '';
+    (area.S[s] ||= []).forEach((item, iIdx) => { if (applyFilters(item)) panel.appendChild(renderItem(idx, s, iIdx, item)); });
   });
 
-  function refill(){
-    $$('.panel',node).forEach(p=>{
-      const S=p.dataset.s;
-      p.querySelector('.s-desc').textContent = DESCR[S];
-      const host=p.querySelector('.items'); host.innerHTML='';
-      (area.sectors[curSector][S]||[]).forEach((it,i)=> host.appendChild(renderItem(area,curSector,S,i,it,updateScore)));
-    });
-    const {byS}=computeByS(area,curSector);
-    $('.score-1S',node).textContent=pct(byS['1S']);
-    $('.score-2S',node).textContent=pct(byS['2S']);
-    $('.score-3S',node).textContent=pct(byS['3S']);
-    $('.score-4S',node).textContent=pct(byS['4S']);
-    $('.score-5S',node).textContent=pct(byS['5S']);
-  }
-  function updateScore(){
-    const {total,dom}=computeByS(area,curSector);
-    scoreEl.textContent=pct(total);
-    domEl.textContent=`${dom.S} ${pct(dom.v)}`;
-    save(); updateDashboard(); drawChart(); buildLineButtons();
-  }
-
-  // add item nei pannelli
-  $$('.panel',node).forEach(p=>{
-    p.querySelector('.add-item')?.addEventListener('click',()=>{
-      const S=p.dataset.s;
-      area.sectors[curSector][S].push({t:"",d:"",p:0,resp:"",due:"",note:""}); save(); refill(); updateScore();
-    });
+  // Aggiungi voce alla S attiva
+  node.querySelector('.add-item').addEventListener('click', ()=>{
+    const activeS = node.querySelector('.tab.active').dataset.s;
+    const list = state.areas[idx].S[activeS];
+    list.push({t:"", sev:"OK", done:false, note:"", resp:"", due:""});
+    save(); render();
   });
 
-  refill(); updateScore();
+  // Collapse / Delete
+  node.querySelector('.collapse').addEventListener('click', (e)=>{
+    node.classList.toggle('collapsed');
+    e.target.textContent = node.classList.contains('collapsed') ? "Espandi" : "Comprimi";
+  });
+  node.querySelector('.delete-area').addEventListener('click', ()=>{
+    if(confirm('Eliminare area?')){ state.areas.splice(idx,1); save(); render(); }
+  });
+
+  // Punteggi
+  const { areaScore, byS } = computeScores(area);
+  scoreArea.textContent = fmtPct(areaScore);
+  Object.entries(byS).forEach(([k,v]) => { if (pills[k]) pills[k].textContent = fmtPct(v); });
+
+  return node;
+}
+function renderItem(aIdx, sKey, iIdx, item){
+  const node = tplItem.content.firstElementChild.cloneNode(true);
+  const chk = node.querySelector('.chk');
+  const txt = node.querySelector('.txt');
+  const sev = node.querySelector('.sev');
+  const note = node.querySelector('.note');
+  const resp = node.querySelector('.resp');
+  const due = node.querySelector('.due');
+
+  txt.value = item.t; sev.value = item.sev; chk.checked = item.done;
+  note.value = item.note; resp.value = item.resp || ""; due.value = item.due || "";
+  node.dataset.sev = item.sev;
+  node.classList.toggle('ok', item.done);
+
+  const setLate = ()=> node.classList.toggle('late', isOverdue(due.value) && !chk.checked);
+  setLate();
+
+  chk.addEventListener('change', ()=>{
+    const it = state.areas[aIdx].S[sKey][iIdx];
+    it.done = chk.checked; save(); updateAll();
+  });
+  txt.addEventListener('input', ()=>{ state.areas[aIdx].S[sKey][iIdx].t = txt.value; save(); });
+  sev.addEventListener('change', ()=>{ state.areas[aIdx].S[sKey][iIdx].sev = sev.value; save(); updateAll(); });
+  note.addEventListener('input', ()=>{ state.areas[aIdx].S[sKey][iIdx].note = note.value; save(); });
+  resp.addEventListener('input', ()=>{ state.areas[aIdx].S[sKey][iIdx].resp = resp.value; save(); });
+  due.addEventListener('change', ()=>{ state.areas[aIdx].S[sKey][iIdx].due = due.value; save(); setLate(); updateDashboard(); });
+
+  node.querySelector('.del').addEventListener('click', ()=>{
+    state.areas[aIdx].S[sKey].splice(iIdx,1); save(); render();
+  });
+
   return node;
 }
 
-/* Render Item */
-function renderItem(area,sector,S,idx,it,onChange){
-  const frag=document.createDocumentFragment();
-  const node=tplItem.content.firstElementChild.cloneNode(true);
-  const desc=tplItem.content.children[1].cloneNode(true);
-
-  const txt=$('.txt',node), resp=$('.resp',node), due=$('.due',node), note=$('.note',node);
-  const dots=$$('.points-dots .dot',node);
-
-  txt.value=it.t||''; resp.value=it.resp||''; due.value=it.due||''; note.value=it.note||'';
-  desc.innerHTML=`<b>${it.t||'(senza titolo)'}</b><br>${it.d||''}`;
-
-  const syncDots=()=>{ dots.forEach(d=> d.classList.toggle('active', +d.dataset.val === (+it.p||0))); };
-  syncDots(); node.classList.toggle('late',isOverdue(it.due));
-
-  txt.addEventListener('input',()=>{it.t=txt.value; desc.innerHTML=`<b>${it.t||'(senza titolo)'}</b><br>${it.d||''}`; save();});
-  resp.addEventListener('input',()=>{it.resp=resp.value; save();});
-  note.addEventListener('input',()=>{it.note=note.value; save();});
-  due.addEventListener('change',()=>{it.due=due.value; save(); node.classList.toggle('late',isOverdue(it.due)); onChange?.();});
-
-  dots.forEach(d=> d.addEventListener('click',()=>{ it.p=+d.dataset.val; syncDots(); save(); onChange?.(); }));
-
-  $('.info',node).addEventListener('click',()=>{const v=desc.style.display!=='block'; desc.style.display=v?'block':'none';});
-  $('.del',node).addEventListener('click',()=>{ const arr=area.sectors[sector][S]; arr.splice(idx,1); save(); render(); });
-
-  node.addEventListener('click',e=>{ if(e.target.classList.contains('dot')) node.classList.remove('highlight'); });
-  $('.info',node).addEventListener('click',()=> node.classList.remove('highlight'));
-
-  frag.appendChild(node); frag.appendChild(desc); return frag;
+/* ---- Scoring & KPI ---- */
+function computeScores(area){
+  const byS = {};
+  let sumDone=0, sumTot=0;
+  for(const s of ["1S","2S","3S","4S","5S"]) {
+    const list = area.S[s] || [];
+    let d=0, t=0;
+    list.forEach(it => { const w=WEIGHTS[it.sev]||1; t+=w; if(it.done) d+=w; });
+    byS[s] = t ? d/t : 0;
+    sumDone += d; sumTot += t;
+  }
+  return { areaScore: sumTot ? sumDone/sumTot : 0, byS };
 }
-
-/* KPI / Late */
-function overallStats(list){
-  const secs=ui.sector==='ALL'?['Rettifica','Montaggio']:[ui.sector];
-  let sum=0,max=0,late=0;
-  (list||filteredAreas()).forEach(a=>{
-    secs.forEach(sec=>['1S','2S','3S','4S','5S'].forEach(S=>(a.sectors[sec][S]||[]).forEach(it=>{
-      sum+=(+it.p||0); max+=5; if(isOverdue(it.due)) late++;
-    })));
+function overallStats(){
+  let totD=0, totT=0, late=0;
+  state.areas.forEach(a=>{
+    for(const s of ["1S","2S","3S","4S","5S"]) {
+      (a.S[s]||[]).forEach(it=>{
+        const w=WEIGHTS[it.sev]||1; totT+=w; if(it.done) totD+=w;
+        if (isOverdue(it.due) && !it.done) late++;
+      });
+    }
   });
-  return {score:max?sum/max:0,late};
+  return { score: (totT? totD/totT : 0), late };
 }
-function updateDashboard(list){
-  const {score,late}=overallStats(list);
-  elKpiAreas.textContent=(list||filteredAreas()).length;
-  elKpiScore.textContent=pct(score);
-  elKpiLate.textContent=late;
-  renderLateList(list);
+function updateDashboard(){
+  elKpiAreas.textContent = state.areas.length;
+  const { score, late } = overallStats();
+  elKpiScore.textContent = fmtPct(score);
+  elKpiLate.textContent = late;
 }
-function renderLateList(list){
-  const host=$('#lateList'); host.innerHTML='';
-  highlightKeys.clear();
-  const secs=ui.sector==='ALL'?['Rettifica','Montaggio']:[ui.sector];
-  const arr=[];
-  (list||filteredAreas()).forEach(a=>{
-    secs.forEach(sec=>['1S','2S','3S','4S','5S'].forEach(S=>(a.sectors[sec][S]||[]).forEach((it,idx)=>{
-      if(isOverdue(it.due)){
-        arr.push({line:a.line||'—',sector:sec,S,idx,title:it.t||'(senza titolo)',due:it.due});
-        highlightKeys.add(`${a.line||'—'}|${S}`);
+function fmtPct(x){ return Math.round(x*100) + "%"; }
+function isOverdue(iso){ if(!iso) return false; const d=new Date(iso+"T23:59:59"); const now=new Date(); return d<now; }
+
+/* ---- Grafico cruscotto: gruppi per area (TOT + 1S..5S con colori e %) ---- */
+function drawAreasChart(){
+  const c = document.getElementById('chartAreas');
+  if(!c) return;
+  const ctx = c.getContext('2d');
+
+  // dimensioni (un po' più alto per etichette e legenda)
+  const Hpx = 220;
+  const W = c.width  = c.clientWidth * devicePixelRatio;
+  const H = c.height = Hpx * devicePixelRatio;
+  ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+  ctx.clearRect(0,0,W,H);
+
+  // dati: per ogni area -> TOT + byS
+  const groups = state.areas.map(a=>{
+    const { byS, areaScore } = computeScores(a);
+    return {
+      name: a.name || 'Area',
+      vals: {
+        "TOT": areaScore,
+        "1S": byS["1S"]||0,
+        "2S": byS["2S"]||0,
+        "3S": byS["3S"]||0,
+        "4S": byS["4S"]||0,
+        "5S": byS["5S"]||0
       }
-    })));
+    };
   });
-  if(!arr.length){host.style.display='none';drawChart();return;}
-  host.style.display='flex';
-  arr.forEach(x=>{
-    const b=document.createElement('button');
-    b.className='late-chip';
-    b.innerHTML=`<span class="meta">${x.line} · ${x.sector} · ${x.S}</span> — ${x.title} · scad. ${x.due}`;
-    b.addEventListener('click',()=>{focusLate(x); drawChart();});
-    host.appendChild(b);
-  });
-  drawChart();
-}
-function focusLate(x){
-  const card=[...document.querySelectorAll('.area')].find(a=>a.querySelector('.area-line')?.value.trim()===(x.line||'').trim());
-  if(!card) return;
-  card.classList.remove('collapsed');
-  const secBtn=[...card.querySelectorAll('.tab.sec')].find(b=>b.dataset.sector===x.sector); secBtn?.click();
-  card.scrollIntoView({behavior:'smooth',block:'start'});
-  const panel=card.querySelector(`.panel[data-s="${x.S}"]`);
-  const item=panel?.querySelectorAll('.item')[x.idx];
-  if(item){
-    item.classList.add('highlight');
-    item.classList.remove('flash'); void item.offsetWidth; item.classList.add('flash');
-  }
-  highlightKeys.add(`${x.line||'—'}|${x.S}`);
-}
 
-/* --------------- CHART (canvas custom) ---------------- */
-function drawChart(list){
-  const canvas=$('#chartAreas');
-  const scroller=canvas?.closest('.chart-scroll');
-  if(!canvas) return;
+  const padL=60, padR=16, padT=20, padB=38;      // bordo basso + alto per etichette
+  const plotW = (W/devicePixelRatio) - padL - padR;
+  const plotH = (H/devicePixelRatio) - padT - padB;
 
-  $('#toggleStacked').checked=!!chartPref.stacked;
-
-  const DPR=window.devicePixelRatio||1, Hcss=260;
-  const areas=(list||filteredAreas());
-  const css=getComputedStyle(document.documentElement);
-  const GRID=css.getPropertyValue('--outline')||'#d0d7e1';
-  const TXT=css.getPropertyValue('--text')||'#003366';
-  const C1=css.getPropertyValue('--c1').trim(),
-        C2=css.getPropertyValue('--c2').trim(),
-        C3=css.getPropertyValue('--c3').trim(),
-        C4=css.getPropertyValue('--c4').trim(),
-        C5=css.getPropertyValue('--c5').trim();
-
-  const secs=ui.sector==='ALL'?['Rettifica','Montaggio']:[ui.sector];
-  const rows=areas.map(a=>{
-    let perS={"1S":{s:0,m:0},"2S":{s:0,m:0},"3S":{s:0,m:0},"4S":{s:0,m:0},"5S":{s:0,m:0}}, t={s:0,m:0};
-    secs.forEach(sec=>['1S','2S','3S','4S','5S'].forEach(S=>(a.sectors[sec][S]||[]).forEach(it=>{
-      perS[S].s+=(+it.p||0); perS[S].m+=5; t.s+=(+it.p||0); t.m+=5;
-    })));
-    const byS={}; Object.keys(perS).forEach(S=>byS[S]=perS[S].m?perS[S].s/perS[S].m:0);
-    return {line:a.line||'—',byS,tot:t.m?t.s/t.m:0};
-  }).sort((a,b)=>a.line.localeCompare(b.line,'it',{numeric:true}));
-
-  const padL=56,padR=16,padT=12,padB=56;
-  const bwBase=14,innerBase=4,gapBase=18;
-  const z=chartPref.zoom||1;
-  const bw=Math.max(8,bwBase*z),
-        inner=Math.max(3,innerBase*z),
-        gap=Math.max(12,gapBase*z);
-  const plotH=Hcss-padT-padB;
-
-  let totalW;
-  if(chartPref.stacked){
-    totalW=padL+padR+rows.length*bw+Math.max(0,(rows.length-1))*gap;
-  }else{
-    const MET=6; // tot + 1S..5S
-    const groupW=MET*bw+(MET-1)*inner;
-    totalW=padL+padR+rows.length*groupW+Math.max(0,(rows.length-1))*gap;
-  }
-
-  canvas.style.width=totalW+'px';
-  canvas.style.height=Hcss+'px';
-  canvas.width=Math.round(totalW*DPR);
-  canvas.height=Math.round(Hcss*DPR);
-  const ctx=canvas.getContext('2d');
-  ctx.setTransform(DPR,0,0,DPR,0,0);
-  ctx.clearRect(0,0,totalW,Hcss);
-
-  const plotW=totalW-padL-padR;
-  ctx.strokeStyle=GRID; ctx.font='12px system-ui'; ctx.fillStyle=TXT;
-  ctx.beginPath(); ctx.moveTo(padL,padT); ctx.lineTo(padL,padT+plotH); ctx.lineTo(padL+plotW,padT+plotH); ctx.stroke();
+  // assi + griglia %
+  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, padT+plotH); ctx.lineTo(padL+plotW, padT+plotH); ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,0.65)';
+  ctx.font = '12px system-ui, Segoe UI, Roboto';
   for(let i=0;i<=4;i++){
-    const y=padT+plotH-(i*0.25)*plotH;
-    ctx.fillText((i*25)+'%',8,y+4);
-    ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(padL+plotW,y); ctx.stroke();
+    const yv=i*25, y = padT + plotH - (yv/100)*plotH;
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL+plotW, y); ctx.stroke();
+    ctx.fillText(yv+'%', 8, y+4);
   }
 
-  const COLORS={'1S':C1,'2S':C2,'3S':C3,'4S':C4,'5S':C5,tot:'#9bb0d6'};
-  let x=padL;
+  if (!groups.length) return;
 
-  const drawOutline=(xx,yy,ww,hh,key)=>{
-    if(!highlightKeys.has(key)) return;
+  // palette dalle CSS variables
+  const gv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const COLORS = {
+    "TOT": gv('--muted') || '#9bb0d6',
+    "1S": gv('--c1') || '#7a56c6',
+    "2S": gv('--c2') || '#e44f37',
+    "3S": gv('--c3') || '#f3a11a',
+    "4S": gv('--c4') || '#35b468',
+    "5S": gv('--c5') || '#4b88ff'
+  };
+
+  // layout barre: per ogni area 6 barre (TOT + 1S..5S)
+  const METRICS = ["TOT","1S","2S","3S","4S","5S"];
+  const innerGap = 4;                 // spazio tra barre dello stesso gruppo
+  const barW     = 14;                // larghezza singola barra
+  const groupW   = METRICS.length*barW + (METRICS.length-1)*innerGap;
+  const areaGap  = Math.max(16, groupW * 0.8);     // spazio tra gruppi (aree)
+
+  // calcolo larghezza totale e punto di partenza (centratura)
+  const totalW = groups.length*groupW + (groups.length-1)*areaGap;
+  const startX = padL + Math.max(8, (plotW - totalW)/2);
+
+  // disegna gruppi
+  let x = startX;
+  groups.forEach(g=>{
+    let bx = x;
+    METRICS.forEach(m=>{
+      const val = g.vals[m] ?? 0;
+      const h = val * plotH;
+      const y = padT + plotH - h;
+
+      // barra
+      ctx.fillStyle = COLORS[m];
+      ctx.fillRect(bx, y, barW, h);
+
+      // percentuale sopra
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.textAlign = 'center';
+      const topY = h>16 ? y-4 : padT + plotH - 2;
+      ctx.fillText(Math.round(val*100)+'%', bx + barW/2, topY);
+
+      bx += barW + innerGap;
+    });
+
+    // etichetta area
     ctx.save();
-    ctx.lineWidth=3;
-    ctx.strokeStyle='#ffb400';
-    ctx.shadowColor='rgba(255,180,0,.5)';
-    ctx.shadowBlur=8;
-    ctx.strokeRect(xx-1,yy-1,ww+2,hh+2);
+    ctx.translate(x + groupW/2, padT + plotH + 16);
+    ctx.rotate(-Math.PI/8);
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.textAlign = 'center';
+    const nm = g.name.length>14 ? g.name.slice(0,14)+'…' : g.name;
+    ctx.fillText(nm, 0, 0);
     ctx.restore();
-  };
-  const textOnBg=(hex)=>{
-    const h=hex.replace('#',''); const r=parseInt(h.slice(0,2),16), g=parseInt(h.slice(2,4),16), b=parseInt(h.slice(4,6),16);
-    const yiq=(r*299+g*587+b*114)/1000; return yiq>=140?'#0b1324':'#fff';
-  };
 
-  if(chartPref.stacked){
-    rows.forEach(g=>{
-      const order=['1S','2S','3S','4S','5S'];
-      let yTop=padT+plotH;
-      order.forEach(k=>{
-        const v=g.byS[k]||0; const h=v*plotH; const y=yTop-h;
-        ctx.fillStyle=COLORS[k]; ctx.fillRect(x,y,bw,h);
-
-        if(v>0){
-          const label=Math.round(v*100)+'%';
-          const inside=h>=18; const col= inside? textOnBg(COLORS[k]) : TXT;
-          ctx.fillStyle=col; ctx.textAlign='center';
-          const yText = inside ? Math.max(padT+12, y+12) : Math.max(padT+12, y-2);
-          ctx.fillText(label, x+bw/2, yText);
-        }
-
-        drawOutline(x,y,bw,h,`${g.line}|${k}`);
-        yTop=y;
-      });
-      ctx.save(); ctx.fillStyle=TXT; ctx.textAlign='center'; ctx.font='600 13px system-ui';
-      ctx.translate(x+bw/2,padT+plotH+30); ctx.rotate(-Math.PI/12); ctx.fillText(g.line,0,0); ctx.restore();
-      x+=bw+gap;
-    });
-  }else{
-    const MET=["tot","1S","2S","3S","4S","5S"];
-    const groupW=MET.length*bw+(MET.length-1)*inner;
-    rows.forEach(g=>{
-      let bx=x;
-      MET.forEach(m=>{
-        const v=(m==='tot'?g.tot:g.byS[m])||0, h=v*plotH, y=padT+plotH-h;
-        ctx.fillStyle=COLORS[m]; ctx.fillRect(bx,y,bw,h);
-
-        // percentuale sopra la colonna
-        ctx.fillStyle=TXT; ctx.textAlign='center';
-        const yPct = y-4;
-        ctx.fillText(Math.round(v*100)+'%',bx+bw/2,Math.max(padT+12,yPct));
-
-        // sigla S/Tot dentro o sopra senza collisioni
-        const inside = h>=20;
-        const sTxt = m==='tot' ? 'Tot' : m;
-        if(inside){
-          ctx.fillStyle = textOnBg(COLORS[m]);
-          ctx.fillText(sTxt, bx+bw/2, y+14);
-        }else{
-          ctx.fillStyle = TXT;
-          ctx.fillText(sTxt, bx+bw/2, Math.max(padT+12, y-6));
-        }
-
-        drawOutline(bx,y,bw,h, m==='tot' ? `${g.line}|tot` : `${g.line}|${m}`);
-        bx+=bw+inner;
-      });
-      ctx.save(); ctx.fillStyle=TXT; ctx.textAlign='center'; ctx.font='600 13px system-ui';
-      ctx.translate(x+groupW/2,padT+plotH+30); ctx.rotate(-Math.PI/12); ctx.fillText(g.line,0,0); ctx.restore();
-      x+=groupW+gap;
-    });
-  }
-
-  if(scroller){
-    if(typeof chartPref.scroll==='number') scroller.scrollLeft=chartPref.scroll;
-    scroller.addEventListener('scroll',()=>{chartPref.scroll=scroller.scrollLeft; saveChartPref();},{passive:true});
-  }
-}
-
-/* Line buttons */
-function buildLineButtons(list){
-  const host=$('#areasList'); host.innerHTML='';
-  const bAll=document.createElement('button'); bAll.className='line-btn'+(ui.line==='ALL'?' active':''); bAll.textContent='Tutte';
-  bAll.addEventListener('click',()=>{ui.line='ALL'; elLineFilter.value='ALL'; render(); window.scrollTo({top:host.offsetTop,behavior:'smooth'});});
-  host.appendChild(bAll);
-  (list||filteredAreas()).forEach(a=>{
-    const b=document.createElement('button'); b.className='line-btn'+(ui.line===(a.line||'')?' active':''); b.textContent=a.line||'—';
-    b.addEventListener('click',()=>{ui.line=a.line||''; elLineFilter.value=ui.line; render(); setTimeout(()=>{const card=[...document.querySelectorAll('.area')].find(x=>x.querySelector('.area-line')?.value.trim()===(a.line||'').trim()); card?.scrollIntoView({behavior:'smooth',block:'start'});},0);});
-    host.appendChild(b);
+    x += groupW + areaGap;
   });
+
+  // legenda in alto a destra
+  const legendX = padL + plotW - 220, legendY = padT - 8;
+  ctx.save();
+  ctx.fillStyle = 'rgba(15,26,54,0.85)';
+  ctx.fillRect(legendX-8, legendY-12, 228, 24);
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  ctx.font = '12px system-ui, Segoe UI, Roboto';
+  let lx = legendX; const ly = legendY+4;
+  METRICS.forEach(m=>{
+    ctx.fillStyle = COLORS[m];
+    ctx.fillRect(lx, ly, 10, 10);
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.fillText(m, lx+14, ly+9);
+    lx += 42;
+  });
+  ctx.restore();
 }
 
-/* Events */
-window.addEventListener('orientationchange',()=>setTimeout(()=>drawChart(),250));
-window.addEventListener('resize',()=>drawChart());
-window.addEventListener('load',()=>requestAnimationFrame(()=>drawChart()));
+/* ---- Top controls ---- */
+document.getElementById('btnNewArea').addEventListener('click', ()=>{
+  const name = (prompt("Nome nuova area?", "Nuova area") || "").trim() || "Nuova area";
+  state.areas.push(cloneDefaultArea(name));     // crea area con tutte le voci
+  save(); render();
+});
+document.getElementById('btnExport').addEventListener('click', ()=>{
+  const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(blob),
+    download: `SKF_5S_${new Date().toISOString().slice(0,10)}.json`
+  });
+  document.body.appendChild(a); a.click(); a.remove();
+});
+document.getElementById('fileImport').addEventListener('change', async (e)=>{
+  const file = e.target.files[0]; if(!file) return;
+  const text = await file.text();
+  try{
+    const data = JSON.parse(text);
+    if(!Array.isArray(data.areas)) throw new Error('Formato non valido');
+    state = data; save(); render();
+  }catch(err){ alert('JSON non valido: ' + err.message); }
+});
+document.getElementById('btnPrint').addEventListener('click', ()=>window.print());
 
-/* Service worker (best effort) */
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('./sw.js').catch(()=>{});
-}
+// Filtri
+elQ.addEventListener('input', ()=>{ ui.q = elQ.value; render(); });
+elSev.addEventListener('change', ()=>{ ui.sev = elSev.value; render(); });
+elOnlyLate.addEventListener('change', ()=>{ ui.onlyLate = elOnlyLate.checked; render(); });
+elBtnClear.addEventListener('click', ()=>{
+  ui = { q:'', sev:'ALL', onlyLate:false };
+  elQ.value=''; elSev.value='ALL'; elOnlyLate.checked=false; render();
+});
 
-/* Go */
-render();
+/* Ricalcola TUTTO (pill, punteggi, grafico) ad ogni modifica */
+function updateAll(){ render(); }
+
+
