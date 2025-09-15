@@ -1,10 +1,11 @@
-/* ================== SKF 5S – v7.15.3 ================== */
-const VERSION = '7.15.3';
+/* ================== SKF 5S – v7.15.4 ================== */
+const VERSION = '7.15.4';
 document.getElementById('version').textContent = `v${VERSION}`;
 
 /* ---------- PWA / Tema ---------- */
 (() => {
   if ('serviceWorker' in navigator) {
+    // aggiorna eventuali SW vecchi
     navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.update()));
     navigator.serviceWorker.register('sw.js?v='+VERSION).catch(()=>{});
   }
@@ -18,12 +19,14 @@ document.getElementById('version').textContent = `v${VERSION}`;
   });
 })();
 
-/* ---------- Model ---------- */
+/* ---------- Modello dati ---------- */
 const DEFAULT_ITEMS = [
-  { id:'stato', title:'1-S Stato',    desc:'Zona pedonale pavimento', s:1, v:0, sector:'rettifica', owner:'', note:'', due:''},
-  { id:'sic',   title:'Sicurezza',     desc:'Sicurezza',               s:2, v:0, sector:'rettifica', owner:'', note:'', due:''},
-  { id:'qual',  title:'Qualità',       desc:'Qualità',                 s:3, v:0, sector:'rettifica', owner:'', note:'', due:''},
-  { id:'pul',   title:'Pulizia',       desc:'Pulizia costante, rimozione cause dello sporco.', s:5, v:0, sector:'rettifica', owner:'', note:'', due:''}
+  { id:'zp',  title:'Zona pedonale pavimento',          desc:'Area pedonale libera da congestione/ostacoli (area libera) e da pericoli di inciampo', s:1, v:0, sector:'rettifica', owner:'', note:'', due:''},
+  { id:'zl',  title:'Zona di lavoro (pavimento, macchine)', desc:'Ordine e pulizia in area di lavoro, macchine e pavimenti', s:1, v:0, sector:'rettifica', owner:'', note:'', due:''},
+  { id:'mat', title:'Materiali',                         desc:'Materiali al loro posto, identificati e senza accumuli inutili', s:2, v:0, sector:'rettifica', owner:'', note:'', due:''},
+  { id:'proc',title:'Processo di etichettatura',         desc:'Etichette leggibili e standard; identificazione chiara', s:3, v:0, sector:'rettifica', owner:'', note:'', due:''},
+  { id:'info',title:'Informazioni',                      desc:'Segnaletica e informazioni visive chiare e aggiornate', s:4, v:0, sector:'rettifica', owner:'', note:'', due:''},
+  { id:'plan',title:'Piano per sostenere il risultato',  desc:'Routine 5S, audit periodici e azioni correttive per mantenere gli standard', s:5, v:0, sector:'rettifica', owner:'', note:'', due:''}
 ];
 
 function seedLine(name){
@@ -62,6 +65,8 @@ function dominantS(line){
 function lateCount(line){
   return line.items.filter(i=>i.sector===line.sector && i.due && i.due<todayISO() && i.v<5).length;
 }
+function escapeHtml(s){return (s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"\'":'&#39;' }[m]));}
+function escapeAttr(s){return (s||'').replace(/"/g,'&quot;')}
 
 /* ---------- Render ---------- */
 const selLine = $('#selLine'), areasEl = $('#areas'), tabList = $('#tabList');
@@ -132,7 +137,7 @@ function renderItem(i){
       <span class="tag tag-${i.s}s">${i.s}S</span>
       <div class="item-title">${escapeHtml(i.title)}</div>
       <div class="dots">
-        ${[0,1,3,5].map(v=>`<div class="dot" data-v="${v}" title="Punteggio ${v}">${v}</div>`).join('')}
+        ${[0,1,3,5].map(v=>`<div class="dot" role="button" tabindex="0" data-v="${v}" title="Punteggio ${v}">${v}</div>`).join('')}
       </div>
     </div>
     <div class="item-body">
@@ -146,8 +151,6 @@ function renderItem(i){
     </div>
   </div>`;
 }
-function escapeHtml(s){return (s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"\'":'&#39;' }[m]));}
-function escapeAttr(s){return (s||'').replace(/"/g,'&quot;')}
 
 /* ---------- KPI + CHART ---------- */
 let chart;
@@ -155,11 +158,13 @@ function updateKpiChart(){
   const mode = document.querySelector('.segmented .seg.active').dataset.mode;
   const lines = state.lines.filter(l=>mode==='all'||l.sector===mode);
 
+  // KPI
   $('#kpiLines').textContent = lines.length;
   const arr = lines.map(percOk);
   $('#kpiAvg').textContent = arr.length? Math.round(arr.reduce((a,b)=>a+b,0)/arr.length)+'%' : '0%';
   $('#kpiLate').textContent = lines.reduce((a,l)=>a+lateCount(l),0);
 
+  // Chart
   const labels = lines.map(l=>l.name);
   const stacked = $('#stacked').checked;
 
@@ -167,7 +172,7 @@ function updateKpiChart(){
     ? [1,2,3,4,5].map(s=>({label:`${s}S`, backgroundColor:sColor(s), data:lines.map(l=>percS(l,s)), borderWidth:0}))
     : [{label:'Totale', backgroundColor:'#8893a8', data:lines.map(l=>percOk(l)), borderWidth:0}];
 
-  // larghezza canvas dinamica per tante linee
+  // larghezza canvas dinamica
   const minBar = stacked ? 80 : 70;
   const w = Math.max(520, labels.length * minBar);
   const canvas = document.getElementById('chart');
@@ -194,13 +199,12 @@ function updateKpiChart(){
           legend:{position:'top', labels:{color:axisColor}},
           tooltip:{enabled:true, callbacks:{label:(ctx)=>`${ctx.dataset.label}: ${ctx.raw}%`}},
           datalabels:{
-            formatter:(v,ctx)=> (v>= (stacked?8:5)) ? `${v}%` : '',
+            formatter:(v)=> (v>= (stacked?8:5)) ? `${v}%` : '',
             anchor:(ctx)=> stacked?'center':'end',
             align:(ctx)=> stacked?'center':'end',
             offset:(ctx)=> stacked?0:2,
             color:(ctx)=>{
               if(!stacked) return themeDark ? '#e6edf6' : '#0b2540';
-              // in stacked: testo bianco, tranne sul giallo (3S)
               return ctx.dataset.label.startsWith('3S') ? '#222' : '#fff';
             },
             font:{weight:'700'}
@@ -216,12 +220,11 @@ function updateKpiChart(){
     chart.update();
   }
 
-  // badge CH …
-  const legend = $('#legend-badges');
-  legend.innerHTML = lines.map(l=>`<span class="badge">${l.name}</span>`).join('');
+  // badge elenco linee
+  $('#legend-badges').innerHTML = lines.map(l=>`<span class="badge">${l.name}</span>`).join('');
 }
 
-/* ---------- Events globali ---------- */
+/* ---------- Eventi globali ---------- */
 $('#btnNew').addEventListener('click', ()=>{
   const name = prompt('Nome linea (es. CH 4):','CH '+(state.lines.length+2));
   if(!name) return;
@@ -265,7 +268,7 @@ function zoom(k){
 $('#btnCollapseAll').addEventListener('click', ()=>{ state.lines.forEach(l=>l.collapsed=true); Store.save(state); renderAll(); });
 $('#btnExpandAll').addEventListener('click',   ()=>{ state.lines.forEach(l=>l.collapsed=false); Store.save(state); renderAll(); });
 
-/* Delegation sulle aree */
+/* Delegation aree */
 areasEl.addEventListener('click',(e)=>{
   const area=e.target.closest('.area'); if(!area) return;
   const line=state.lines.find(l=>l.id===area.dataset.id);
@@ -290,7 +293,11 @@ areasEl.addEventListener('click',(e)=>{
     const itEl=e.target.closest('.item'); const item=line.items.find(i=>i.id===itEl.dataset.item);
     item.v=parseInt(dot.dataset.v,10); Store.save(state); renderAll(); return;
   }
-  if(e.target.classList.contains('info')){ alert(e.target.dataset.info||''); return; }
+  if(e.target.classList.contains('info')){
+    $('#infoText').textContent = e.target.dataset.info || '';
+    $('#infoDlg').showModal();
+    return;
+  }
   if(e.target.classList.contains('del')){
     const itEl=e.target.closest('.item'); line.items=line.items.filter(i=>i.id!==itEl.dataset.item);
     Store.save(state); renderAll(); return;
@@ -309,6 +316,7 @@ areasEl.addEventListener('input',(e)=>{
   if(e.target.classList.contains('due'))   item.due  =e.target.value;
   Store.save(state); renderAll();
 });
+$('#infoClose').addEventListener('click',()=>$('#infoDlg').close());
 
 /* Start */
 renderAll();
