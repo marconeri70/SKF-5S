@@ -1,438 +1,393 @@
-/* ===================================================================
-   SKF 5S – App (v7.15.3)
-   =================================================================== */
+/* SKF 5S – core v7.16.0
+ * Correzioni:
+ * - Grafico stacked/non-stacked con 5 colonne per linea
+ * - Datalabels su ogni barra (sigla S + %)
+ * - Toggle “i” per descrizioni; comprimi/espandi singolo & tutti
+ * - Bottoni punteggio 0/1/3/5 con stato e ricalcolo live
+ * - Datepicker affidabile, “Nuova linea” con prompt
+ */
 
-/* --------- Utils --------- */
-const $  = (sel, el=document) => el.querySelector(sel);
-const $$ = (sel, el=document) => Array.from(el.querySelectorAll(sel));
-const fmtPct = v => `${Math.round(v)}%`;
+const VERSION = '7.16.0';
+document.getElementById('ver').textContent = 'v' + VERSION;
 
-/* --------- DOM refs (declare once!) --------- */
-const selLine     = $('#selLine');
-const areasEl     = $('#areas');            // <— unico punto di dichiarazione
-const linePills   = $('#linePills');
-const txtSearch   = $('#txtSearch');
-const chkLate     = $('#chkLate');
-const chkStacked  = $('#chkStacked');
-const btnZoomIn   = $('#btnZoomIn');
-const btnZoomOut  = $('#btnZoomOut');
-const btnNew      = $('#btnNew');
-const btnExport   = $('#btnExport');
-const fileImport  = $('#fileImport');
-const btnClear    = $('#btnClear');
-const btnCollapseAll = $('#btnCollapseAll');
-const btnExpandAll   = $('#btnExpandAll');
-const segSector   = $('#segSector');
-const kpiLines    = $('#kpiLines');
-const kpiAvg      = $('#kpiAvg');
-const kpiLate     = $('#kpiLate');
-
-/* --------- Costanti / colori 5S --------- */
-const S_COLORS = {
-  '1S':'#7b61ff','2S':'#ea4335','3S':'#f9ab00','4S':'#34a853','5S':'#4285f4','Tot':'#6b7c93'
-};
-const S_ORDER = ['1S','2S','3S','4S','5S'];
-
-/* --------- Voci default (estratto sintetico) --------- */
+// ---- Dati base (puoi sostituire con import/export) -------------------------
 const VOC = {
-  '1S': [
-    {t:'1-S Selezionare', d:'1) L'area pedonale è esente da congestione/ostacoli (area libera) e da pericoli di inciampo.  
-       Area libera da ostacoli/pericoli di inciampo. 
-       2.Nel pavimento non sono stati trovati materiali, strumenti, materiali di consumo non identificati. 
-       3. Nell'area sono presenti solo i materiali di consumo, gli strumenti, le attrezzature, i mobili necessari. 
-       Tutti gli elementi non necessari (non richiesti o richiesti con una frequenza molto minore) sono stati rimossi o contrassegnati per la rimozione. 
-       4. Nell'area è presente solo il materiale necessario per il lavoro in corso. Materiali obsoleti o non necessari, l'inventario viene rimosso. 
-       (ad es. Buono/ Rilavorazione/ Scarto, nessuna possibilità di confusione,viene conservato solo un materiale in esecuzione). 
-       5. Nell'area sono presenti in buone condizioni solo i documenti, gli espositori, le visualizzazioni, le bacheche, i poster necessari e pertinenti per il lavoro in corso. 
-       6. Sono definiti l'area etichetta rossa, il processo e il team. 
-       7. Il processo del tag rosso funziona bene. 
-       8.Lavagna 5S esiste per mostrare il piano, i miglioramenti fatti (Foto Prima & Dopo), punteggio audit, SPL ed è gestito bene.
-       9. Esistono prove per garantire che 1S sia sostenibile in quest'area (lista di controllo/piano per lo smistamento periodico/piano per l'audit periodico). 
-       10. Il concetto generale di 5S & 1S in dettaglio è ben compreso dai membri e la responsabilità è definita. 
-       11. Tutti i membri sono coinvolti e partecipano all'attività nella loro area.'},
-  ],
-  '2S': [
-    {t:'Postazioni', d:'Tutto al suo posto, segnaletica chiara. Ombre/etichette per posizioni a terra o quota.'},
-  ],
-  '3S': [
-    {t:'Pulizia', d:'Pulizia costante, rimozione cause dello sporco.'}
-  ],
-  '4S': [
-    {t:'Standard', d:'Regole e segnali visivi chiari.'}
-  ],
-  '5S': [
-    {t:'Audit', d:'Audit regolari, disciplina e abitudine.'}
-  ]
+  'rett': {
+    '1S Stato': 'Selezione del necessario. Superfluo rimosso.',
+    'Postazioni': 'Tutto al suo posto, segnaletica chiara.',
+    'Pulizia': 'Pulizia costante, rimozione cause dello sporco.',
+  },
+  'mont': {
+    'Sicurezza': 'Area pedonale libera / segnalazioni pericoli.',
+    'Qualità'  : 'Standard, attrezzi idonei e identificati.',
+  }
 };
 
-/* --------- Stato --------- */
 let state = load() || {
-  ver: '7.15.3',
-  stacked: false,
-  zoom: 1,
-  sector: 'all',     // all | rettifica | montaggio
   lines: [
     makeLine('CH 2'),
-    makeLine('CH 3')
-  ]
+    makeLine('CH 3'),
+  ],
+  filter: { q:'', line:'Tutte', seg:'all', late:false, stacked:false, zoom:1 }
 };
 
-/* --------- Chart --------- */
-let chart;
+// utili
+const $ = sel => document.querySelector(sel);
+const $$ = sel => Array.from(document.querySelectorAll(sel));
+
+// ---- UI init ----------------------------------------------------------------
+const selLine = $('#selLine');
+const q = $('#q');
+const stacked = $('#stacked');
+const onlyLate = $('#onlyLate');
+const chips = $('#chips');
 const ctx = $('#chart').getContext('2d');
-function buildChart(){
-  if (chart) chart.destroy();
 
-  const visibleLines = getFilteredLines();
-  const labels = visibleLines.map(l=>l.name);
-  const stacked = state.stacked;
+Chart.register(ChartDataLabels);
+let chart;
 
-  // dataset: o “Totale” oppure 5S separati
-  let datasets;
-  if (stacked){
-    datasets = S_ORDER.map(s => ({
-      label:s,
-      backgroundColor: S_COLORS[s],
-      data: visibleLines.map(l => scoreByS(l)[s] || 0),
-      stack:'s'
-    }));
-  } else {
-    datasets = [{
-      label:'Tot',
-      backgroundColor: S_COLORS.Tot,
-      data: visibleLines.map(l => totalScore(l))
-    }];
+// popola select linee + chips sotto grafico
+function refreshLineSelectors(){
+  // select
+  selLine.innerHTML = `<option value="Tutte">Linea: Tutte</option>` +
+    state.lines.map((l,i)=>`<option value="${l.name}">${l.name}</option>`).join('');
+  selLine.value = state.filter.line;
+
+  // chips
+  chips.innerHTML = '';
+  const all = chip('Tutte', state.filter.line==='Tutte');
+  chips.appendChild(all);
+  state.lines.forEach(l=>{
+    chips.appendChild(chip(l.name, l.name===state.filter.line));
+  });
+  function chip(name, active){
+    const el = document.createElement('button');
+    el.className = 'chip' + (active?' active':'');
+    el.textContent = name;
+    el.onclick = ()=>{ state.filter.line=name; save(); renderAll(); };
+    return el;
   }
+}
 
-  chart = new Chart(ctx, {
-    type:'bar',
-    data:{labels,datasets},
-    options:{
-      responsive:true,
-      maintainAspectRatio:false,
-      scales:{
-        y:{min:0,max:100,ticks:{stepSize:25}},
-        x:{ticks:{color:'#5b6b7b'}}
-      },
-      plugins:{
-        legend:{
-          display: stacked,
-          labels:{boxWidth:12,color:'#4a5a6a'}
-        },
-        tooltip:{
-          callbacks:{
-            label: (ctx)=>{
-              const v = ctx.raw ?? 0;
-              if (stacked) return `${ctx.dataset.label}: ${fmtPct(v)}`;
-              return `Totale: ${fmtPct(v)}`;
-            }
-          }
-        }
-      }
-    }
+// crea nuova linea
+$('#btnNew').onclick = () => {
+  const next = 'CH ' + (state.lines.length ? nextNum(state.lines) : 1);
+  const name = prompt('Nome nuova linea:', next);
+  if(!name) return;
+  state.lines.push(makeLine(name));
+  state.filter.line = name;
+  save(); renderAll();
+};
+function nextNum(lines){
+  const nums = lines.map(l => parseInt((l.name.match(/\d+/)||[0])[0],10)||0);
+  return Math.max(...nums)+1;
+}
+
+// export/import
+$('#btnExport').onclick = () => {
+  const blob = new Blob([JSON.stringify(state)], {type:'application/json'});
+  const a = Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:'SKF-5S.json'});
+  a.click(); URL.revokeObjectURL(a.href);
+};
+$('#btnImport').onclick = async () => {
+  const inp = Object.assign(document.createElement('input'),{type:'file',accept:'.json'});
+  inp.onchange = e=>{
+    const f = e.target.files[0]; if(!f) return;
+    const r = new FileReader();
+    r.onload = ()=>{ state = JSON.parse(r.result); save(); renderAll(); };
+    r.readAsText(f);
+  };
+  inp.click();
+};
+$('#btnPrint').onclick = ()=>window.print();
+
+// filtri
+q.oninput = ()=>{ state.filter.q=q.value; save(); renderAll(); };
+selLine.onchange = ()=>{ state.filter.line = selLine.value; save(); renderAll(); };
+onlyLate.onchange = ()=>{ state.filter.late = onlyLate.checked; save(); renderAll(); };
+stacked.onchange = ()=>{ state.filter.stacked = stacked.checked; save(); drawChart(); };
+$('.seg-toggle').addEventListener('click', e=>{
+  if(!e.target.classList.contains('seg')) return;
+  $$('.seg-toggle .seg').forEach(b=>b.classList.remove('active'));
+  e.target.classList.add('active');
+  state.filter.seg = e.target.dataset.seg;
+  save(); renderAll();
+});
+$('#btnClear').onclick = ()=>{ q.value=''; state.filter={...state.filter,q:'',line:'Tutte',late:false}; save(); renderAll(); };
+$('#zoomIn').onclick  = ()=>{ state.filter.zoom=Math.min(2, state.filter.zoom+0.1); drawChart(); };
+$('#zoomOut').onclick = ()=>{ state.filter.zoom=Math.max(0.6, state.filter.zoom-0.1); drawChart(); };
+
+// comprimi/espandi tutte
+$('#btnCollapseAll').onclick = ()=>{$$('#areas .item .desc').forEach(d=>d.classList.add('hide'));};
+$('#btnExpandAll').onclick  = ()=>{$$('#areas .item .desc').forEach(d=>d.classList.remove('hide'));};
+
+// ---- render aree -------------------------------------------------------------
+function renderAreas(){
+  $('#areas').innerHTML = '';
+  const targetLines = filteredLines();
+  targetLines.forEach(line => {
+    const node = renderArea(line);
+    $('#areas').appendChild(node);
   });
 }
 
-/* --------- Rendering aree --------- */
-function renderAll(){
-  // Populate select linea e pill sotto grafico
-  selLine.innerHTML = `<option value="*">Linea: Tutte</option>` + state.lines.map((l,i)=>(
-    `<option value="${i}">${l.name}</option>`
-  )).join('');
+function renderArea(line){
+  const t = $('#tplArea').content.firstElementChild.cloneNode(true);
+  t.dataset.line = line.name;
+  t.querySelector('.area-name').value = line.name;
 
-  linePills.innerHTML = state.lines.map((l,i)=>{
-    return `<button class="pill" data-line-pill="${i}" style="border-color:#cbd5e1">
-      ${l.name}
-    </button>`;
-  }).join('');
+  // top badges
+  updateBadges(t, line);
 
-  // KPI
-  const linesVis = getFilteredLines();
-  kpiLines.textContent = linesVis.length;
-  const avg = linesVis.length ? (linesVis.map(totalScore).reduce((a,b)=>a+b,0)/linesVis.length) : 0;
-  kpiAvg.textContent = fmtPct(avg);
-  kpiLate.textContent = totalLate(linesVis);
-
-  // Chart
-  buildChart();
-
-  // Aree
-  areasEl.innerHTML = '';
-  getFilteredLines().forEach((line, idx) => {
-    areasEl.appendChild(renderArea(line, idx));
+  // set settore toggle attivo
+  t.querySelectorAll('.seg-toggle .seg').forEach(btn=>{
+    btn.classList.toggle('active', btn.dataset.seg===line.seg);
   });
 
-  // Aggiorna stacked checkbox
-  chkStacked.checked = state.stacked;
-}
-
-function renderArea(line, idx){
-  const tpl = $('#tpl-area').content.cloneNode(true);
-  const el  = tpl.querySelector('.area');
-  el.dataset.line = idx;
-
-  const nameInput = el.querySelector('.area__name');
-  nameInput.value = line.name;
-  nameInput.addEventListener('input', e=>{
-    line.name = e.target.value || `CH ${idx+1}`;
-    save(); renderAll();
-  });
-
-  // settore toggle
-  const seg = el.querySelector('.area__sector');
-  $$('[data-sector]', seg).forEach(b=>{
-    if (b.dataset.sector === line.sector) b.classList.add('active');
-    b.addEventListener('click', ()=>{
-      line.sector = b.dataset.sector;
-      $$('[data-sector]', seg).forEach(x=>x.classList.toggle('active', x===b));
-      save(); renderAll();
-    });
-  });
-
-  // score badges
-  const sMap = scoreByS(line);
-  S_ORDER.forEach(s=>{
-    const b = el.querySelector(`[data-badge="${s}"] b`);
-    b.textContent = fmtPct(sMap[s]||0);
-  });
-  el.querySelector('.js-score').textContent = fmtPct(totalScore(line));
-  el.querySelector('.js-dom').textContent = dominantS(line) || '—';
-
-  // actions header
-  el.querySelector('.js-add').addEventListener('click', ()=>{
-    addItem(line, suggestS(line));
-    save(); renderAll();
-  });
-  el.querySelector('.js-toggle').addEventListener('click', (ev)=>{
-    const body = el.querySelector('.items');
-    const collapsed = body.hasAttribute('hidden');
-    body.toggleAttribute('hidden', !collapsed);
-    ev.currentTarget.textContent = collapsed ? 'Comprimi' : 'Espandi';
-  });
-  el.querySelector('.js-del').addEventListener('click', ()=>{
-    if (!confirm(`Eliminare la linea "${line.name}"?`)) return;
-    state.lines.splice(idx,1);
+  // pulsanti area
+  t.querySelector('.add').onclick = ()=>{ addItem(line); renderAll(); };
+  t.querySelector('.collapse').onclick = ()=>{
+    t.querySelectorAll('.item .desc').forEach(d=>d.classList.toggle('hide'));
+  };
+  t.querySelector('.del').onclick = ()=>{
+    if(confirm('Eliminare la linea?')){ state.lines = state.lines.filter(l=>l!==line); save(); renderAll(); }
+  };
+  t.querySelector('.area-name').onchange = (e)=>{
+    line.name = e.target.value || line.name; save(); refreshLineSelectors(); drawChart();
+  };
+  t.querySelector('.seg-toggle').addEventListener('click', e=>{
+    if(!e.target.classList.contains('seg')) return;
+    t.querySelectorAll('.seg').forEach(b=>b.classList.remove('active'));
+    e.target.classList.add('active');
+    line.seg = e.target.dataset.seg;
     save(); renderAll();
   });
 
   // items
-  const itemsWrap = el.querySelector('.items');
-  line.items.forEach((it,itx)=>{
-    itemsWrap.appendChild(renderItem(line, it, itx));
-  });
+  const wrap = t.querySelector('.items');
+  line.items.forEach(it => wrap.appendChild(renderItem(line, it)));
 
-  return el;
+  return t;
 }
 
-function renderItem(line, it, itx){
-  const tpl = $('#tpl-item').content.cloneNode(true);
-  const el  = tpl.querySelector('.item');
+function renderItem(line, it){
+  const t = $('#tplItem').content.firstElementChild.cloneNode(true);
+  t.querySelector('.title').textContent = it.title;
+  t.querySelector('.desc').textContent  = it.desc;
+  t.querySelector('.resp').value        = it.resp || '';
+  t.querySelector('.due').value         = it.due  || '';
+  t.querySelector('.note').value        = it.note || '';
 
-  const tit = el.querySelector('.item__title');
-  tit.value = it.t; tit.addEventListener('input', e=>{ it.t=e.target.value; save(); });
+  // informazioni / descrizione
+  t.querySelector('.info').onclick = ()=> t.querySelector('.desc').classList.toggle('hide');
 
-  // desc (info toggle)
-  const descBox = el.querySelector('.item__desc');
-  descBox.textContent = it.d || '—';
-  el.querySelector('.info').addEventListener('click', ()=>{
-    const vis = descBox.style.display==='block';
-    descBox.style.display = vis ? 'none':'block';
-  });
+  // calendario
+  t.querySelector('.cal').onclick = ()=> t.querySelector('.due').showPicker ? t.querySelector('.due').showPicker() : t.querySelector('.due').focus();
 
-  // points
-  const pts = el.querySelector('.points');
-  $$('[data-pt]', pts).forEach(btn=>{
-    const val = +btn.dataset.pt;
-    if (val === it.pt) btn.classList.add('active');
-    btn.addEventListener('click', ()=>{
+  // punteggi
+  t.querySelectorAll('.pt').forEach(b=>{
+    const val = +b.dataset.pt;
+    if(val===it.pt) b.classList.add('active');
+    b.onclick = ()=>{
+      t.querySelectorAll('.pt').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
       it.pt = val;
-      // aggiorna UI punti
-      $$('[data-pt]', pts).forEach(x=>x.classList.toggle('active', +x.dataset.pt===val));
-      save(); renderAll();           // aggiorno subito score e badge
+      computeLine(line);
+      save(); updateBadges(document.querySelector(`.area[data-line="${line.name}"]`), line);
+      drawChart();
+    };
+  });
+
+  // extras
+  t.querySelector('.resp').onchange = e => { it.resp = e.target.value; save(); };
+  t.querySelector('.due').onchange  = e => { it.due  = e.target.value; save(); drawChart(); };
+  t.querySelector('.note').onchange = e => { it.note = e.target.value; save(); };
+  t.querySelector('.del-item').onclick = ()=>{
+    if(confirm('Eliminare la voce?')){
+      line.items = line.items.filter(x=>x!==it);
+      computeLine(line); save(); renderAll();
+    }
+  };
+
+  return t;
+}
+
+function updateBadges(areaNode, line){
+  const map = line.perc;
+  areaNode.querySelector('.badge.s1').textContent = `1S ${map['1S']}%`;
+  areaNode.querySelector('.badge.s2').textContent = `2S ${map['2S']}%`;
+  areaNode.querySelector('.badge.s3').textContent = `3S ${map['3S']}%`;
+  areaNode.querySelector('.badge.s4').textContent = `4S ${map['4S']}%`;
+  areaNode.querySelector('.badge.s5').textContent = `5S ${map['5S']}%`;
+  areaNode.querySelector('.badge.tot').textContent = `Punteggio: ${line.total}%`;
+  areaNode.querySelector('.badge.pred').textContent = `Predominante: ${line.pred.s} ${line.pred.v}%`;
+}
+
+// ---- chart -------------------------------------------------------------------
+function drawChart(){
+  const lines = filteredLines();
+  const stackedOn = state.filter.stacked;
+
+  const labels = lines.map(l=>l.name);
+  const colors = {'1S':getCSS('--s1'),'2S':getCSS('--s2'),'3S':getCSS('--s3'),'4S':getCSS('--s4'),'5S':getCSS('--s5')};
+  const datasets = [];
+
+  if(stackedOn){
+    // una colonna per linea, impilata
+    ['1S','2S','3S','4S','5S'].forEach(S=>{
+      datasets.push({
+        type:'bar', label:S, backgroundColor:colors[S],
+        data: lines.map(l=>l.perc[S]),
+        stack:'s', datalabels:{anchor:'end',align:'end',formatter:v=>v?`${v}%`:''}
+      });
     });
-  });
-
-  // meta
-  const resp = el.querySelector('.resp'); resp.value = it.r || '';
-  resp.addEventListener('input', e=>{it.r=e.target.value; save();});
-
-  const date = el.querySelector('.date'); date.value = it.dt || '';
-  date.addEventListener('input', e=>{it.dt=e.target.value; save();});
-
-  const note = el.querySelector('.note'); note.value = it.n || '';
-  note.addEventListener('input', e=>{it.n=e.target.value; save();});
-
-  el.querySelector('.js-remove').addEventListener('click', ()=>{
-    if (!confirm('Eliminare questa voce?')) return;
-    line.items.splice(itx,1);
-    save(); renderAll();
-  });
-
-  return el;
-}
-
-/* --------- Model helpers --------- */
-function makeLine(name='CH'){
-  // default 1 voce per ciascuna S
-  const items = [];
-  S_ORDER.forEach(s=>{
-    const v = (VOC[s] && VOC[s][0]) ? VOC[s][0] : {t:`${s} voce`, d:''};
-    items.push({s, t:v.t, d:v.d, pt:0, r:'', dt:'', n:''});
-  });
-  return {name, sector:'rettifica', items};
-}
-function addItem(line, s='1S'){
-  const v = (VOC[s] && VOC[s][0]) ? VOC[s][0] : {t:`${s} voce`, d:''};
-  line.items.push({s, t:v.t, d:v.d, pt:0, r:'', dt:'', n:''});
-}
-function suggestS(line){
-  // suggerisci la S meno coperta
-  const map = scoreByS(line);
-  let minS=S_ORDER[0], minV=map[minS]||0;
-  S_ORDER.forEach(s=>{ const v=map[s]||0; if (v<minV){minS=s;minV=v;}});
-  return minS;
-}
-
-function scoreByS(line){
-  const map = { '1S':0,'2S':0,'3S':0,'4S':0,'5S':0 };
-  const cnt = { '1S':0,'2S':0,'3S':0,'4S':0,'5S':0 };
-  line.items.forEach(it=>{ if(S_ORDER.includes(it.s)){ cnt[it.s]++; map[it.s]+=ptToPct(it.pt); } });
-  S_ORDER.forEach(s=>{ if (cnt[s]) map[s] = map[s]/cnt[s]; });
-  return map;
-}
-function ptToPct(pt){
-  // mappa 0/1/3/5 su 0/25/60/100 (taratura “dolce”)
-  return pt===5?100 : pt===3?60 : pt===1?25 : 0;
-}
-function totalScore(line){
-  const m = scoreByS(line);
-  const arr = S_ORDER.map(s=>m[s]||0);
-  return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0;
-}
-function dominantS(line){
-  const m = scoreByS(line);
-  let maxS=null, maxV=-1;
-  S_ORDER.forEach(s=>{const v=m[s]||0; if(v>maxV){maxV=v;maxS=s;}});
-  return maxV<=0 ? null : `${maxS} ${fmtPct(maxV)}`;
-}
-function totalLate(lines){
-  // “in ritardo” se dt valorizzata < data odierna e pt < 100
-  const now = new Date().toISOString().slice(0,10);
-  let c=0;
-  lines.forEach(l=>l.items.forEach(it=>{
-    if (it.dt && it.dt < now && ptToPct(it.pt)<100) c++;
-  }));
-  return c;
-}
-
-/* --------- Filtering --------- */
-function getFilteredLines(){
-  const q = txtSearch.value.trim().toLowerCase();
-  const lineSel = selLine.value; // "*" oppure index
-  const sector = state.sector;   // all|rettifica|montaggio
-  const lateOnly = chkLate.checked;
-
-  let arr = state.lines;
-
-  if (lineSel !== '*') arr = arr.filter((_,i)=> String(i)===lineSel);
-  if (sector !== 'all') arr = arr.filter(l => l.sector===sector);
-  if (q){
-    arr = arr.filter(l=>{
-      const hitLine = l.name.toLowerCase().includes(q);
-      const hitItems = l.items.some(it =>
-        [it.t,it.d,it.n,it.r].some(x=> String(x||'').toLowerCase().includes(q))
-      );
-      return hitLine || hitItems;
+  }else{
+    // 5 colonne affiancate per ogni linea
+    const group = ['1S','2S','3S','4S','5S'];
+    group.forEach((S,i)=>{
+      datasets.push({
+        type:'bar', label:S, backgroundColor:alpha(colors[S], 0.85),
+        data: lines.map(l=>l.perc[S]),
+        stack: undefined, // affiancate
+        datalabels:{
+          anchor:'end',align:'end',
+          formatter:v=>v?`${S}\n${v}%`:''}
+      });
     });
   }
-  if (lateOnly){
-    const now = new Date().toISOString().slice(0,10);
-    arr = arr.filter(l => l.items.some(it => it.dt && it.dt < now && ptToPct(it.pt)<100));
-  }
-  return arr;
+
+  const opt = {
+    responsive:true,
+    maintainAspectRatio:false,
+    scales:{
+      x:{ stacked: stackedOn, ticks:{ autoSkip:false, maxRotation:0, minRotation:0 }},
+      y:{ stacked: stackedOn, beginAtZero:true, max:100, ticks:{ stepSize:25 }}
+    },
+    plugins:{
+      legend:{ display:false },
+      datalabels:{
+        color:'#0b2440', backgroundColor:'#fff', borderRadius:6, padding:4,
+        borderWidth:1, borderColor:'#e6eef7', clamp:true, display:(ctx)=>ctx.dataset.data[ctx.dataIndex]>0
+      },
+      tooltip:{ enabled:true, callbacks:{ label:(ctx)=> `${ctx.dataset.label}: ${ctx.parsed.y}%` }}
+    }
+  };
+
+  if(chart) chart.destroy();
+  chart = new Chart(ctx, {data:{labels, datasets}, options:opt});
+  ctx.canvas.style.transform = `scale(${state.filter.zoom})`;
+  ctx.canvas.style.transformOrigin = 'left top';
+
+  // KPI
+  $('#kLines').textContent = lines.length;
+  $('#kAvg').textContent   = avg(lines.map(l=>l.total)) + '%';
+  $('#kLate').textContent  = lines.reduce((a,l)=>a+lateCount(l),0);
+
+  stacked.checked = state.filter.stacked;
+  onlyLate.checked = state.filter.late;
 }
 
-/* --------- Persistenza --------- */
+// ---- logica punteggi ---------------------------------------------------------
+function computeLine(line){
+  const items = filteredItems(line);
+  const byS = {'1S':[], '2S':[], '3S':[], '4S':[], '5S':[]};
+
+  items.forEach(it=>{
+    const S = detectS(it.title);
+    if(!S) return;
+    byS[S].push(it.pt||0);
+  });
+
+  const perc = {};
+  ['1S','2S','3S','4S','5S'].forEach(S=>{
+    const a = byS[S]; const max = a.length*5 || 1;
+    const sum = a.reduce((x,y)=>x+y,0);
+    perc[S] = Math.round((sum/max)*100);
+  });
+
+  line.perc  = perc;
+  line.total = avg(Object.values(perc));
+  const pairs = Object.entries(perc).sort((a,b)=>b[1]-a[1]);
+  line.pred  = {s: pairs[0]?.[0] || '1S', v: pairs[0]?.[1] || 0};
+}
+
+function filteredLines(){
+  const qx = (state.filter.q||'').toLowerCase();
+  const one = state.filter.line;
+  let list = state.lines;
+
+  if(one !== 'Tutte') list = list.filter(l=>l.name===one);
+  if(state.filter.seg!=='all') list = list.filter(l=>l.seg===state.filter.seg);
+  if(state.filter.late) list = list.filter(l=>lateCount(l)>0);
+
+  // ricerca testuale su item/resp/note
+  if(qx){
+    list = list.filter(l=> filteredItems(l).some(it =>
+      (it.title||'').toLowerCase().includes(qx) ||
+      (it.desc ||'').toLowerCase().includes(qx) ||
+      (it.resp ||'').toLowerCase().includes(qx) ||
+      (it.note ||'').toLowerCase().includes(qx)
+    ));
+  }
+
+  // ricalcola sempre prima di mostrare
+  list.forEach(computeLine);
+  return list;
+}
+
+function filteredItems(line){
+  return line.items; // (già separiamo per seg a livello linea)
+}
+
+function lateCount(line){
+  const today = new Date().toISOString().slice(0,10);
+  return line.items.filter(it=> it.due && it.due < today && (it.pt||0)<5).length;
+}
+
+// ---- helper/factory ----------------------------------------------------------
+function makeLine(name){
+  // default settore rettifica
+  const seg = 'rett';
+  const items = [
+    ...Object.entries(VOC.rett).map(([t,d])=>({seg:'rett', title:t, desc:d, pt:0})),
+    ...Object.entries(VOC.mont).map(([t,d])=>({seg:'mont', title:t, desc:d, pt:0})),
+  ];
+  const line = {name, seg:'rett', items};
+  computeLine(line);
+  return line;
+}
+function detectS(title){
+  // mappatura semplice (adatta alla tua nomenclatura)
+  title = title.toLowerCase();
+  if(title.includes('stato') || title.includes('selezione')) return '1S';
+  if(title.includes('posto') || title.includes('postazioni')) return '2S';
+  if(title.includes('puliz')) return '3S';
+  if(title.includes('standard') || title.includes('segnale')) return '4S';
+  if(title.includes('disciplin') || title.includes('abitudin') || title.includes('migliora')) return '5S';
+  // fallback per sicurezza: calcola dallo “scope” corrente
+  return '1S';
+}
+
+function alpha(hex, a){ // #rrggbb → rgba()
+  const c = hex.replace('#','');
+  const r = parseInt(c.slice(0,2),16), g = parseInt(c.slice(2,4),16), b = parseInt(c.slice(4,6),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+function getCSS(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+function avg(arr){ return Math.round(arr.reduce((a,b)=>a+b,0)/(arr.length||1)); }
+
 function save(){ localStorage.setItem('skf5s', JSON.stringify(state)); }
-function load(){
-  try{ return JSON.parse(localStorage.getItem('skf5s')); }
-  catch(_){ return null; }
+function load(){ try{ return JSON.parse(localStorage.getItem('skf5s')); }catch{return null;} }
+
+// ---- bootstrap ---------------------------------------------------------------
+function renderAll(){
+  // sincronia controlli
+  q.value = state.filter.q||'';
+  stacked.checked = state.filter.stacked;
+  onlyLate.checked = state.filter.late;
+
+  refreshLineSelectors();
+  renderAreas();
+  drawChart();
 }
-
-/* --------- Event wiring --------- */
-
-// Tema
-$('#btnTheme').addEventListener('click', ()=>{
-  document.documentElement.classList.toggle('dark');
-});
-
-// Nuova linea
-btnNew.addEventListener('click', ()=>{
-  state.lines.push(makeLine(`CH ${state.lines.length+1}`));
-  save(); renderAll();
-});
-// Export / Import
-btnExport.addEventListener('click', ()=>{
-  const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
-  const a = Object.assign(document.createElement('a'), {download:'SKF-5S.json', href:URL.createObjectURL(blob)});
-  a.click(); URL.revokeObjectURL(a.href);
-});
-fileImport.addEventListener('change', async (e)=>{
-  const f = e.target.files[0]; if(!f) return;
-  const txt = await f.text();
-  state = JSON.parse(txt);
-  save(); renderAll();
-  e.target.value='';
-});
-
-// Filtri base
-[txtSearch, selLine, chkLate].forEach(el => el.addEventListener('input', ()=>renderAll()));
-btnClear.addEventListener('click', ()=>{
-  txtSearch.value=''; selLine.value='*'; chkLate.checked=false;
-  state.sector='all'; $$('.seg__btn', segSector).forEach(b=>b.classList.toggle('active', b.dataset.sector==='all'));
-  renderAll();
-});
-
-// Settore quick
-segSector.addEventListener('click', (e)=>{
-  const b = e.target.closest('.seg__btn'); if(!b) return;
-  $$('.seg__btn', segSector).forEach(x=>x.classList.remove('active'));
-  b.classList.add('active');
-  state.sector = b.dataset.sector;
-  renderAll();
-});
-
-// Pills linee (sotto chart)
-linePills.addEventListener('click', (e)=>{
-  const b = e.target.closest('[data-line-pill]'); if(!b) return;
-  selLine.value = b.dataset.linePill;
-  renderAll();
-});
-
-// Stacked + zoom
-chkStacked.addEventListener('change', ()=>{ state.stacked = chkStacked.checked; save(); buildChart(); });
-btnZoomIn.addEventListener('click', ()=> zoomChart(1));
-btnZoomOut.addEventListener('click', ()=> zoomChart(-1));
-function zoomChart(delta){
-  state.zoom = Math.max(0.6, Math.min(2, state.zoom + delta*0.1));
-  $('#chart').parentElement.style.transform = `scale(${state.zoom})`;
-}
-
-// Batch expand / collapse
-btnCollapseAll.addEventListener('click', ()=>{
-  $$('.area .items').forEach(x=>x.setAttribute('hidden',''));
-  $$('.area .js-toggle').forEach(b=>b.textContent='Espandi');
-});
-btnExpandAll.addEventListener('click', ()=>{
-  $$('.area .items').forEach(x=>x.removeAttribute('hidden'));
-  $$('.area .js-toggle').forEach(b=>b.textContent='Comprimi');
-});
-
-// Delegation click su aree (NO seconda dichiarazione di areasEl!)
-areasEl.addEventListener('click', (e)=>{
-  // cambiare S associata ad una voce (clic sul badge 1S..5S non presente qui: le S sono nel data della voce)
-  // Questo delegato resta per eventuali estensioni future
-});
-
-// Init
 renderAll();
