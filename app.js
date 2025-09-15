@@ -36,7 +36,7 @@ const S_ORDER = ['1S','2S','3S','4S','5S'];
 /* --------- Voci default (estratto sintetico) --------- */
 const VOC = {
   '1S': [
-    {t:'1-S Stato', d:'Selezione del necessario. Superfluo rimosso.Area libera da ostacoli/pericoli di inciampo. Materiali buoni separati dagli scarti. Punto di raccolta/ordini definito.'},
+    {t:'1-S Stato', d:'Selezione del necessario. Superfluo rimosso.  Area libera da ostacoli/pericoli di inciampo. Materiali buoni separati dagli scarti. Punto di raccolta/ordini definito.'},
   ],
   '2S': [
     {t:'Postazioni', d:'Tutto al suo posto, segnaletica chiara. Ombre/etichette per posizioni a terra o quota.'},
