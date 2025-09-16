@@ -161,15 +161,42 @@ body{
   .item-row{grid-template-columns:1fr}
 }
 
-/* Colored S tags using theme variables */
-.s-tag{display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:26px;border-radius:999px;padding:0 10px;font-weight:800;letter-spacing:.3px;color:#fff}
-.s-tag.s1{background:var(--c1)} .s-tag.s2{background:var(--c2)} .s-tag.s3{background:var(--c3)} .s-tag.s4{background:var(--c4)} .s-tag.s5{background:var(--c5)}
-.panel[data-s="1S"]{border-left:4px solid var(--c1)} .panel[data-s="2S"]{border-left:4px solid var(--c2)}
-.panel[data-s="3S"]{border-left:4px solid var(--c3)} .panel[data-s="4S"]{border-left:4px solid var(--c4)} .panel[data-s="5S"]{border-left:4px solid var(--c5)}
+:root[data-theme="dark"] body, 
+:root[data-theme="dark"] p,
+:root[data-theme="dark"] h1, 
+:root[data-theme="dark"] h2, 
+:root[data-theme="dark"] h3,
+:root[data-theme="dark"] h4,
+:root[data-theme="dark"] h5,
+:root[data-theme="dark"] h6,
+:root[data-theme="dark"] .desc,
+:root[data-theme="dark"] .chip,
+:root[data-theme="dark"] .pill,
+:root[data-theme="dark"] .kpi,
+:root[data-theme="dark"] label,
+:root[data-theme="dark"] .btn,
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] textarea,
+:root[data-theme="dark"] .tab { color:#eaf1ff !important; }
+:root[data-theme="dark"] .muted, :root[data-theme="dark"] small { color:#c4d1f2 !important; }
 
-:root[data-theme="dark"] .panel h4{color:#eaf1ff}
-:root[data-theme="dark"] #infoDlg{color:#eaf1ff}
-:root[data-theme="dark"] #infoDlg .modal{background:#0f162d;border-color:#2a3a7a}
+.panel[data-s="1S"]{ border:2px solid var(--c1) }
+.panel[data-s="2S"]{ border:2px solid var(--c2) }
+.panel[data-s="3S"]{ border:2px solid var(--c3) }
+.panel[data-s="4S"]{ border:2px solid var(--c4) }
+.panel[data-s="5S"]{ border:2px solid var(--c5) }
+.panel .s-desc{ padding:8px 10px; border-radius:10px; }
+.panel[data-s="1S"] .s-desc{ background:rgba(124,92,255,.12); color:#f4f0ff }
+.panel[data-s="2S"] .s-desc{ background:rgba(255,135,55,.12); color:#fff2e6 }
+.panel[data-s="3S"] .s-desc{ background:rgba(43,166,255,.12); color:#e9f4ff }
+.panel[data-s="4S"] .s-desc{ background:rgba(40,196,141,.12); color:#e8fff7 }
+.panel[data-s="5S"] .s-desc{ background:rgba(122,92,255,.12); color:#f4f0ff }
 
-/* Safety: ensure panels visible */
+#infoDlg .modal{ border:1px solid var(--outline); background:var(--panel); color:var(--text) }
+#infoDlg.s1 .modal{ border-color:var(--c1) }
+#infoDlg.s2 .modal{ border-color:var(--c2) }
+#infoDlg.s3 .modal{ border-color:var(--c3) }
+#infoDlg.s4 .modal{ border-color:var(--c4) }
+#infoDlg.s5 .modal{ border-color:var(--c5) }
+
 .panel{display:block}
