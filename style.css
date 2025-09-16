@@ -161,18 +161,31 @@ body{
   .item-row{grid-template-columns:1fr}
 }
 
-/* Modal info */
-dialog{border:none;padding:0;border-radius:16px;max-width:min(720px,94vw);}
-dialog::backdrop{background:rgba(0,0,0,.45)}
-dialog .modal{background:var(--card);border:1px solid var(--outline);padding:16px 16px 18px;color:var(--text)}
-dialog .close{position:absolute;top:6px;right:8px;border:none;background:transparent;font-size:18px;cursor:pointer;color:var(--muted)}
 
-.points-dots{display:flex;flex-wrap:wrap;gap:6px}
-.points-dots .dot{width:34px;height:34px;border-radius:999px;border:1px solid var(--outline);background:var(--card);cursor:pointer}
+/* Footer version small */
+.app-footer{display:flex;justify-content:flex-end;align-items:center;padding:10px 14px}
+.app-footer small{opacity:.7;font-size:11px}
+
+/* Card readability tweaks */
+.area{background:var(--panel); border:1px solid var(--outline); box-shadow: 0 6px 20px rgba(0,0,0,.06);}
+.area h3{letter-spacing:.2px}
+.chips .chip{font-weight:600}
+
+/* Score dots improved */
+.points-dots{display:flex;gap:8px;flex-wrap:wrap}
+.points-dots .dot{width:34px;height:34px;border-radius:999px;border:1px solid var(--outline);display:grid;place-items:center;font-weight:700}
+.points-dots .dot.active{box-shadow:0 0 0 2px var(--blue) inset, 0 0 0 2px rgba(0,0,0,.02)}
 .points-dots .dot[data-val="0"]{background:#f1f3f5}
 .points-dots .dot[data-val="1"]{background:#ffe3e3}
 .points-dots .dot[data-val="2"]{background:#ffe8cc}
 .points-dots .dot[data-val="3"]{background:#d0ebff}
 .points-dots .dot[data-val="4"]{background:#c3fae8}
 .points-dots .dot[data-val="5"]{background:#b2f2bb}
-.points-dots .dot.active{outline:2px solid var(--blue);}
+
+/* Dark theme contrast fix */
+:root[data-theme="dark"]{
+  --text:#e9eefc;
+  --muted:#b8c4e6;
+  --panel:#0f1527;
+  --outline:#2a3a7a;
+}
