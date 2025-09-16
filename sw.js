@@ -1,27 +1,29 @@
-const CACHE = 'skf-5s-v7';
-const ASSETS = [
+const SW_VERSION = 'skf5s-sw-v7.16.0';
+const CORE = [
   './',
   './index.html',
   './style.css',
   './app.js',
   './manifest.json',
-  './assets/skf-logo.png',
+  './assets/5s-hero.png',
   './assets/skf-192.png',
   './assets/skf-512.png'
 ];
 
 self.addEventListener('install', e=>{
-  e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)));
+  e.waitUntil(caches.open(SW_VERSION).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()));
 });
 self.addEventListener('activate', e=>{
-  e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));
+  e.waitUntil(
+    caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==SW_VERSION).map(k=>caches.delete(k))))
+    .then(()=>self.clients.claim())
+  );
 });
 self.addEventListener('fetch', e=>{
+  const req=e.request;
   e.respondWith(
-    caches.match(e.request).then(r => r || fetch(e.request).then(resp=>{
-      const copy = resp.clone();
-      caches.open(CACHE).then(c=>c.put(e.request, copy)).catch(()=>{});
-      return resp;
-    }))
+    caches.match(req).then(res=> res || fetch(req).then(r=>{
+      const copy=r.clone(); caches.open(SW_VERSION).then(c=>c.put(req,copy)); return r;
+    }).catch(()=>caches.match('./')) )
   );
 });
