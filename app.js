@@ -4,7 +4,7 @@
    - Scheda con 5 sezioni fisse (descrizioni ufficiali)
    - Fix responsive pulsante "Elimina voce"
 =========================================================================== */
-const VERSION='v7.16.0';
+const VERSION='v7.17.9';
 const STORE='skf.5s.v7.16';
 const CHART_STORE=STORE+'.chart';
 const POINTS=[0,1,3,5];
@@ -114,7 +114,7 @@ $('#btnExpandAll')?.addEventListener('click',()=>{$$('.area').forEach(a=>a.class
 
 /* Render */
 function render(){
-  $('#appVersion')?.replaceChildren(VERSION);
+  const hv=document.querySelector('#appVersion'); if(hv) hv.textContent=''; document.querySelector('#appVersionFooter')?.replaceChildren(VERSION);
   refreshLineFilter();
 
   sectorSelect.value=ui.sector;
@@ -218,11 +218,16 @@ function renderArea(area){
     $('.score-5S',node).textContent=pct(byS['5S']);
   }
   function updateScore(){
-    const {total,dom}=computeByS(area,curSector);
-    scoreEl.textContent=pct(total);
-    domEl.textContent=`${dom.S} ${pct(dom.v)}`;
-    save(); updateDashboard(); drawChart(); buildLineButtons();
-  }
+  const {byS,total,dom}=computeByS(area,curSector);
+  if(scoreEl) scoreEl.textContent=pct(total);
+  if(domEl) domEl.textContent=`${dom.S} ${pct(dom.v)}`;
+  document.querySelectorAll('.score-1S').forEach(n=>n.textContent=pct(byS['1S']||0));
+  document.querySelectorAll('.score-2S').forEach(n=>n.textContent=pct(byS['2S']||0));
+  document.querySelectorAll('.score-3S').forEach(n=>n.textContent=pct(byS['3S']||0));
+  document.querySelectorAll('.score-4S').forEach(n=>n.textContent=pct(byS['4S']||0));
+  document.querySelectorAll('.score-5S').forEach(n=>n.textContent=pct(byS['5S']||0));
+  save(); updateDashboard(); drawChart(); buildLineButtons();
+}
 
   // add item nei pannelli
   $$('.panel',node).forEach(p=>{
@@ -236,6 +241,12 @@ function renderArea(area){
   return node;
 }
 
+
+// --- Info popup helper ---
+const infoDlg=document.getElementById('infoDlg');
+function openInfo(title,text){ if(!infoDlg) return; infoDlg.querySelector('#infoTitle').textContent=title||''; infoDlg.querySelector('#infoBody').textContent=text||''; try{ infoDlg.showModal(); }catch(e){} }
+function themeInfoBy(panel){ if(!infoDlg) return; infoDlg.classList.remove('s1','s2','s3','s4','s5'); const s=(panel?.dataset?.s||'').slice(0,2).toLowerCase(); if(s) infoDlg.classList.add(s); }
+document.addEventListener('click',(ev)=>{ const btn=ev.target.closest('.info'); if(!btn) return; const panel=btn.closest('.panel'); const title=btn.getAttribute('data-title') || panel?.querySelector('h4')?.textContent?.trim() || 'Dettagli'; const descEl = panel?.querySelector('.s-desc') || panel?.querySelector('.desc'); const desc = btn.getAttribute('data-desc') || (descEl?descEl.textContent.trim():''); themeInfoBy(panel); openInfo(title, desc); });
 /* Render Item */
 function renderItem(area,sector,S,idx,it,onChange){
   const frag=document.createDocumentFragment();
@@ -258,7 +269,7 @@ function renderItem(area,sector,S,idx,it,onChange){
 
   dots.forEach(d=> d.addEventListener('click',()=>{ it.p=+d.dataset.val; syncDots(); save(); onChange?.(); }));
 
-  $('.info',node).addEventListener('click',()=>{const v=desc.style.display!=='block'; desc.style.display=v?'block':'none';});
+  $('.info',node).addEventListener('click',()=>{});
   $('.del',node).addEventListener('click',()=>{ const arr=area.sectors[sector][S]; arr.splice(idx,1); save(); render(); });
 
   node.addEventListener('click',e=>{ if(e.target.classList.contains('dot')) node.classList.remove('highlight'); });

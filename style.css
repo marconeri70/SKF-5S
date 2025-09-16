@@ -160,3 +160,25 @@ body{
   .filters .row{grid-template-columns:1fr}
   .item-row{grid-template-columns:1fr}
 }
+
+/* Footer */
+.app-footer{display:flex;justify-content:flex-end;padding:10px 14px}
+.app-footer small{opacity:.72;font-size:11px}
+/* Logo size */
+.topbar .brand img{height:28px}
+@media(min-width:640px){ .topbar .brand img{height:32px} }
+/* Popup accent */
+#infoDlg .modal{ border:2px solid var(--outline); border-radius:16px; padding:16px 18px; }
+#infoDlg.s1 .modal{ border-color:var(--c1) } #infoDlg.s2 .modal{ border-color:var(--c2) } #infoDlg.s3 .modal{ border-color:var(--c3) } #infoDlg.s4 .modal{ border-color:var(--c4) } #infoDlg.s5 .modal{ border-color:var(--c5) }
+#infoDlg h3{ margin:0 0 8px; font-weight:800 }
+/* Chart toolbar responsive */
+.chart .tools, .chart-tools, .toolbar{ display:flex; gap:.5rem; flex-wrap:wrap; align-items:center }
+.chart .tools label, .chart-tools label, .toolbar label{ font-size:.9rem }
+@media(max-width:480px){ .chart .tools label, .chart-tools label, .toolbar label{ font-size:.8rem } }
+/* Labels beside (i) stronger + themed */
+.panel[data-s] .item .label, .panel[data-s] .item label, .panel[data-s] .item .title { font-weight:700 }
+.panel[data-s="1S"] .item .label, .panel[data-s="1S"] .item label, .panel[data-s="1S"] .item .title { color:#4b3aa7 }
+.panel[data-s="2S"] .item .label, .panel[data-s="2S"] .item label, .panel[data-s="2S"] .item .title { color:#b0471b }
+.panel[data-s="3S"] .item .label, .panel[data-s="3S"] .item label, .panel[data-s="3S"] .item .title { color:#136db3 }
+.panel[data-s="4S"] .item .label, .panel[data-s="4S"] .item label, .panel[data-s="4S"] .item .title { color:#0f8b65 }
+.panel[data-s="5S"] .item .label, .panel[data-s="5S"] .item label, .panel[data-s="5S"] .item .title { color:#463aa7 }
