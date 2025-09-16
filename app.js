@@ -33,31 +33,6 @@ const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const todayISO=()=>new Date().toISOString().slice(0,10);
 const isOverdue=d=>d && new Date(d+'T23:59:59')<new Date();
 const pct=n=>Math.round((n||0)*100)+'%';
-
-// --- Info popup helper (robust) ---
-const infoDlg=document.getElementById('infoDlg');
-function openInfo(title,text){
-  if(!infoDlg) return;
-  infoDlg.querySelector('#infoTitle').textContent = title||'';
-  infoDlg.querySelector('#infoBody').textContent  = text||'';
-  try{ infoDlg.showModal(); }catch(e){}
-}
-function themeInfoBy(panel){
-  if(!infoDlg) return;
-  infoDlg.classList.remove('s1','s2','s3','s4','s5');
-  const s=(panel?.getAttribute('data-s')||'').slice(0,2).toLowerCase();
-  if(s) infoDlg.classList.add(s);
-}
-document.addEventListener('click', (ev)=>{
-  const btn = ev.target.closest('.info');
-  if(!btn) return;
-  const panel = btn.closest('.panel');
-  const title = btn.getAttribute('data-title') || panel?.querySelector('h4')?.textContent?.trim() || 'Dettagli';
-  const descEl = panel?.querySelector('.s-desc') || panel?.querySelector('.desc');
-  const desc = btn.getAttribute('data-desc') || (descEl?descEl.textContent.trim():'');
-  themeInfoBy(panel);
-  openInfo(title, desc);
-});
 const nextCH=()=>{
   const nums=(state.areas||[]).map(a=>((a.line||'').match(/^CH\s*(\d+)/i)||[])[1]).filter(Boolean).map(n=>+n).sort((a,b)=>a-b);
   const last=nums.length?nums[nums.length-1]:1; return `CH ${last+1}`;
@@ -139,7 +114,7 @@ $('#btnExpandAll')?.addEventListener('click',()=>{$$('.area').forEach(a=>a.class
 
 /* Render */
 function render(){
-  const hv=document.querySelector('#appVersion'); if(hv) hv.textContent=''; document.querySelector('#appVersionFooter')?.replaceChildren(VERSION);
+  $('#appVersion')?.replaceChildren(VERSION);
   refreshLineFilter();
 
   sectorSelect.value=ui.sector;
@@ -243,18 +218,11 @@ function renderArea(area){
     $('.score-5S',node).textContent=pct(byS['5S']);
   }
   function updateScore(){
-  try{
-    const tmp=computeByS(area,curSector);
-    const byS=tmp.byS, total=tmp.total, dom=tmp.dom;
-    if(scoreEl) scoreEl.textContent=pct(total);
-    if(domEl) domEl.textContent=`${dom.S} ${pct(dom.v)}`;
-    document.querySelectorAll('.score-pills .pill').forEach(p=>{
-      const s=p.dataset.s; const span=p.querySelector('.val')||p;
-      span.textContent=pct(byS[s]||0);
-    });
+    const {total,dom}=computeByS(area,curSector);
+    scoreEl.textContent=pct(total);
+    domEl.textContent=`${dom.S} ${pct(dom.v)}`;
     save(); updateDashboard(); drawChart(); buildLineButtons();
-  }catch(e){ console && console.warn && console.warn('updateScore', e); }
-}
+  }
 
   // add item nei pannelli
   $$('.panel',node).forEach(p=>{
@@ -385,7 +353,7 @@ function drawChart(list){
     return {line:a.line||'—',byS,tot:t.m?t.s/t.m:0};
   }).sort((a,b)=>a.line.localeCompare(b.line,'it',{numeric:true}));
 
-  const padL=56,padR=22,padT=12,padB=100;
+  const padL=56,padR=16,padT=12,padB=56;
   const bwBase=14,innerBase=4,gapBase=18;
   const z=chartPref.zoom||1;
   const bw=Math.max(8,bwBase*z),
@@ -450,7 +418,7 @@ function drawChart(list){
           const inside=h>=18; const col= inside? textOnBg(COLORS[k]) : TXT;
           ctx.fillStyle=col; ctx.textAlign='center';
           const yText = inside ? Math.max(padT+12, y+12) : Math.max(padT+12, y-2);
-          if(chartPref.stacked && h<18){ ctx.textAlign='left'; ctx.fillStyle=TXT; ctx.font='600 11px system-ui'; ctx.fillText(label, x + bw + 8, y + Math.max(10, h/2+4)); } else { ctx.fillText(label, x+bw/2, yText); }
+          ctx.fillText(label, x+bw/2, yText);
         }
 
         drawOutline(x,y,bw,h,`${g.line}|${k}`);
@@ -482,13 +450,14 @@ function drawChart(list){
           ctx.fillText(sTxt, bx+bw/2, y+14);
         }else{
           ctx.fillStyle = TXT;
-          ctx.textAlign='center'; ctx.font='600 11px system-ui'; ctx.fillText(sTxt, bx+bw/2, padT+plotH+18);
+          ctx.fillText(sTxt, bx+bw/2, Math.max(padT+12, y-6));
         }
 
         drawOutline(bx,y,bw,h, m==='tot' ? `${g.line}|tot` : `${g.line}|${m}`);
         bx+=bw+inner;
       });
-      ctx.save(); ctx.fillStyle=TXT; ctx.textAlign='center'; ctx.font='600 12px system-ui'; ctx.fillText(g.line, x+groupW/2, padT+plotH+40); ctx.restore();
+      ctx.save(); ctx.fillStyle=TXT; ctx.textAlign='center'; ctx.font='600 13px system-ui';
+      ctx.translate(x+groupW/2,padT+plotH+30); ctx.rotate(-Math.PI/12); ctx.fillText(g.line,0,0); ctx.restore();
       x+=groupW+gap;
     });
   }
