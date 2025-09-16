@@ -4,10 +4,10 @@
    - Scheda con 5 sezioni fisse (descrizioni ufficiali)
    - Fix responsive pulsante "Elimina voce"
 =========================================================================== */
-const VERSION='v7.16.1';
-const STORE='skf.5s.v7.16.1';
+const VERSION='v7.17.0';
+const STORE='skf.5s.v7.17';
 const CHART_STORE=STORE+'.chart';
-const POINTS=[0,1,3,5];
+const POINTS=[0,1,2,3,4,5];
 
 /* Descrizioni ufficiali */
 const DESCR = {
@@ -33,6 +33,14 @@ const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const todayISO=()=>new Date().toISOString().slice(0,10);
 const isOverdue=d=>d && new Date(d+'T23:59:59')<new Date();
 const pct=n=>Math.round((n||0)*100)+'%';
+
+const infoDlg=document.getElementById('infoDlg');
+function openInfo(title, text){
+  if(!infoDlg) return;
+  infoDlg.querySelector('#infoTitle').textContent=title||'';
+  infoDlg.querySelector('#infoBody').textContent=text||'';
+  infoDlg.showModal();
+}
 const nextCH=()=>{
   const nums=(state.areas||[]).map(a=>((a.line||'').match(/^CH\s*(\d+)/i)||[])[1]).filter(Boolean).map(n=>+n).sort((a,b)=>a-b);
   const last=nums.length?nums[nums.length-1]:1; return `CH ${last+1}`;
@@ -258,7 +266,7 @@ function renderItem(area,sector,S,idx,it,onChange){
 
   dots.forEach(d=> d.addEventListener('click',()=>{ it.p=+d.dataset.val; syncDots(); save(); onChange?.(); }));
 
-  $('.info',node).addEventListener('click',()=>{const v=desc.style.display!=='block'; desc.style.display=v?'block':'none';});
+  $('.info',node).addEventListener('click',()=>{ openInfo(`${S} — ${it.t||''}`, it.d||''); });
   $('.del',node).addEventListener('click',()=>{ const arr=area.sectors[sector][S]; arr.splice(idx,1); save(); render(); });
 
   node.addEventListener('click',e=>{ if(e.target.classList.contains('dot')) node.classList.remove('highlight'); });
@@ -353,7 +361,7 @@ function drawChart(list){
     return {line:a.line||'—',byS,tot:t.m?t.s/t.m:0};
   }).sort((a,b)=>a.line.localeCompare(b.line,'it',{numeric:true}));
 
-  const padL=56,padR=16,padT=12,padB=56;
+  const padL=56,padR=16,padT=12,padB=70;
   const bwBase=14,innerBase=4,gapBase=18;
   const z=chartPref.zoom||1;
   const bw=Math.max(8,bwBase*z),
@@ -456,8 +464,7 @@ function drawChart(list){
         drawOutline(bx,y,bw,h, m==='tot' ? `${g.line}|tot` : `${g.line}|${m}`);
         bx+=bw+inner;
       });
-      ctx.save(); ctx.fillStyle=TXT; ctx.textAlign='center'; ctx.font='600 13px system-ui';
-      ctx.translate(x+groupW/2,padT+plotH+30); ctx.rotate(-Math.PI/12); ctx.fillText(g.line,0,0); ctx.restore();
+      ctx.save(); ctx.fillStyle=TXT; ctx.textAlign='center'; ctx.font='600 12px system-ui'; ctx.fillText(g.line, x+groupW/2, padT+plotH+22); ctx.restore();
       x+=groupW+gap;
     });
   }
