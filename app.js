@@ -33,6 +33,31 @@ const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const todayISO=()=>new Date().toISOString().slice(0,10);
 const isOverdue=d=>d && new Date(d+'T23:59:59')<new Date();
 const pct=n=>Math.round((n||0)*100)+'%';
+
+// --- Info popup helper (robust) ---
+const infoDlg=document.getElementById('infoDlg');
+function openInfo(title,text){
+  if(!infoDlg) return;
+  infoDlg.querySelector('#infoTitle').textContent = title||'';
+  infoDlg.querySelector('#infoBody').textContent  = text||'';
+  try{ infoDlg.showModal(); }catch(e){}
+}
+function themeInfoBy(panel){
+  if(!infoDlg) return;
+  infoDlg.classList.remove('s1','s2','s3','s4','s5');
+  const s=(panel?.getAttribute('data-s')||'').slice(0,2).toLowerCase();
+  if(s) infoDlg.classList.add(s);
+}
+document.addEventListener('click', (ev)=>{
+  const btn = ev.target.closest('.info');
+  if(!btn) return;
+  const panel = btn.closest('.panel');
+  const title = btn.getAttribute('data-title') || panel?.querySelector('h4')?.textContent?.trim() || 'Dettagli';
+  const descEl = panel?.querySelector('.s-desc') || panel?.querySelector('.desc');
+  const desc = btn.getAttribute('data-desc') || (descEl?descEl.textContent.trim():'');
+  themeInfoBy(panel);
+  openInfo(title, desc);
+});
 const nextCH=()=>{
   const nums=(state.areas||[]).map(a=>((a.line||'').match(/^CH\s*(\d+)/i)||[])[1]).filter(Boolean).map(n=>+n).sort((a,b)=>a-b);
   const last=nums.length?nums[nums.length-1]:1; return `CH ${last+1}`;
@@ -223,12 +248,10 @@ function renderArea(area){
     const byS=tmp.byS, total=tmp.total, dom=tmp.dom;
     if(scoreEl) scoreEl.textContent=pct(total);
     if(domEl) domEl.textContent=`${dom.S} ${pct(dom.v)}`;
-    if(scorePills && scorePills.length){
-      scorePills.forEach(p=>{
-        const s=p.dataset.s; const span=p.querySelector('.val')||p;
-        span.textContent=pct(byS[s]||0);
-      });
-    }
+    document.querySelectorAll('.score-pills .pill').forEach(p=>{
+      const s=p.dataset.s; const span=p.querySelector('.val')||p;
+      span.textContent=pct(byS[s]||0);
+    });
     save(); updateDashboard(); drawChart(); buildLineButtons();
   }catch(e){ console && console.warn && console.warn('updateScore', e); }
 }
@@ -501,10 +524,3 @@ if('serviceWorker' in navigator){
 
 /* Go */
 render();
-function applyInfoTheme(row){
-  const dlg=document.getElementById('infoDlg'); if(!dlg) return;
-  dlg.classList.remove('s1','s2','s3','s4','s5');
-  const s=row?.getAttribute('data-s')||''; const cls=s.slice(0,2).toLowerCase();
-  if(cls) dlg.classList.add(cls);
-}
-

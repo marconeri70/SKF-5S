@@ -1,4 +1,4 @@
-const SW_VERSION = 'skf5s-sw-v7.17.5';
+const SW_VERSION = 'skf5s-sw-v7.17.6';
 const CORE = [
   './',
   './index.html',
