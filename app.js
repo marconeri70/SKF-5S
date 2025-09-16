@@ -33,6 +33,25 @@ const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const todayISO=()=>new Date().toISOString().slice(0,10);
 const isOverdue=d=>d && new Date(d+'T23:59:59')<new Date();
 const pct=n=>Math.round((n||0)*100)+'%';
+
+// --- Info popup helper & delegation ---
+const infoDlg=document.getElementById('infoDlg');
+function openInfo(title,text){
+  if(!infoDlg) return;
+  infoDlg.querySelector('#infoTitle').textContent = title||'';
+  infoDlg.querySelector('#infoBody').textContent  = text||'';
+  infoDlg.showModal();
+}
+document.addEventListener('click',(e)=>{
+  const b=e.target.closest('.info');
+  if(!b) return;
+  const row = b.closest('[data-s]') || b.closest('.item');
+  const sName = row?.getAttribute('data-s') || '';
+  const title = b.getAttribute('data-title') || b.title || sName || 'Dettagli';
+  const descEl = row?.querySelector?.('.s-desc, .desc');
+  const body = b.getAttribute('data-desc') || (descEl?descEl.textContent.trim():'');
+  openInfo(title, body);
+});
 const nextCH=()=>{
   const nums=(state.areas||[]).map(a=>((a.line||'').match(/^CH\s*(\d+)/i)||[])[1]).filter(Boolean).map(n=>+n).sort((a,b)=>a-b);
   const last=nums.length?nums[nums.length-1]:1; return `CH ${last+1}`;
@@ -353,7 +372,7 @@ function drawChart(list){
     return {line:a.line||'—',byS,tot:t.m?t.s/t.m:0};
   }).sort((a,b)=>a.line.localeCompare(b.line,'it',{numeric:true}));
 
-  const padL=56,padR=16,padT=12,padB=92;
+  const padL=56,padR=20,padT=12,padB=96;
   const bwBase=14,innerBase=4,gapBase=18;
   const z=chartPref.zoom||1;
   const bw=Math.max(8,bwBase*z),

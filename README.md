@@ -1,18 +1,17 @@
-# SKF 5S – v7.6.2
+# SKF 5S — v7.17.2
 
-PWA per audit/checklist 5S (Rettifica & Montaggio, Linee multiple).
+## Novità
+- **Grafico**: etichette 1S–5S su riga dedicata, nome linea CH più in basso; padding aumentato.  
+- **Stacked**: sposta le percentuali dei segmenti piccoli a **destra** della barra per essere leggibili.  
+- **Popup informativo**: clic sulla **i** apre un dialog con titolo+descrizione (delegation globale).  
+- **Schede**: badge colorati 1S–5S, nome linea in stile pill; contrasto migliorato in **tema scuro**.  
+- **Pallini 0–5**: stile **3D** con progressione cromatica.  
+- **Versione** nel **footer** (non nel titolo).
 
-## Struttura
-- `index.html` – UI e template
-- `style.css` – tema chiaro/scuro, 5S, chip e pallini 0/1/3/5
-- `app.js` – logica (storage localStorage), grafico canvas, filtri, export/import
-- `sw.js` – cache offline
-- `manifest.json` – PWA icons & colors
-- `assets/` – `skf-logo.png`, `skf-192.png`, `skf-512.png`
+## Aggiornamento
+1. Copia i file in questa cartella (`index.html`, `app.js`, `style.css`, `manifest.json`, `sw.js`).  
+2. Hard refresh (**Ctrl+F5**). Per PWA: *Application → Service Workers* → **Unregister** → ricarica.
 
-## Aggiornare
-1. Cambia i file.
-2. Bump `CACHE_NAME` in `sw.js`.
-3. DevTools → Application → **Unregister** + **Clear site data** → ricarica (Ctrl+F5).
-
-
+## Note
+- Le linee sono **CH** (CH 1, CH 2, …) e hanno punteggi separati.  
+- Per personalizzare il popup, usa attributi `data-title` / `data-desc` sui bottoni `.info` oppure aggiungi il testo nella `.s-desc` della voce.

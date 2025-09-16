@@ -164,28 +164,61 @@ body{
 
 /* Footer version small */
 .app-footer{display:flex;justify-content:flex-end;align-items:center;padding:10px 14px}
-.app-footer small{opacity:.7;font-size:11px}
+.app-footer small{opacity:.72;font-size:11px}
 
-/* Card readability tweaks */
-.area{background:var(--panel); border:1px solid var(--outline); box-shadow: 0 6px 20px rgba(0,0,0,.06);}
-.area h3{letter-spacing:.2px}
-.chips .chip{font-weight:600}
-
-/* Score dots improved */
-.points-dots{display:flex;gap:8px;flex-wrap:wrap}
-.points-dots .dot{width:34px;height:34px;border-radius:999px;border:1px solid var(--outline);display:grid;place-items:center;font-weight:700}
-.points-dots .dot.active{box-shadow:0 0 0 2px var(--blue) inset, 0 0 0 2px rgba(0,0,0,.02)}
-.points-dots .dot[data-val="0"]{background:#f1f3f5}
-.points-dots .dot[data-val="1"]{background:#ffe3e3}
-.points-dots .dot[data-val="2"]{background:#ffe8cc}
-.points-dots .dot[data-val="3"]{background:#d0ebff}
-.points-dots .dot[data-val="4"]{background:#c3fae8}
-.points-dots .dot[data-val="5"]{background:#b2f2bb}
-
-/* Dark theme contrast fix */
-:root[data-theme="dark"]{
-  --text:#e9eefc;
-  --muted:#b8c4e6;
-  --panel:#0f1527;
-  --outline:#2a3a7a;
+/* Line title badge */
+.area .line-title,
+.area input[type="text"].line-title {
+  background:linear-gradient(180deg,#ffffff,#f5f7fb);
+  border:1px solid var(--outline);
+  border-radius:12px;
+  padding:8px 12px;
+  font-weight:700;
+  letter-spacing:.2px;
 }
+:root[data-theme="dark"] .area .line-title,
+:root[data-theme="dark"] .area input[type="text"].line-title {
+  background:linear-gradient(180deg,#0e1630,#0b1226);
+  color:var(--text);
+  border-color:#2b3b7c;
+}
+
+/* Colored S tags */
+.s-tag{display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:26px;border-radius:999px;padding:0 10px;font-weight:800;letter-spacing:.3px;color:#fff}
+.s-tag.s1{background:#7c5cff}
+.s-tag.s2{background:#ff8737}
+.s-tag.s3{background:#2ba6ff}
+.s-tag.s4{background:#28c48d}
+.s-tag.s5{background:#7a5cff}
+
+/* 3D-style score dots */
+.points-dots{display:flex;gap:8px;flex-wrap:wrap}
+.points-dots .dot{
+  width:36px;height:36px;border-radius:50%;
+  background: radial-gradient(120% 120% at 30% 30%, rgba(255,255,255,.85), rgba(255,255,255,.1) 40%, rgba(0,0,0,.12) 100%);
+  border:1px solid rgba(0,0,0,.08);
+  box-shadow: inset 0 2px 6px rgba(255,255,255,.25), inset 0 -6px 10px rgba(0,0,0,.18), 0 6px 12px rgba(0,0,0,.08);
+  display:grid;place-items:center;font-weight:800;
+}
+.points-dots .dot.active{outline:2px solid var(--blue)}
+.points-dots .dot[data-val="0"]{background:#f1f3f5}
+.points-dots .dot[data-val="1"]{background:linear-gradient(#ffe8ef,#ffccd5)}
+.points-dots .dot[data-val="2"]{background:linear-gradient(#fff2e1,#ffd8a8)}
+.points-dots .dot[data-val="3"]{background:linear-gradient(#e6f4ff,#d0ebff)}
+.points-dots .dot[data-val="4"]{background:linear-gradient(#e9fbf4,#c3fae8)}
+.points-dots .dot[data-val="5"]{background:linear-gradient(#e8ffe8,#b2f2bb)}
+
+/* Card readability & chips */
+.area{background:var(--panel); border:1px solid var(--outline); box-shadow: 0 6px 20px rgba(0,0,0,.06);}
+.chips .chip{font-weight:700}
+.chips .chip strong{font-weight:800}
+
+/* Dark theme: improve contrast */
+:root[data-theme="dark"]{
+  --text:#eaf1ff;
+  --muted:#b8c4e6;
+  --panel:#0e1426;
+  --outline:#2b3a7a;
+}
+:root[data-theme="dark"] .chip{background:#121b36;color:#dbe7ff;border-color:#2a3a7a}
+:root[data-theme="dark"] .menu, :root[data-theme="dark"] .dropdown{background:#0f162d;color:var(--text)}
