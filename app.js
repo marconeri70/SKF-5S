@@ -34,24 +34,10 @@ const todayISO=()=>new Date().toISOString().slice(0,10);
 const isOverdue=d=>d && new Date(d+'T23:59:59')<new Date();
 const pct=n=>Math.round((n||0)*100)+'%';
 
-// --- Info popup helper & delegation ---
+// popup helper
 const infoDlg=document.getElementById('infoDlg');
-function openInfo(title,text){
-  if(!infoDlg) return;
-  infoDlg.querySelector('#infoTitle').textContent = title||'';
-  infoDlg.querySelector('#infoBody').textContent  = text||'';
-  infoDlg.showModal();
-}
-document.addEventListener('click',(e)=>{
-  const b=e.target.closest('.info');
-  if(!b) return;
-  const row = b.closest('[data-s]') || b.closest('.item');
-  const sName = row?.getAttribute('data-s') || '';
-  const title = b.getAttribute('data-title') || b.title || sName || 'Dettagli';
-  const descEl = row?.querySelector?.('.s-desc, .desc');
-  const body = b.getAttribute('data-desc') || (descEl?descEl.textContent.trim():'');
-  openInfo(title, body);
-});
+function openInfo(title,text){ try{ infoDlg.querySelector('#infoTitle').textContent=title||''; infoDlg.querySelector('#infoBody').textContent=text||''; infoDlg.showModal(); }catch(e){} }
+document.addEventListener('click',(e)=>{ const b=e.target.closest('.info'); if(!b) return; const row=b.closest('[data-s]')||b.closest('.item'); const sName=row?.getAttribute('data-s')||''; const title=b.getAttribute('data-title')||b.title||sName||'Dettagli'; const descEl=row?.querySelector?.('.s-desc,.desc'); const body=b.getAttribute('data-desc')||(descEl?descEl.textContent.trim():''); openInfo(title, body); });
 const nextCH=()=>{
   const nums=(state.areas||[]).map(a=>((a.line||'').match(/^CH\s*(\d+)/i)||[])[1]).filter(Boolean).map(n=>+n).sort((a,b)=>a-b);
   const last=nums.length?nums[nums.length-1]:1; return `CH ${last+1}`;
@@ -133,7 +119,7 @@ $('#btnExpandAll')?.addEventListener('click',()=>{$$('.area').forEach(a=>a.class
 
 /* Render */
 function render(){
-  document.querySelector('#appVersionFooter')?.replaceChildren(VERSION); const hv=document.querySelector('#appVersion'); if(hv) hv.textContent='';
+  $('#appVersion')?.replaceChildren(VERSION);
   refreshLineFilter();
 
   sectorSelect.value=ui.sector;
@@ -237,10 +223,19 @@ function renderArea(area){
     $('.score-5S',node).textContent=pct(byS['5S']);
   }
   function updateScore(){
-    const {total,dom}=computeByS(area,curSector);
-    scoreEl.textContent=pct(total);
-    domEl.textContent=`${dom.S} ${pct(dom.v)}`;
-    save(); updateDashboard(); drawChart(); buildLineButtons();
+    try{
+      const tmp=computeByS(area,curSector);
+      const byS=tmp.byS, total=tmp.total, dom=tmp.dom;
+      if(scoreEl) scoreEl.textContent=pct(total);
+      if(domEl) domEl.textContent=`${dom.S} ${pct(dom.v)}`;
+      if(scorePills && scorePills.length){
+        scorePills.forEach(p=>{
+          const s=p.dataset.s; const span=p.querySelector('.val')||p;
+          span.textContent=pct(byS[s]||0);
+        });
+      }
+      save(); updateDashboard(); drawChart(); buildLineButtons();
+    }catch(e){ console && console.warn && console.warn('updateScore guard', e); }
   }
 
   // add item nei pannelli
