@@ -33,6 +33,25 @@ const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const todayISO=()=>new Date().toISOString().slice(0,10);
 const isOverdue=d=>d && new Date(d+'T23:59:59')<new Date();
 const pct=n=>Math.round((n||0)*100)+'%';
+
+// --- Info popup helper & delegation ---
+const infoDlg=document.getElementById('infoDlg');
+function openInfo(title,text){
+  if(!infoDlg) return;
+  infoDlg.querySelector('#infoTitle').textContent = title||'';
+  infoDlg.querySelector('#infoBody').textContent  = text||'';
+  infoDlg.showModal();
+}
+document.addEventListener('click',(e)=>{
+  const b=e.target.closest('.info');
+  if(!b) return;
+  const row = b.closest('[data-s]') || b.closest('.item');
+  const sName = row?.getAttribute('data-s') || '';
+  const title = b.getAttribute('data-title') || b.title || sName || 'Dettagli';
+  const descEl = row?.querySelector?.('.s-desc, .desc');
+  const body = b.getAttribute('data-desc') || (descEl?descEl.textContent.trim():'');
+  openInfo(title, body);
+});
 const nextCH=()=>{
   const nums=(state.areas||[]).map(a=>((a.line||'').match(/^CH\s*(\d+)/i)||[])[1]).filter(Boolean).map(n=>+n).sort((a,b)=>a-b);
   const last=nums.length?nums[nums.length-1]:1; return `CH ${last+1}`;
@@ -114,7 +133,7 @@ $('#btnExpandAll')?.addEventListener('click',()=>{$$('.area').forEach(a=>a.class
 
 /* Render */
 function render(){
-  $('#appVersion')?.replaceChildren(VERSION);
+  document.querySelector('#appVersionFooter')?.replaceChildren(VERSION); const hv=document.querySelector('#appVersion'); if(hv) hv.textContent='';
   refreshLineFilter();
 
   sectorSelect.value=ui.sector;
@@ -218,16 +237,9 @@ function renderArea(area){
     $('.score-5S',node).textContent=pct(byS['5S']);
   }
   function updateScore(){
-    const tmp=computeByS(area,curSector);
-    const byS=tmp.byS, total=tmp.total, dom=tmp.dom;
+    const {total,dom}=computeByS(area,curSector);
     scoreEl.textContent=pct(total);
     domEl.textContent=`${dom.S} ${pct(dom.v)}`;
-    if(scorePills && scorePills.length){
-      scorePills.forEach(p=>{
-        const s=p.dataset.s;
-        p.querySelector('.val').textContent=pct(byS[s]||0);
-      });
-    }
     save(); updateDashboard(); drawChart(); buildLineButtons();
   }
 
@@ -425,7 +437,7 @@ function drawChart(list){
           const inside=h>=18; const col= inside? textOnBg(COLORS[k]) : TXT;
           ctx.fillStyle=col; ctx.textAlign='center';
           const yText = inside ? Math.max(padT+12, y+12) : Math.max(padT+12, y-2);
-          ctx.fillText(label, x+bw/2, yText);
+          if(chartPref.stacked && h<16){ ctx.textAlign='left'; ctx.fillStyle=TXT; ctx.font='600 11px system-ui'; ctx.fillText(label, x + bw + 6, y + Math.max(10, h/2+4)); } else { ctx.fillText(label, x+bw/2, yText); }
         }
 
         drawOutline(x,y,bw,h,`${g.line}|${k}`);
