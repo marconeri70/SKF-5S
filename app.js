@@ -4,7 +4,7 @@
    - Scheda con 5 sezioni fisse (descrizioni ufficiali)
    - Fix responsive pulsante "Elimina voce"
 =========================================================================== */
-const VERSION='v7.17.10';
+const VERSION='v7.17.12';
 const STORE='skf.5s.v7.16';
 const CHART_STORE=STORE+'.chart';
 const POINTS=[0,1,3,5];
@@ -114,7 +114,7 @@ $('#btnExpandAll')?.addEventListener('click',()=>{$$('.area').forEach(a=>a.class
 
 /* Render */
 
-// === Info popup (global, single) ===
+// === Global Info Popup ===
 const infoDlg=document.getElementById('infoDlg');
 function openInfo(title,text){
   if(!infoDlg) return;
@@ -124,22 +124,23 @@ function openInfo(title,text){
 }
 function themeInfoBy(panel){
   if(!infoDlg) return;
-  infoDlg.className=''; // reset
+  infoDlg.className='';
   const s=(panel?.getAttribute('data-s')||'').slice(0,2).toLowerCase();
   if(s) infoDlg.classList.add(s);
 }
+// Open popup on .info click; never toggle panel text
 document.addEventListener('click',(ev)=>{
   const btn = ev.target.closest('.info');
   if(!btn) return;
   const panel = btn.closest('.panel');
-  const title = panel?.querySelector('h4')?.textContent?.trim() || btn.getAttribute('aria-label') || 'Dettagli';
+  const title = panel?.querySelector('h4')?.textContent?.trim() || 'Dettagli';
   const descEl = panel?.querySelector('.s-desc') || panel?.querySelector('.desc');
   const body = descEl?descEl.textContent.trim():'';
   themeInfoBy(panel);
   openInfo(title, body);
 });
 function render(){
-  const hv=document.querySelector('#appVersion'); if(hv) hv.textContent=''; document.querySelector('#appVersionFooter')?.replaceChildren(VERSION);
+  $('#appVersion')?.replaceChildren(VERSION);
   refreshLineFilter();
 
   sectorSelect.value=ui.sector;
@@ -243,11 +244,18 @@ function renderArea(area){
     $('.score-5S',node).textContent=pct(byS['5S']);
   }
   function updateScore(){
-    const {total,dom}=computeByS(area,curSector);
-    scoreEl.textContent=pct(total);
-    domEl.textContent=`${dom.S} ${pct(dom.v)}`;
-    save(); updateDashboard(); drawChart(); buildLineButtons();
-  }
+  const {byS,total,dom}=computeByS(area,curSector);
+  if(scoreEl) scoreEl.textContent=pct(total);
+  if(domEl) domEl.textContent=`${dom.S} ${pct(dom.v)}`;
+  document.querySelectorAll('.score-pills .pill').forEach(p=>{
+    const s = p.getAttribute('data-s');
+    const v = byS[s]||0;
+    const val = p.querySelector('.val');
+    if(val) val.textContent=pct(v);
+    else p.textContent = pct(v);
+  });
+  save(); updateDashboard(); drawChart(); buildLineButtons();
+}
 
   // add item nei pannelli
   $$('.panel',node).forEach(p=>{
@@ -283,7 +291,7 @@ function renderItem(area,sector,S,idx,it,onChange){
 
   dots.forEach(d=> d.addEventListener('click',()=>{ it.p=+d.dataset.val; syncDots(); save(); onChange?.(); }));
 
-  $('.info',node).addEventListener('click',()=>{/* handled globally */});
+  $('.info',node).addEventListener('click',()=>{/* popup handled globally */});
   $('.del',node).addEventListener('click',()=>{ const arr=area.sectors[sector][S]; arr.splice(idx,1); save(); render(); });
 
   node.addEventListener('click',e=>{ if(e.target.classList.contains('dot')) node.classList.remove('highlight'); });
@@ -378,7 +386,7 @@ function drawChart(list){
     return {line:a.line||'—',byS,tot:t.m?t.s/t.m:0};
   }).sort((a,b)=>a.line.localeCompare(b.line,'it',{numeric:true}));
 
-  const padL=56,padR=16,padT=12,padB=56;
+  const padL=56,padR=16,padT=12,padB=100;
   const bwBase=14,innerBase=4,gapBase=18;
   const z=chartPref.zoom||1;
   const bw=Math.max(8,bwBase*z),
@@ -475,14 +483,13 @@ function drawChart(list){
           ctx.fillText(sTxt, bx+bw/2, y+14);
         }else{
           ctx.fillStyle = TXT;
-          ctx.fillText(sTxt, bx+bw/2, Math.max(padT+12, y-6));
+          // S label moved to axis; handled later
         }
 
         drawOutline(bx,y,bw,h, m==='tot' ? `${g.line}|tot` : `${g.line}|${m}`);
         bx+=bw+inner;
       });
-      ctx.save(); ctx.fillStyle=TXT; ctx.textAlign='center'; ctx.font='600 13px system-ui';
-      ctx.translate(x+groupW/2,padT+plotH+30); ctx.rotate(-Math.PI/12); ctx.fillText(g.line,0,0); ctx.restore();
+      ctx.save(); ctx.fillStyle=TXT; ctx.textAlign='center'; ctx.font='600 12px system-ui'; ctx.fillText(g.line, x+groupW/2, padT+plotH+42); ctx.restore();
       x+=groupW+gap;
     });
   }
@@ -518,3 +525,18 @@ if('serviceWorker' in navigator){
 
 /* Go */
 render();
+
+function scrollToS(container, s){
+  const panel = container.querySelector(`.panel[data-s="${s}"]`);
+  if(panel){ panel.scrollIntoView({behavior:'smooth', block:'center'});
+    panel.classList.add('flash');
+    setTimeout(()=>panel.classList.remove('flash'), 1600);
+  }
+}
+document.addEventListener('click', (ev)=>{
+  const pill = ev.target.closest('.score-pills .pill');
+  if(!pill) return;
+  const line = pill.closest('.line-card') || document;
+  const s = pill.getAttribute('data-s');
+  if(s) scrollToS(line, s);
+});
