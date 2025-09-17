@@ -208,18 +208,3 @@ button.del, .btn-delete, .danger{ background:#ff6277 !important; color:#fff !imp
   .zoom{flex-wrap:wrap; justify-content:flex-start}
   .zoom label span{font-size:.9rem}
 }
-
-/* --- v7.17.16 --- */
-.area-hd .area-line{font-size:1.3rem;font-weight:800;color:var(--text)}
-.score .score-pill{box-shadow:inset 0 2px 0 #ffffffaa,0 1px 3px #0000001a;padding:4px 8px;border-radius:8px}
-.score .score-pill b{font-weight:800}
-.panel.flash-panel{animation:flashPanel 1.2s ease 1}
-@keyframes flashPanel{0%{box-shadow:0 0 0 3px #ff4444aa inset}100%{box-shadow:none}}
-#infoDlg .modal{border:2px solid var(--outline);border-radius:16px;padding:16px 18px;background:var(--panel);color:var(--text)}
-#infoDlg.s1 .modal{border-color:var(--c1);background:color-mix(in oklab, var(--c1) 12%, var(--panel))}
-#infoDlg.s2 .modal{border-color:var(--c2);background:color-mix(in oklab, var(--c2) 12%, var(--panel))}
-#infoDlg.s3 .modal{border-color:var(--c3);background:color-mix(in oklab, var(--c3) 12%, var(--panel))}
-#infoDlg.s4 .modal{border-color:var(--c4);background:color-mix(in oklab, var(--c4) 12%, var(--panel))}
-#infoDlg.s5 .modal{border-color:var(--c5);background:color-mix(in oklab, var(--c5) 12%, var(--panel))}
-:root[data-theme="dark"] body{color:#eaf1ff}
-:root[data-theme="dark"] .panel .item-desc{background:rgba(255,255,255,.06);color:#eaf1ff}

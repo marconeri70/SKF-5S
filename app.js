@@ -4,8 +4,8 @@
    - Scheda con 5 sezioni fisse (descrizioni ufficiali)
    - Fix responsive pulsante "Elimina voce"
 =========================================================================== */
-const VERSION='v7.17.16';
-const STORE='skf.5s.v7.17.16';
+const VERSION='v7.17.10';
+const STORE='skf.5s.v7.16';
 const CHART_STORE=STORE+'.chart';
 const POINTS=[0,1,3,5];
 
@@ -242,18 +242,8 @@ function renderArea(area){
     $('.score-4S',node).textContent=pct(byS['4S']);
     $('.score-5S',node).textContent=pct(byS['5S']);
   }
-  function updateScore(node, area, curSector, scoreEl, domEl){
-  const {byS,total,dom}=computeByS(area,curSector);
-  if(scoreEl) scoreEl.textContent=pct(total);
-  if(domEl) domEl.textContent=`${dom.S} ${pct(dom.v)}`;
-  if(node){
-    node.querySelector('.score-1S').textContent=pct(byS['1S']);
-    node.querySelector('.score-2S').textContent=pct(byS['2S']);
-    node.querySelector('.score-3S').textContent=pct(byS['3S']);
-    node.querySelector('.score-4S').textContent=pct(byS['4S']);
-    node.querySelector('.score-5S').textContent=pct(byS['5S']);
-  }
-}computeByS(area,curSector);
+  function updateScore(){
+    const {total,dom}=computeByS(area,curSector);
     scoreEl.textContent=pct(total);
     domEl.textContent=`${dom.S} ${pct(dom.v)}`;
     save(); updateDashboard(); drawChart(); buildLineButtons();
