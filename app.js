@@ -253,7 +253,7 @@ function renderArea(area){
     node.querySelector('.score-4S').textContent=pct(byS['4S']);
     node.querySelector('.score-5S').textContent=pct(byS['5S']);
   }
-}=computeByS(area,curSector);
+}computeByS(area,curSector);
     scoreEl.textContent=pct(total);
     domEl.textContent=`${dom.S} ${pct(dom.v)}`;
     save(); updateDashboard(); drawChart(); buildLineButtons();
