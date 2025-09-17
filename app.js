@@ -440,9 +440,9 @@ function drawChart(list){
 
         if(v>0){
           const label=Math.round(v*100)+'%';
-          const inside=h>=18; const col= inside? textOnBg(COLORS[k]) : TXT;
+          const inside=h>=20; const col= inside? textOnBg(COLORS[k]) : TXT;
           ctx.fillStyle=col; ctx.textAlign='center';
-          const yText = inside ? Math.max(padT+12, y+12) : Math.max(padT+12, y-2);
+          const yText = inside ? Math.max(padT+12, y+12) : Math.max(padT+12, y-4);
           ctx.fillText(label, x+bw/2, yText);
         }
 
@@ -462,20 +462,22 @@ function drawChart(list){
         const v=(m==='tot'?g.tot:g.byS[m])||0, h=v*plotH, y=padT+plotH-h;
         ctx.fillStyle=COLORS[m]; ctx.fillRect(bx,y,bw,h);
 
-        // percentuale sopra la colonna
-        ctx.fillStyle=TXT; ctx.textAlign='center';
-        const yPct = y-4;
-        ctx.fillText(Math.round(v*100)+'%',bx+bw/2,Math.max(padT+12,yPct));
-
-        // sigla S/Tot dentro o sopra senza collisioni
-        const inside = h>=20;
+        // percentuale sopra la colonna (evita 0% per non affollare)
+        if(v>0){
+          ctx.fillStyle=TXT; ctx.textAlign='center';
+          const yPct = y-6;
+          ctx.fillText(Math.round(v*100)+'%',bx+bw/2,Math.max(padT+12,yPct));
+        }
+        // sigla S/Tot dentro o sopra senza collisioni con offset distinto
+        const inside = h>=22;
         const sTxt = m==='tot' ? 'Tot' : m;
         if(inside){
           ctx.fillStyle = textOnBg(COLORS[m]);
           ctx.fillText(sTxt, bx+bw/2, y+14);
         }else{
           ctx.fillStyle = TXT;
-          ctx.fillText(sTxt, bx+bw/2, Math.max(padT+12, y-6));
+          const yS = v>0 ? y-20 : y-6;
+          ctx.fillText(sTxt, bx+bw/2, Math.max(padT+12, yS));
         }
 
         drawOutline(bx,y,bw,h, m==='tot' ? `${g.line}|tot` : `${g.line}|${m}`);

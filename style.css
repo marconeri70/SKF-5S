@@ -130,7 +130,7 @@ body{
 
 .panels{margin-top:6px;display:grid;gap:16px}
 .panel h4{margin:.2rem 0}
-.s-desc{margin:.25rem 0 .75rem;color:var(--muted)}
+.s-desc{ display:none !important; margin:.25rem 0 .75rem;color:var(--muted)}
 
 .items{display:grid;gap:10px}
 .item{border:1px solid var(--outline);border-radius:12px;background:var(--card);padding:10px}
@@ -198,4 +198,13 @@ button.del, .btn-delete, .danger{ background:#ff6277 !important; color:#fff !imp
 @media (max-width:480px){
   .chart .tools label, .chart-tools label, .toolbar label{ font-size:.8rem; }
   .chart .tools{ justify-content:flex-start }
+}
+
+.app-footer{display:flex;justify-content:flex-end;padding:10px 14px}
+.app-footer small{opacity:.72;font-size:11px}
+
+@media (max-width:600px){
+  .kpis{grid-template-columns:1fr; gap:10px}
+  .zoom{flex-wrap:wrap; justify-content:flex-start}
+  .zoom label span{font-size:.9rem}
 }
