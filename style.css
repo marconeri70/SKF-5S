@@ -161,24 +161,41 @@ body{
   .item-row{grid-template-columns:1fr}
 }
 
-/* Footer */
-.app-footer{display:flex;justify-content:flex-end;padding:10px 14px}
-.app-footer small{opacity:.72;font-size:11px}
-/* Logo size */
-.topbar .brand img{height:28px}
-@media(min-width:640px){ .topbar .brand img{height:32px} }
-/* Popup accent */
-#infoDlg .modal{ border:2px solid var(--outline); border-radius:16px; padding:16px 18px; }
-#infoDlg.s1 .modal{ border-color:var(--c1) } #infoDlg.s2 .modal{ border-color:var(--c2) } #infoDlg.s3 .modal{ border-color:var(--c3) } #infoDlg.s4 .modal{ border-color:var(--c4) } #infoDlg.s5 .modal{ border-color:var(--c5) }
-#infoDlg h3{ margin:0 0 8px; font-weight:800 }
+/* Panel outline by S */
+.panel[data-s="1S"]{ border:2px solid var(--c1) !important }
+.panel[data-s="2S"]{ border:2px solid var(--c2) !important }
+.panel[data-s="3S"]{ border:2px solid var(--c3) !important }
+.panel[data-s="4S"]{ border:2px solid var(--c4) !important }
+.panel[data-s="5S"]{ border:2px solid var(--c5) !important }
+/* Score dots 3D */
+.points-dots .dot{
+  width:38px;height:38px;border-radius:50%;
+  background: radial-gradient(120% 120% at 30% 30%, rgba(255,255,255,.9), rgba(255,255,255,.2) 40%, rgba(0,0,0,.16) 100%);
+  border:1px solid rgba(0,0,0,.08);
+  box-shadow: inset 0 2px 6px rgba(255,255,255,.28), inset 0 -7px 12px rgba(0,0,0,.20), 0 6px 12px rgba(0,0,0,.08);
+  display:grid;place-items:center;font-weight:800;
+}
+.points-dots .dot.active{ outline:2px solid var(--blue); }
+/* Delete buttons */
+button.del, .btn-delete, .danger{ background:#ff6277 !important; color:#fff !important; border-color:#ff6277 !important }
+/* Labels beside i more evident & themed */
+.panel[data-s] .item .label, .panel[data-s] .item label, .panel[data-s] .item .title{ font-weight:700 }
+.panel[data-s="1S"] .item .label, .panel[data-s="1S"] .item label, .panel[data-s="1S"] .item .title{ color:#4b3aa7 }
+.panel[data-s="2S"] .item .label, .panel[data-s="2S"] .item label, .panel[data-s="2S"] .item .title{ color:#b0471b }
+.panel[data-s="3S"] .item .label, .panel[data-s="3S"] .item label, .panel[data-s="3S"] .item .title{ color:#136db3 }
+.panel[data-s="4S"] .item .label, .panel[data-s="4S"] .item label, .panel[data-s="4S"] .item .title{ color:#0f8b65 }
+.panel[data-s="5S"] .item .label, .panel[data-s="5S"] .item label, .panel[data-s="5S"] .item .title{ color:#463aa7 }
+/* Popup themed border + subtle bg contrast by S */
+#infoDlg .modal{ border:2px solid var(--outline); border-radius:16px; padding:16px 18px; background:var(--panel); color:var(--text) }
+#infoDlg.s1 .modal{ border-color:var(--c1); background: color-mix(in oklab, var(--c1) 12%, var(--panel)); }
+#infoDlg.s2 .modal{ border-color:var(--c2); background: color-mix(in oklab, var(--c2) 12%, var(--panel)); }
+#infoDlg.s3 .modal{ border-color:var(--c3); background: color-mix(in oklab, var(--c3) 12%, var(--panel)); }
+#infoDlg.s4 .modal{ border-color:var(--c4); background: color-mix(in oklab, var(--c4) 12%, var(--panel)); }
+#infoDlg.s5 .modal{ border-color:var(--c5); background: color-mix(in oklab, var(--c5) 12%, var(--panel)); }
 /* Chart toolbar responsive */
 .chart .tools, .chart-tools, .toolbar{ display:flex; gap:.5rem; flex-wrap:wrap; align-items:center }
 .chart .tools label, .chart-tools label, .toolbar label{ font-size:.9rem }
-@media(max-width:480px){ .chart .tools label, .chart-tools label, .toolbar label{ font-size:.8rem } }
-/* Labels beside (i) stronger + themed */
-.panel[data-s] .item .label, .panel[data-s] .item label, .panel[data-s] .item .title { font-weight:700 }
-.panel[data-s="1S"] .item .label, .panel[data-s="1S"] .item label, .panel[data-s="1S"] .item .title { color:#4b3aa7 }
-.panel[data-s="2S"] .item .label, .panel[data-s="2S"] .item label, .panel[data-s="2S"] .item .title { color:#b0471b }
-.panel[data-s="3S"] .item .label, .panel[data-s="3S"] .item label, .panel[data-s="3S"] .item .title { color:#136db3 }
-.panel[data-s="4S"] .item .label, .panel[data-s="4S"] .item label, .panel[data-s="4S"] .item .title { color:#0f8b65 }
-.panel[data-s="5S"] .item .label, .panel[data-s="5S"] .item label, .panel[data-s="5S"] .item .title { color:#463aa7 }
+@media (max-width:480px){
+  .chart .tools label, .chart-tools label, .toolbar label{ font-size:.8rem; }
+  .chart .tools{ justify-content:flex-start }
+}
