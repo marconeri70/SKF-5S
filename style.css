@@ -161,34 +161,13 @@ body{
   .item-row{grid-template-columns:1fr}
 }
 
-:root[data-theme="dark"] body, 
-:root[data-theme="dark"] .panel, 
-:root[data-theme="dark"] .desc, 
-:root[data-theme="dark"] .s-desc, 
-:root[data-theme="dark"] .kpi, 
-:root[data-theme="dark"] .pill, 
-:root[data-theme="dark"] label, 
-:root[data-theme="dark"] input, 
-:root[data-theme="dark"] textarea { color:#eaf1ff !important; }
-
-.panel .s-desc{ padding:12px 14px; border-radius:12px; margin-bottom:10px; }
-:root:not([data-theme="dark"]) .panel[data-s="1S"] .s-desc{ background:#f3ecff; color:#1e1b2e; border:1px solid var(--c1) }
-:root:not([data-theme="dark"]) .panel[data-s="2S"] .s-desc{ background:#fff1e6; color:#3a2314; border:1px solid var(--c2) }
-:root:not([data-theme="dark"]) .panel[data-s="3S"] .s-desc{ background:#eaf5ff; color:#102033; border:1px solid var(--c3) }
-:root:not([data-theme="dark"]) .panel[data-s="4S"] .s-desc{ background:#e9fff6; color:#0f2a23; border:1px solid var(--c4) }
-:root:not([data-theme="dark"]) .panel[data-s="5S"] .s-desc{ background:#eef0ff; color:#171b33; border:1px solid var(--c5) }
-:root[data-theme="dark"] .panel[data-s="1S"] .s-desc{ background:rgba(124,92,255,.16); color:#f5f1ff; border:1px solid var(--c1) }
-:root[data-theme="dark"] .panel[data-s="2S"] .s-desc{ background:rgba(255,135,55,.16); color:#fff3ea; border:1px solid var(--c2) }
-:root[data-theme="dark"] .panel[data-s="3S"] .s-desc{ background:rgba(43,166,255,.16); color:#ecf6ff; border:1px solid var(--c3) }
-:root[data-theme="dark"] .panel[data-s="4S"] .s-desc{ background:rgba(40,196,141,.16); color:#ebfff8; border:1px solid var(--c4) }
-:root[data-theme="dark"] .panel[data-s="5S"] .s-desc{ background:rgba(122,92,255,.16); color:#f5f1ff; border:1px solid var(--c5) }
-
+/* Panel outline by S */
 .panel[data-s="1S"]{ border:2px solid var(--c1) !important }
 .panel[data-s="2S"]{ border:2px solid var(--c2) !important }
 .panel[data-s="3S"]{ border:2px solid var(--c3) !important }
 .panel[data-s="4S"]{ border:2px solid var(--c4) !important }
 .panel[data-s="5S"]{ border:2px solid var(--c5) !important }
-
+/* Score dots 3D */
 .points-dots .dot{
   width:38px;height:38px;border-radius:50%;
   background: radial-gradient(120% 120% at 30% 30%, rgba(255,255,255,.9), rgba(255,255,255,.2) 40%, rgba(0,0,0,.16) 100%);
@@ -197,37 +176,26 @@ body{
   display:grid;place-items:center;font-weight:800;
 }
 .points-dots .dot.active{ outline:2px solid var(--blue); }
-
+/* Delete buttons */
 button.del, .btn-delete, .danger{ background:#ff6277 !important; color:#fff !important; border-color:#ff6277 !important }
-
+/* Labels beside i more evident & themed */
+.panel[data-s] .item .label, .panel[data-s] .item label, .panel[data-s] .item .title{ font-weight:700 }
+.panel[data-s="1S"] .item .label, .panel[data-s="1S"] .item label, .panel[data-s="1S"] .item .title{ color:#4b3aa7 }
+.panel[data-s="2S"] .item .label, .panel[data-s="2S"] .item label, .panel[data-s="2S"] .item .title{ color:#b0471b }
+.panel[data-s="3S"] .item .label, .panel[data-s="3S"] .item label, .panel[data-s="3S"] .item .title{ color:#136db3 }
+.panel[data-s="4S"] .item .label, .panel[data-s="4S"] .item label, .panel[data-s="4S"] .item .title{ color:#0f8b65 }
+.panel[data-s="5S"] .item .label, .panel[data-s="5S"] .item label, .panel[data-s="5S"] .item .title{ color:#463aa7 }
+/* Popup themed border + subtle bg contrast by S */
 #infoDlg .modal{ border:2px solid var(--outline); border-radius:16px; padding:16px 18px; background:var(--panel); color:var(--text) }
 #infoDlg.s1 .modal{ border-color:var(--c1); background: color-mix(in oklab, var(--c1) 12%, var(--panel)); }
 #infoDlg.s2 .modal{ border-color:var(--c2); background: color-mix(in oklab, var(--c2) 12%, var(--panel)); }
 #infoDlg.s3 .modal{ border-color:var(--c3); background: color-mix(in oklab, var(--c3) 12%, var(--panel)); }
 #infoDlg.s4 .modal{ border-color:var(--c4); background: color-mix(in oklab, var(--c4) 12%, var(--panel)); }
 #infoDlg.s5 .modal{ border-color:var(--c5); background: color-mix(in oklab, var(--c5) 12%, var(--panel)); }
-
-.chart .tools, .chart-tools, .toolbar{ display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; max-width:100% }
-.chart .tools label, .chart-tools label, .toolbar label{ font-size:.9rem; white-space:nowrap }
+/* Chart toolbar responsive */
+.chart .tools, .chart-tools, .toolbar{ display:flex; gap:.5rem; flex-wrap:wrap; align-items:center }
+.chart .tools label, .chart-tools label, .toolbar label{ font-size:.9rem }
 @media (max-width:480px){
   .chart .tools label, .chart-tools label, .toolbar label{ font-size:.8rem; }
   .chart .tools{ justify-content:flex-start }
 }
-
-.s-recap .pill{ font-weight:800; }
-:root[data-theme="dark"] .s-recap .pill{ color:#0b1220; background:#fff; }
-
-@keyframes flashRed{ 0%{box-shadow:0 0 0 0 rgba(255,0,0,.0)} 25%{box-shadow:0 0 0 4px rgba(255,0,0,.35)} 50%{box-shadow:0 0 0 0 rgba(255,0,0,.0)} 75%{box-shadow:0 0 0 4px rgba(255,0,0,.35)} 100%{box-shadow:0 0 0 0 rgba(255,0,0,.0)} }
-.panel.flash{ animation: flashRed 1.6s ease-in-out 1 }
-
-.line-card .line-name, .line-card h3.line-name{ font-size:1.15rem; font-weight:800 }
-
-.app-footer{display:flex;justify-content:flex-end;padding:10px 14px}
-.app-footer small{opacity:.72;font-size:11px}
-#infoDlg .modal{ border:2px solid var(--outline); border-radius:16px; padding:16px 18px; background:var(--panel); color:var(--text) }
-#infoDlg.s1 .modal{ border-color:var(--c1) }
-#infoDlg.s2 .modal{ border-color:var(--c2) }
-#infoDlg.s3 .modal{ border-color:var(--c3) }
-#infoDlg.s4 .modal{ border-color:var(--c4) }
-#infoDlg.s5 .modal{ border-color:var(--c5) }
-:root[data-theme="dark"] body { color:#eaf1ff }
