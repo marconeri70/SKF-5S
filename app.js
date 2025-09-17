@@ -4,8 +4,8 @@
    - Scheda con 5 sezioni fisse (descrizioni ufficiali)
    - Fix responsive pulsante "Elimina voce"
 =========================================================================== */
-const VERSION='v7.17.10';
-const STORE='skf.5s.v7.16';
+const VERSION='v7.17.17';
+const STORE='skf.5s.v7.17.17';
 const CHART_STORE=STORE+'.chart';
 const POINTS=[0,1,3,5];
 
@@ -242,8 +242,15 @@ function renderArea(area){
     $('.score-4S',node).textContent=pct(byS['4S']);
     $('.score-5S',node).textContent=pct(byS['5S']);
   }
-  function updateScore(){
-    const {total,dom}=computeByS(area,curSector);
+  function updateScore(node, area, curSector, scoreEl, domEl){
+  const {byS,total,dom}=computeByS(area,curSector);
+  if(scoreEl) scoreEl.textContent=pct(total);
+  if(domEl) domEl.textContent=`${dom.S} ${pct(dom.v)}`;
+  if(node){
+    const set=(s,cls)=>{const el=node.querySelector(cls); if(el) el.textContent=pct(byS[s]||0)};
+    set('1S','.score-1S'); set('2S','.score-2S'); set('3S','.score-3S'); set('4S','.score-4S'); set('5S','.score-5S');
+  }
+}=computeByS(area,curSector);
     scoreEl.textContent=pct(total);
     domEl.textContent=`${dom.S} ${pct(dom.v)}`;
     save(); updateDashboard(); drawChart(); buildLineButtons();
@@ -440,9 +447,9 @@ function drawChart(list){
 
         if(v>0){
           const label=Math.round(v*100)+'%';
-          const inside=h>=20; const col= inside? textOnBg(COLORS[k]) : TXT;
+          const inside=h>=18; const col= inside? textOnBg(COLORS[k]) : TXT;
           ctx.fillStyle=col; ctx.textAlign='center';
-          const yText = inside ? Math.max(padT+12, y+12) : Math.max(padT+12, y-4);
+          const yText = inside ? Math.max(padT+12, y+12) : Math.max(padT+12, y-2);
           ctx.fillText(label, x+bw/2, yText);
         }
 
@@ -462,22 +469,20 @@ function drawChart(list){
         const v=(m==='tot'?g.tot:g.byS[m])||0, h=v*plotH, y=padT+plotH-h;
         ctx.fillStyle=COLORS[m]; ctx.fillRect(bx,y,bw,h);
 
-        // percentuale sopra la colonna (evita 0% per non affollare)
-        if(v>0){
-          ctx.fillStyle=TXT; ctx.textAlign='center';
-          const yPct = y-6;
-          ctx.fillText(Math.round(v*100)+'%',bx+bw/2,Math.max(padT+12,yPct));
-        }
-        // sigla S/Tot dentro o sopra senza collisioni con offset distinto
-        const inside = h>=22;
+        // percentuale sopra la colonna
+        ctx.fillStyle=TXT; ctx.textAlign='center';
+        const yPct = y-4;
+        ctx.fillText(Math.round(v*100)+'%',bx+bw/2,Math.max(padT+12,yPct));
+
+        // sigla S/Tot dentro o sopra senza collisioni
+        const inside = h>=20;
         const sTxt = m==='tot' ? 'Tot' : m;
         if(inside){
           ctx.fillStyle = textOnBg(COLORS[m]);
           ctx.fillText(sTxt, bx+bw/2, y+14);
         }else{
           ctx.fillStyle = TXT;
-          const yS = v>0 ? y-20 : y-6;
-          ctx.fillText(sTxt, bx+bw/2, Math.max(padT+12, yS));
+          ctx.fillText(sTxt, bx+bw/2, Math.max(padT+12, y-6));
         }
 
         drawOutline(bx,y,bw,h, m==='tot' ? `${g.line}|tot` : `${g.line}|${m}`);
@@ -520,3 +525,36 @@ if('serviceWorker' in navigator){
 
 /* Go */
 render();
+
+// v7.17.17 addon: pill focus + popup i
+(function(){
+  const dlg=document.getElementById('infoDlg');
+  document.addEventListener('click', (ev)=>{
+    const pill=ev.target.closest('.score-pill');
+    if(pill){
+      const txt=(pill.dataset.s || pill.textContent||'').trim();
+      const s = txt.slice(0,2);
+      const node=pill.closest('.area, .line, body');
+      const target=node && node.querySelector?.(`.panel[data-s="${s}"]`);
+      if(target){
+        target.scrollIntoView({behavior:'smooth',block:'center'});
+        target.classList.add('flash-panel');
+        setTimeout(()=>target.classList.remove('flash-panel'),1200);
+      }
+    }
+    const infoBtn=ev.target.closest('.info');
+    if(infoBtn){
+      const panel=infoBtn.closest('.panel');
+      const title=panel?.querySelector('h4')?.textContent?.trim()||'Dettagli';
+      const desc=panel?.querySelector('.s-desc, .item-desc, .desc, .desc-rich');
+      if(panel && dlg){
+        dlg.className='';
+        const s=(panel.getAttribute('data-s')||'').slice(0,2).toLowerCase();
+        if(s) dlg.classList.add(s);
+        dlg.querySelector('#infoTitle').textContent=title;
+        dlg.querySelector('#infoBody').textContent=(desc?.textContent||'').trim();
+        try{dlg.showModal();}catch(e){}
+      }
+    }
+  }, true);
+})();
