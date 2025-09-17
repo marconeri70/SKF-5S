@@ -267,7 +267,7 @@ function renderArea(area){
     });
   });
 
-  refill(); updateScore();
+ }refill(); updateScore();
   return node;
 }
 
