@@ -4,7 +4,7 @@
    - Scheda con 5 sezioni fisse (descrizioni ufficiali)
    - Fix responsive pulsante "Elimina voce"
 =========================================================================== */
-const VERSION='v7.17.10';
+const VERSION='v7.16.0';
 const STORE='skf.5s.v7.16';
 const CHART_STORE=STORE+'.chart';
 const POINTS=[0,1,3,5];
@@ -113,33 +113,8 @@ $('#btnCollapseAll')?.addEventListener('click',()=>{$$('.area').forEach(a=>a.cla
 $('#btnExpandAll')?.addEventListener('click',()=>{$$('.area').forEach(a=>a.classList.remove('collapsed'));});
 
 /* Render */
-
-// === Info popup (global, single) ===
-const infoDlg=document.getElementById('infoDlg');
-function openInfo(title,text){
-  if(!infoDlg) return;
-  infoDlg.querySelector('#infoTitle').textContent = title||'';
-  infoDlg.querySelector('#infoBody').textContent  = text||'';
-  try{ infoDlg.showModal(); }catch(e){}
-}
-function themeInfoBy(panel){
-  if(!infoDlg) return;
-  infoDlg.className=''; // reset
-  const s=(panel?.getAttribute('data-s')||'').slice(0,2).toLowerCase();
-  if(s) infoDlg.classList.add(s);
-}
-document.addEventListener('click',(ev)=>{
-  const btn = ev.target.closest('.info');
-  if(!btn) return;
-  const panel = btn.closest('.panel');
-  const title = panel?.querySelector('h4')?.textContent?.trim() || btn.getAttribute('aria-label') || 'Dettagli';
-  const descEl = panel?.querySelector('.s-desc') || panel?.querySelector('.desc');
-  const body = descEl?descEl.textContent.trim():'';
-  themeInfoBy(panel);
-  openInfo(title, body);
-});
 function render(){
-  const hv=document.querySelector('#appVersion'); if(hv) hv.textContent=''; document.querySelector('#appVersionFooter')?.replaceChildren(VERSION);
+  $('#appVersion')?.replaceChildren(VERSION);
   refreshLineFilter();
 
   sectorSelect.value=ui.sector;
@@ -283,7 +258,7 @@ function renderItem(area,sector,S,idx,it,onChange){
 
   dots.forEach(d=> d.addEventListener('click',()=>{ it.p=+d.dataset.val; syncDots(); save(); onChange?.(); }));
 
-  $('.info',node).addEventListener('click',()=>{/* handled globally */});
+  $('.info',node).addEventListener('click',()=>{const v=desc.style.display!=='block'; desc.style.display=v?'block':'none';});
   $('.del',node).addEventListener('click',()=>{ const arr=area.sectors[sector][S]; arr.splice(idx,1); save(); render(); });
 
   node.addEventListener('click',e=>{ if(e.target.classList.contains('dot')) node.classList.remove('highlight'); });
@@ -440,9 +415,9 @@ function drawChart(list){
 
         if(v>0){
           const label=Math.round(v*100)+'%';
-          const inside=h>=20; const col= inside? textOnBg(COLORS[k]) : TXT;
+          const inside=h>=18; const col= inside? textOnBg(COLORS[k]) : TXT;
           ctx.fillStyle=col; ctx.textAlign='center';
-          const yText = inside ? Math.max(padT+12, y+12) : Math.max(padT+12, y-4);
+          const yText = inside ? Math.max(padT+12, y+12) : Math.max(padT+12, y-2);
           ctx.fillText(label, x+bw/2, yText);
         }
 
@@ -462,22 +437,20 @@ function drawChart(list){
         const v=(m==='tot'?g.tot:g.byS[m])||0, h=v*plotH, y=padT+plotH-h;
         ctx.fillStyle=COLORS[m]; ctx.fillRect(bx,y,bw,h);
 
-        // percentuale sopra la colonna (evita 0% per non affollare)
-        if(v>0){
-          ctx.fillStyle=TXT; ctx.textAlign='center';
-          const yPct = y-6;
-          ctx.fillText(Math.round(v*100)+'%',bx+bw/2,Math.max(padT+12,yPct));
-        }
-        // sigla S/Tot dentro o sopra senza collisioni con offset distinto
-        const inside = h>=22;
+        // percentuale sopra la colonna
+        ctx.fillStyle=TXT; ctx.textAlign='center';
+        const yPct = y-4;
+        ctx.fillText(Math.round(v*100)+'%',bx+bw/2,Math.max(padT+12,yPct));
+
+        // sigla S/Tot dentro o sopra senza collisioni
+        const inside = h>=20;
         const sTxt = m==='tot' ? 'Tot' : m;
         if(inside){
           ctx.fillStyle = textOnBg(COLORS[m]);
           ctx.fillText(sTxt, bx+bw/2, y+14);
         }else{
           ctx.fillStyle = TXT;
-          const yS = v>0 ? y-20 : y-6;
-          ctx.fillText(sTxt, bx+bw/2, Math.max(padT+12, yS));
+          ctx.fillText(sTxt, bx+bw/2, Math.max(padT+12, y-6));
         }
 
         drawOutline(bx,y,bw,h, m==='tot' ? `${g.line}|tot` : `${g.line}|${m}`);
