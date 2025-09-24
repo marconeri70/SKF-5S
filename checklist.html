@@ -3,70 +3,66 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>SKF 5S — Rettifica</title>
+  <title>SKF 5S — Checklist</title>
 
-  <!-- PWA -->
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#0a57d5" />
   <link rel="icon" href="assets/pwa-192.png" />
 
-  <!-- Stili -->
   <link rel="stylesheet" href="style.css" />
-
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-
-  <!-- App -->
   <script defer src="app.js"></script>
 </head>
-<body data-page="home">
+<body data-page="checklist">
   <!-- HEADER -->
   <header class="topbar">
     <div class="brand">
+      <a class="back" href="index.html">← Indietro</a>
       <img src="assets/skf-logo.png" alt="SKF" class="brand-logo" />
       <span class="brand-text"><strong>SKF</strong> <em>5S</em></span>
     </div>
-
     <div class="top-actions">
+      <span id="pageTitle" class="page-title">CH 24 — Rettifica</span>
       <button id="lockBtn" class="icon-btn" aria-label="Impostazioni (PIN)">
         <span class="lock-ico">🔒</span>
       </button>
-      <a class="cta" href="checklist.html">Vai alla checklist <span class="arr">→</span></a>
     </div>
   </header>
 
-  <!-- HERO + COSA È 5S -->
   <main class="container">
-    <section class="card hero">
-      <div class="hero-ill">
-        <img src="assets/5s-hero.png" alt="5S" />
+    <!-- Statistiche -->
+    <section class="stats">
+      <div class="stat">
+        <span>Voto medio</span>
+        <strong id="avgScore">0%</strong>
       </div>
-      <div class="hero-copy">
-        <h2>Cosa è 5S</h2>
-        <ul class="five-list">
-          <li><span class="tag s1">1S Selezionare</span> — Eliminare il superfluo.</li>
-          <li><span class="tag s2">2S Sistemare</span> — Un posto per tutto e tutto al suo posto.</li>
-          <li><span class="tag s3">3S Splendere</span> — Pulire e prevenire lo sporco.</li>
-          <li><span class="tag s4">4S Standardizzare</span> — Regole e segnali chiari.</li>
-          <li><span class="tag s5">5S Sostenere</span> — Abitudine e miglioramento continuo.</li>
-        </ul>
+      <div class="stat">
+        <span>Azioni in ritardo</span>
+        <strong id="lateCount">0</strong>
       </div>
     </section>
 
-    <!-- TITOLO GRAFICO -->
-    <h3 id="chartTitle" class="section-title">Andamento CH 24 — Rettifica</h3>
+    <!-- Badge riassuntivi -->
+    <div id="summaryBadges" class="summary-badges"></div>
+    <div class="actions-row">
+      <button id="toggleAll" class="pill blue">Comprimi / Espandi</button>
+    </div>
 
-    <!-- GRAFICO -->
-    <section class="card">
-      <canvas id="progressChart" height="110"></canvas>
-      <div id="lateBtns" class="late-box"></div>
-      <div class="actions-row">
-        <button id="exportBtn" class="pill blue">Esporta dati per Supervisore (PIN)</button>
-      </div>
-    </section>
+    <!-- Schede -->
+    <section id="sheets" class="sheets"></section>
   </main>
 
-  <!-- DIALOG PIN -->
+  <!-- DIALOG INFO (punti interattivi) -->
+  <dialog id="infoDialog" class="modal">
+    <form method="dialog" class="modal-box">
+      <div class="sticky-top">
+        <h4 id="infoTitle">Info</h4>
+        <button id="infoCloseBtn" class="pill blue small">Chiudi</button>
+      </div>
+      <div id="infoContent" class="info-content"></div>
+    </form>
+  </dialog>
+
+  <!-- DIALOG PIN (stesso della home) -->
   <dialog id="pinDialog" class="modal">
     <form method="dialog" class="modal-box">
       <h4>Impostazioni canale & PIN</h4>
