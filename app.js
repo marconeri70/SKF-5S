@@ -576,3 +576,104 @@ document.addEventListener("DOMContentLoaded", ()=>{
     try{ setupLineImportExportCompat(); }catch(e){ console.warn(e); }
   }
 });
+
+/** ====== Supervisor: cards + notes page ====== */
+function sup_all(){ try{ return JSON.parse(localStorage.getItem("skf5s:supervisor:data")) ?? []; }catch{ return []; } }
+function sup_lines(){ return sup_all().slice().sort((a,b)=> (a.channel||"").localeCompare(b.channel||"")); }
+function pct(v){ return Math.round((Number(v)||0)*20); }
+
+function renderSupervisorCards(){
+  const host = document.getElementById("supCards");
+  if(!host) return;
+  const rows = sup_lines();
+  host.innerHTML = "";
+  rows.forEach(r=>{
+    const el = document.createElement("div");
+    el.className = "sup-card";
+    const P = r.points||{s1:0,s2:0,s3:0,s4:0,s5:0};
+    el.innerHTML = `
+      <h4>${r.channel} <span class="note-meta">— ${r.area||""}</span></h4>
+      <div class="kpi-row">
+        <span class="badge s1">1S ${pct(P.s1)}%</span>
+        <span class="badge s2">2S ${pct(P.s2)}%</span>
+        <span class="badge s3">3S ${pct(P.s3)}%</span>
+        <span class="badge s4">4S ${pct(P.s4)}%</span>
+        <span class="badge s5">5S ${pct(P.s5)}%</span>
+      </div>
+      <div class="actions">
+        <a class="pill" href="notes.html?ch=${encodeURIComponent(r.channel)}">Note</a>
+      </div>`;
+    host.appendChild(el);
+  });
+}
+
+function setupNotesPage(){
+  const data = sup_lines();
+  const sel = document.getElementById("filterCh");
+  const list = document.getElementById("notesList");
+  if(!sel || !list) return;
+
+  sel.innerHTML = `<option value="">Tutte le linee</option>` + data.map(r=> `<option value="${r.channel}">${r.channel}</option>`).join("");
+  const params = new URLSearchParams(location.search);
+  const chParam = params.get("ch");
+  if(chParam){ sel.value = chParam; }
+
+  function normalizeNotes(rec){
+    const items = [];
+    const notes = rec.notes || {};
+    const dates = rec.dates || {};
+    ["s1","s2","s3","s4","s5"].forEach((k,i)=>{
+      let v = notes[k];
+      if(!v) return;
+      const due = dates[k] ? new Date(dates[k]) : null;
+      const arr = Array.isArray(v) ? v : [v];
+      arr.forEach(txt=>{
+        if(String(txt).trim().length===0) return;
+        items.push({
+          ch: rec.channel, area: rec.area, s: k.toUpperCase(),
+          text: String(txt),
+          due: due ? due.toISOString().slice(0,10) : null,
+          ts: rec.date || null
+        });
+      });
+    });
+    return items;
+  }
+
+  function refresh(){
+    const flt = sel.value;
+    const all = data.flatMap(normalizeNotes).filter(x=> !flt || x.ch===flt);
+    all.sort((a,b)=> (b.due||"") < (a.due||"") ? -1 : 1);
+    list.innerHTML = "";
+    if(all.length===0){
+      list.innerHTML = "<p class='muted'>Nessuna nota disponibile.</p>";
+      return;
+    }
+    const today = new Date(new Date().toDateString());
+    all.forEach(n=>{
+      const div = document.createElement("div");
+      const sClass = "s"+n.s[0];
+      const overdue = n.due && new Date(n.due) < today;
+      div.className = `note-item ${sClass}`;
+      div.innerHTML = `
+        <div class="note-head">
+          <div><strong>${n.ch}</strong> — <span>${n.s}</span></div>
+          <div class="note-meta">${n.due ? `<span class="${overdue?'overdue':''}">${n.due}</span>` : ""}</div>
+        </div>
+        <div>${n.text}</div>`;
+      list.appendChild(div);
+    });
+  }
+
+  sel.addEventListener("change", refresh);
+  refresh();
+}
+
+document.addEventListener("DOMContentLoaded", ()=>{
+  if (document.body?.dataset?.page === "supervisor"){
+    try{ renderSupervisorCards(); }catch(e){ console.warn(e); }
+  }
+  if (document.body?.dataset?.page === "notes"){
+    try{ setupNotesPage(); }catch(e){ console.warn(e); }
+  }
+});
