@@ -455,162 +455,90 @@ document.addEventListener("DOMContentLoaded", ()=>{
   if (document.body.dataset.page==="checklist") setupChecklist();
 });
 
-/* ==== Supervisor data layer (robusto) ==== */
-const SUP_STORE = "skf5s:supervisor:data";
-function sup_get(){ try{ return JSON.parse(localStorage.getItem(SUP_STORE)) ?? []; }catch{ return []; } }
-function sup_set(v){ localStorage.setItem(SUP_STORE, JSON.stringify(v)); }
-function sup_norm(rec){
-  if(!rec || typeof rec!=='object') return null;
-  const pts = rec.points && typeof rec.points==='object' ? rec.points : {};
-  const out = {s1:0,s2:0,s3:0,s4:0,s5:0};
-  for (const k of ['s1','s2','s3','s4','s5']) {
-    let v = pts[k] ?? 0;
-    if (typeof v==='string') v = v.replace('%','').trim();
-    v = Number(v); if (isNaN(v)) v=0;
-    if (v>5) v = Math.round(v/20);
-    if (v<0) v=0; if (v>5) v=5;
-    out[k]=v;
-  }
-  return {
-    area: String(rec.area||''),
-    channel: String(rec.channel||''),
-    date: rec.date || new Date().toISOString(),
-    points: out,
-    notes: rec.notes && typeof rec.notes==='object' ? rec.notes : {s1:"",s2:"",s3:"",s4:"",s5:""},
-    dates: rec.dates && typeof rec.dates==='object' ? rec.dates : {s1:null,s2:null,s3:null,s4:null,s5:null},
-    detail: rec.detail && typeof rec.detail==='object' ? rec.detail : {s1:{},s2:{},s3:{},s4:{},s5:{}}
-  };
-}
-function sup_mergeMany(list){
-  const cur = sup_get();
-  const idx = new Map(cur.map(r => [`${(r.area||'').toUpperCase()}::${(r.channel||'').toUpperCase()}`, r]));
-  for (const any of list){
-    const r = sup_norm(any); if(!r || !r.channel) continue;
-    const key = `${r.area.toUpperCase()}::${r.channel.toUpperCase()}`;
-    const prev = idx.get(key);
-    if (!prev || new Date(r.date||0) >= new Date(prev.date||0)) {
-      idx.set(key, r);
-    }
-  }
-  const merged = Array.from(idx.values());
-  sup_set(merged);
-  return merged;
-}
-function setupSupervisor(){
-  const fileInp = document.getElementById('supFiles');
-  const clearBtn= document.getElementById('supClear');
-  const expBtn  = document.getElementById('supExportAll');
-  fileInp?.addEventListener('change', async (ev)=>{
-    const files = Array.from(ev.target.files||[]);
-    if(!files.length) return;
-    const items = [];
-    for (const f of files){
-      try{
-        const txt = await f.text();
-        const any = JSON.parse(txt);
-        if (Array.isArray(any)) items.push(...any);
-        else items.push(any);
-      }catch(e){ console.warn('Import JSON non valido:', f.name, e); }
-    }
-    sup_mergeMany(items);
-    try{ renderSupervisor(); }catch(e){}
-    try{ renderMainFromSupervisor(); }catch(e){}
-    ev.target.value = "";
-  });
-  clearBtn?.addEventListener('click', ()=>{
-    if (confirm('Svuotare archivio Supervisor?')) { sup_set([]); try{ renderSupervisor(); }catch{} try{ renderMainFromSupervisor(); }catch{} }
-  });
-  expBtn?.addEventListener('click', ()=>{
-    const blob = new Blob([JSON.stringify(sup_get(),null,2)], {type:'application/json'});
-    const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='SKF-5S-supervisor-archive.json'; a.click();
-    URL.revokeObjectURL(a.href);
-  });
-}
-document.addEventListener('DOMContentLoaded', ()=>{
-  if (document.body?.dataset?.page === 'supervisor') {
-    try{ setupSupervisor(); }catch(e){ console.warn(e); }
-    try{ renderSupervisor && renderSupervisor(); }catch(e){}
-  }
+/* ======= PWA Install Button ======= */
+let _deferredPrompt=null;
+window.addEventListener('beforeinstallprompt', (e)=>{ e.preventDefault(); _deferredPrompt=e; const b=document.getElementById('installAppBtn'); if(b){ b.style.display='inline-flex'; }});
+document.addEventListener('click', async (ev)=>{
+  const t = ev.target.closest && ev.target.closest('#installAppBtn');
+  if(!t || !_deferredPrompt) return;
+  _deferredPrompt.prompt();
+  try{ await _deferredPrompt.userChoice; }catch{}
+  _deferredPrompt = null;
 });
 
-/* ==== Aggiorna grafico della home con dati Supervisor (se presente) ==== */
-function renderMainFromSupervisor(){
-  const host = document.getElementById('mainChart');
-  if(!host) return;
+/* ======= Supervisor cards with inline notes ======= */
+function renderSupervisorWithNotes(){
   const data = (function(){ try{ return JSON.parse(localStorage.getItem("skf5s:supervisor:data")) ?? []; }catch{ return []; } })();
-  if (!window.Chart) return;
-  const labels = data.map(r=> r.channel);
-  const colors = ["#7c3aed","#ef4444","#f59e0b","#10b981","#2563eb"];
-  const keys = ['s1','s2','s3','s4','s5'];
-  const datasets = keys.map((k,i)=>({
-    label: k.toUpperCase(),
-    data: data.map(r=> (r.points?.[k]||0)*20),
-    backgroundColor: colors[i]
-  }));
-  if (window._mainChart) window._mainChart.destroy();
-  window._mainChart = new Chart(host, {type:'bar', data:{labels, datasets},
-    options:{responsive:true, plugins:{legend:{position:'bottom'}}, scales:{y:{beginAtZero:true,max:100,ticks:{callback:v=>v+'%'}}}}
-  });
-}
-document.addEventListener('DOMContentLoaded', ()=>{
-  if (document.body?.dataset?.page === 'home' || document.body?.dataset?.page === 'index'){
-    try{ renderMainFromSupervisor(); }catch(e){ console.warn(e); }
-  }
-});
-
-function setupSupervisor(){
-  const status = document.getElementById('importStatus');
-  const fileInp = document.getElementById('supFiles');
-  const clearBtn= document.getElementById('supClear');
-  const expBtn  = document.getElementById('supExportAll');
-  const showBtn = document.getElementById('supShowData');
-  const modal = document.getElementById('modal');
-  const close = document.getElementById('modalClose');
-  const body  = document.getElementById('modalBody');
-
-  function setStatus(msg, cls){ if(status){ status.className='muted '+(cls||''); status.textContent=msg; } }
-
-  fileInp?.addEventListener('change', async ev=>{
-    const files = Array.from(ev.target.files||[]);
-    if(!files.length) return;
-    const items = [];
-    for(const f of files){
+  const host = document.getElementById('supCards'); if(!host) return;
+  host.innerHTML = "";
+  data.forEach(rec=>{
+    const el = document.createElement('div'); el.className='sup-card';
+    const P = rec.points||{s1:0,s2:0,s3:0,s4:0,s5:0};
+    const hasNotes = ['s1','s2','s3','s4','s5'].some(k=>{
+      const v = rec.notes?.[k];
+      return (Array.isArray(v) && v.length) || (!!v && String(v).trim().length>0);
+    });
+    el.innerHTML = `
+      <h4>${rec.channel} <span class="note-meta">— ${rec.area||""}</span></h4>
+      <div class="kpi-row">
+        <span class="badge s1">1S ${Math.round(P.s1*20)}%</span>
+        <span class="badge s2">2S ${Math.round(P.s2*20)}%</span>
+        <span class="badge s3">3S ${Math.round(P.s3*20)}%</span>
+        <span class="badge s4">4S ${Math.round(P.s4*20)}%</span>
+        <span class="badge s5">5S ${Math.round(P.s5*20)}%</span>
+      </div>
+      <div class="actions">
+        <button class="pill" data-act="open">Apri scheda CH</button>
+        <a class="pill" href="notes.html?ch=${encodeURIComponent(rec.channel)}">Apri Note</a>
+        ${hasNotes ? '<button class="pill" data-act="toggleNotes">Mostra note</button>' : ''}
+      </div>
+      <div class="notes-inline" style="display:none"></div>
+    `;
+    host.appendChild(el);
+    el.querySelector('[data-act="open"]').onclick = ()=> {
       try{
-        const txt = await f.text();
-        const any = JSON.parse(txt);
-        if(Array.isArray(any)) items.push(...any);
-        else items.push(any);
-      }catch(e){ console.warn('Import JSON non valido:', f.name, e); }
+        const state = {
+          channel: rec.channel,
+          pin: JSON.parse(localStorage.getItem("skf5s:pin")) ?? "6170",
+          points: {...rec.points},
+          notes:  {...rec.notes},
+          dates:  {...rec.dates},
+          detail: {...rec.detail}
+        };
+        localStorage.setItem(`skf5s:${CONFIG.AREA}:state`, JSON.stringify(state));
+        window.location.href = "checklist.html";
+      }catch(e){ console.error(e); }
+    };
+    const toggleBtn = el.querySelector('[data-act="toggleNotes"]');
+    const box = el.querySelector('.notes-inline');
+    if(toggleBtn && box){
+      toggleBtn.addEventListener('click', ()=>{
+        if(box.style.display==='none'){ box.style.display='block'; toggleBtn.textContent='Nascondi note'; renderInlineNotes(rec, box); }
+        else { box.style.display='none'; toggleBtn.textContent='Mostra note'; box.innerHTML=''; }
+      });
     }
-    const {merged, imported} = sup_mergeMany(items);
-    setStatus(`Import riuscito: ${imported} record aggiornati. Totale linee: ${merged.length}`, 'success');
-    try{ renderSupervisor && renderSupervisor(); }catch(e){ console.warn(e); }
-    try{ renderMainFromSupervisor && renderMainFromSupervisor(); }catch(e){}
-    ev.target.value = "";
   });
-
-  clearBtn?.addEventListener('click', ()=>{
-    if(confirm('Svuotare archivio Supervisor?')){
-      sup_set([]); setStatus('Archivio svuotato.', 'error');
-      try{ renderSupervisor && renderSupervisor(); }catch(e){}
-      try{ renderMainFromSupervisor && renderMainFromSupervisor(); }catch(e){}
-    }
-  });
-  expBtn?.addEventListener('click', ()=>{
-    const blob = new Blob([JSON.stringify(sup_get(),null,2)], {type:'application/json'});
-    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='SKF-5S-supervisor-archive.json'; a.click();
-    URL.revokeObjectURL(a.href);
-  });
-  showBtn?.addEventListener('click', ()=>{
-    body.textContent = JSON.stringify(sup_get(), null, 2);
-    modal.classList.remove('hidden');
-  });
-  close?.addEventListener('click', ()=> modal.classList.add('hidden'));
-  setStatus('Pronto per importare file .json dalle linee.', '');
 }
+function renderInlineNotes(rec, container){
+  container.innerHTML = "";
+  const wrap = document.createElement('div'); wrap.className = 'notes-group';
+  ['s1','s2','s3','s4','s5'].forEach(k=>{
+    const n = rec.notes?.[k]; if(!n || (Array.isArray(n)&&n.length===0) || (!Array.isArray(n)&&String(n).trim()==="")) return;
+    const arr = Array.isArray(n) ? n : String(n).split(/\n+/).filter(Boolean);
+    const block = document.createElement('div'); block.className = 'note-s '+k;
+    const due = rec.dates?.[k] ? ` <span class="note-meta">${rec.dates[k]}</span>` : "";
+    block.innerHTML = `<strong>${k.toUpperCase()}</strong>${due}`;
+    const ul=document.createElement('ul'); ul.style.margin="6px 0 0 1rem";
+    arr.forEach(t=>{ const li=document.createElement('li'); li.textContent=t; ul.appendChild(li); });
+    block.appendChild(ul);
+    wrap.appendChild(block);
+  });
+  if(!wrap.children.length){ container.innerHTML = "<p class='muted'>Nessuna nota.</p>"; return; }
+  container.appendChild(wrap);
+}
+
 document.addEventListener('DOMContentLoaded', ()=>{
   if (document.body?.dataset?.page === 'supervisor') {
-    try{ setupSupervisor(); }catch(e){ console.warn(e); }
-    try{ renderSupervisor && renderSupervisor(); }catch(e){}
+    try{ renderSupervisorWithNotes(); }catch(e){}
   }
 });

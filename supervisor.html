@@ -17,6 +17,7 @@
       <span class="brand-text"><strong>SKF</strong> <em>5S</em> — Supervisore</span>
     </div>
     <div class="top-actions">
+      <button id="installAppBtn" class="pill">⬇️ Installa app</button>
       <a class="pill" href="notes.html">Note</a>
     </div>
   </header>
@@ -26,11 +27,10 @@
       <h3>Importa file JSON dalle linee (CH)</h3>
       <input id="supFiles" type="file" multiple accept="application/json" />
       <div class="actions-row">
-        <button id="supShowData" class="pill">Mostra archivio</button>
         <button id="supClear" class="pill">Svuota archivio</button>
         <button id="supExportAll" class="pill blue">Esporta archivio</button>
       </div>
-      <p id="importStatus" class="muted">Formato: {area, channel, date, points{s1..s5}, notes, dates, detail}</p>
+      <p class="muted">Formato: {area, channel, date, points{s1..s5}, notes, dates, detail}</p>
     </section>
 
     <section class="card">
@@ -46,14 +46,6 @@
       <h3>Dettaglio per linea</h3>
       <div id="supCards" class="sup-cards"></div>
     </section>
-  
-  <div id="modal" class="modal hidden">
-    <div class="modal-box">
-      <div class="modal-head"><strong>Archivio supervisore</strong><button id="modalClose" class="pill">Chiudi</button></div>
-      <pre id="modalBody" class="modal-body"></pre>
-    </div>
-  </div>
-
-</main>
+  </main>
 </body>
 </html>
