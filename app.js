@@ -1,278 +1,679 @@
-// SKF 5S — Supervisor bundle (no external deps).
-// Data model in localStorage: key 'skf5s_archive'.
-// Each entry: { area, channel, date, points:{s1..s5}, notes:[{s:'1S'..'5S', text, date, late?:true}] }
+/** CONFIGURAZIONE */
+const CONFIG = {
+  AREA: "Rettifica",           // Per Montaggio cambia qui in "Montaggio"
+  CHANNEL_DEFAULT: "CH 24",
+  DEFAULT_PIN: "6170"
+};
+const COLORS = {
+  s1:"#7c3aed", s2:"#ef4444", s3:"#f59e0b", s4:"#10b981", s5:"#2563eb"
+};
 
-(function(){
-  const KEY = 'skf5s_archive';
-  const PIN = 'SKF5S'; // change if needed
+/** TESTI INFO – formato "(1) ... (2) ... (3) ..." */
+const INFO_TEXT = {
+  s1: "(1) L'area pedonale è libera da ostacoli e pericoli di inciampo. (2) Nessun materiale/attrezzo non identificato sul pavimento. (3) Solo materiali/strumenti necessari presenti; il resto è rimosso. (4) Solo materiale necessario per il lavoro in corso. (5) Documenti/visualizzazioni necessari, aggiornati, in buono stato. (6) Definiti team e processo etichetta rossa; processo attivo. (7) Lavagna 5S aggiornata (piano, foto prima/dopo, audit). (8) Evidenze che garantiscono la sostenibilità di 1S. (9) 5S/1S compresi dal team; responsabilità definite. (10) Tutti i membri partecipano alle attività dell'area.",
+  s2: "(1) Area e team definiti; nessuna cosa non necessaria in zona. (2) Articoli di sicurezza chiaramente contrassegnati e accessibili. (3) Uscite/interruttori emergenza visibili e liberi. (4) Stazioni qualità definite e organizzate. (5) SWC seguito. (6) Posizioni prefissate per utenze/strumenti/pulizia con indicatori min/max. (7) Posizioni definite per contenitori e rifiuti con identificazione chiara. (8) WIP/accettati/rifiutati/quarantena con posizioni e identificazione. (9) Materie prime/componenti con posizioni designate. (10) Layout con corridoi/aree/pedonali e DPI definito. (11) File/documenti identificati e organizzati al punto d'uso. (12) Miglioramenti one-touch/poka-yoke/ergonomia. (13) Evidenze di sostenibilità 2S. (14) 5S/2S compresi; responsabilità definite. (15) Partecipazione di tutti.",
+  s3: "(1) Non si trovano cose inutili. (2) Miglioramenti 2S mantenuti. (3) Verifiche regolari e azioni su deviazioni. (4) Area/team definiti; 1S/2S compresi. (5) Pavimenti/pareti puliti e senza detriti/oli/trucioli ecc. (6) Segnali/etichette puliti, corretti e leggibili. (7) Documenti in buone condizioni e protetti. (8) Luci/ventilazione/AC in ordine e pulite. (9) Fonti sporco identificate e note. (10) Piani d'azione per eliminare fonti sporco. (11) Azioni eseguite. (12) Miglioramenti per prevenire pulizia (meno tappe, eliminazione fonte). (13) Riciclaggio attivo con corretto smistamento. (14) Demarcazioni rese permanenti. (15) Evidenze di sostenibilità 3S. (16) 5S/3S compresi; responsabilità definite; partecipazione di tutti.",
+  s4: "(1) Visual management/kanban/Min-Max implementati (gestire a vista). (2) Colori/segni standard per lubrificazioni, tubazioni, valvole, ecc. (3) Standard 5S consolidati e aggiornati come training/guida. (4) Istruzioni 5S integrate nella gestione quotidiana.",
+  s5: "(1) Tutti formati sugli standard 5S e coinvolti. (2) 5S come abitudine; standard seguiti da tutti. (3) Layered audit programmati. (4) Foto prima/dopo mantenute come riferimento. (5) Obiettivi 5S esposti."
+};
 
-  const q = (sel, root=document) => root.querySelector(sel);
-  const qa = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+/** Helpers storage */
+const storageKey = k => `skf5s:${CONFIG.AREA}:${k}`;
+const getJSON = (k,d)=>{ try{ return JSON.parse(localStorage.getItem(k)) ?? d; }catch{ return d; } };
+const setJSON = (k,v)=> localStorage.setItem(k, JSON.stringify(v));
 
-  function load(){
-    try{ return JSON.parse(localStorage.getItem(KEY)) || []; }catch(e){ return []; }
-  }
-  function save(arr){
-    localStorage.setItem(KEY, JSON.stringify(arr));
-  }
+/** Service worker */
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", ()=> navigator.serviceWorker.register("sw.js"));
+}
 
-  // Merge entries by (area, channel, date). New overwrites fields; notes are concatenated de-duplicated.
-  function mergeData(current, incoming){
-    const sig = e => `${e.area}||${e.channel}||${e.date}`;
-    const map = new Map(current.map(e => [sig(e), JSON.parse(JSON.stringify(e))]));
-    for(const e of incoming){
-      const k = sig(e);
-      const copy = JSON.parse(JSON.stringify(e));
-      if(map.has(k)){
-        const base = map.get(k);
-        base.points = Object.assign({}, base.points, copy.points);
-        base.notes = dedupNotes((base.notes||[]).concat(copy.notes||[]));
-        map.set(k, base);
-      } else {
-        copy.notes = dedupNotes(copy.notes||[]);
-        map.set(k, copy);
-      }
+/** Stato */
+let state = getJSON(storageKey("state"), {
+  channel: CONFIG.CHANNEL_DEFAULT,
+  pin: getJSON("skf5s:pin", CONFIG.DEFAULT_PIN),
+  points: { s1:0, s2:0, s3:0, s4:0, s5:0 },
+  notes:  { s1:"", s2:"", s3:"", s4:"", s5:"" },
+  dates:  { s1:null, s2:null, s3:null, s4:null, s5:null },
+  // scelte dei punti nel popup, per calcolare la media
+  detail: { s1:{}, s2:{}, s3:{}, s4:{}, s5:{} }   // es. detail.s1[0]=3  -> punto #1 di S1 valutato 3
+});
+function savePin(p){ state.pin = p; setJSON(storageKey("state"), state); localStorage.setItem("skf5s:pin", JSON.stringify(p)); }
+
+/** Titoli dinamici */
+function refreshTitles(){
+  const chartTitle = document.getElementById("chartTitle");
+  if (chartTitle) chartTitle.textContent = `Andamento ${state.channel} — ${CONFIG.AREA}`;
+  const pageTitle = document.getElementById("pageTitle");
+  if (pageTitle) pageTitle.textContent = `${state.channel} — ${CONFIG.AREA}`;
+}
+
+/** PIN dialog (con cambio PIN offline) */
+function openPinDialog(){
+  const dlg = document.getElementById("pinDialog");
+  if (!dlg) return;
+
+  dlg.showModal();
+  const pinInput = document.getElementById("pinInput");
+  const chInput  = document.getElementById("channelInput");
+  const np1 = document.getElementById("newPin1");
+  const np2 = document.getElementById("newPin2");
+  const okBtn = document.getElementById("pinConfirmBtn");
+  const cancel = document.getElementById("pinCancel");
+
+  pinInput.value = "";
+  chInput.value = state.channel ?? CONFIG.CHANNEL_DEFAULT;
+  np1.value = ""; np2.value = "";
+
+  okBtn.onclick = ()=>{
+    const entered = pinInput.value.trim();
+    if (entered !== String(state.pin)) { alert("PIN errato"); return; }
+    state.channel = chInput.value.trim() || CONFIG.CHANNEL_DEFAULT;
+
+    if (np1.value || np2.value){
+      if (np1.value !== np2.value) { alert("I due PIN non coincidono"); return; }
+      if (!/^\d{3,8}$/.test(np1.value)) { alert("PIN non valido"); return; }
+      savePin(np1.value);
     }
-    return Array.from(map.values());
-  }
-  function dedupNotes(arr){
-    const seen = new Set();
-    const out = [];
-    for(const n of arr){
-      const k = `${n.s}||${n.date||''}||${(n.text||'').trim()}`;
-      if(!seen.has(k)){ seen.add(k); out.push(n); }
-    }
-    return out;
-  }
-
-  function aggregate(archive){
-    // Returns global stats + byChannel map
-    const byCh = {};
-    for(const e of archive){
-      const ch = e.channel;
-      if(!byCh[ch]) byCh[ch] = { area:e.area, points:[], notes:[] };
-      byCh[ch].points.push(e.points || {});
-      if(e.notes) byCh[ch].notes.push(...e.notes);
-    }
-    // avg helpers
-    const avg = ns => ns.length? Math.round(ns.reduce((a,b)=>a+b,0)/ns.length) : 0;
-    const sAvg = (arr, key) => avg(arr.map(p => Number(p[key]||0)));
-    const chStats = {};
-    Object.keys(byCh).forEach(ch=>{
-      const list = byCh[ch].points;
-      chStats[ch] = {
-        area: byCh[ch].area,
-        s1: sAvg(list,'s1'), s2: sAvg(list,'s2'), s3: sAvg(list,'s3'),
-        s4: sAvg(list,'s4'), s5: sAvg(list,'s5'),
-        notes: byCh[ch].notes
-      };
-    });
-    const channels = Object.keys(chStats);
-    const kpiLines = channels.length;
-    const globalAvg = channels.length ?
-      Math.round(channels.reduce((a,ch)=> a + (chStats[ch].s1+chStats[ch].s2+chStats[ch].s3+chStats[ch].s4+chStats[ch].s5)/5, 0) / channels.length)
-      : 0;
-    const late = archive.reduce((acc,e)=>acc + (e.notes||[]).filter(n=>n.late).length, 0);
-    const s1 = avg(channels.map(ch=>chStats[ch].s1));
-    const s2 = avg(channels.map(ch=>chStats[ch].s2));
-    const s3 = avg(channels.map(ch=>chStats[ch].s3));
-    const s4 = avg(channels.map(ch=>chStats[ch].s4));
-    const s5 = avg(channels.map(ch=>chStats[ch].s5));
-    return {kpiLines, globalAvg, late, bars:[s1,s2,s3,s4,s5], chStats};
-  }
-
-  function drawBars(el, values){
-    // simple SVG bar chart
-    const labels = ['1S','2S','3S','4S','5S'];
-    const colors = ['var(--c1)','var(--c2)','var(--c3)','var(--c4)','var(--c5)'];
-    const W = el.clientWidth || 700, H = 240, pad = 28;
-    const bw = (W - pad*2) / (values.length*1.4);
-    const gap = bw*0.4;
-    const max = 100;
-    let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
-    // grid
-    for(let i=0;i<=4;i++){
-      const y = pad + i*(H-2*pad)/4;
-      svg += `<line x1="${pad}" y1="${y}" x2="${W-pad}" y2="${y}" stroke="rgba(255,255,255,.15)" stroke-width="1"/>`;
-    }
-    // bars
-    let x = pad;
-    values.forEach((v, i)=>{
-      const h = ((H-2*pad) * v) / max;
-      const y = H - pad - h;
-      svg += `<rect x="${x}" y="${y}" width="${bw}" height="${h}" fill="${colors[i]}" rx="6"/>`;
-      svg += `<text x="${x+bw/2}" y="${y-6}" fill="#fff" font-size="12" text-anchor="middle">${v}%</text>`;
-      svg += `<text x="${x+bw/2}" y="${H-pad+16}" fill="#d9e4ff" font-size="12" text-anchor="middle">${labels[i]}</text>`;
-      x += bw + gap;
-    });
-    svg += `</svg>`;
-    el.innerHTML = svg;
-  }
-
-  function ensureSW(){
-    if('serviceWorker' in navigator){
-      navigator.serviceWorker.register('sw.js').catch(()=>{});
-    }
-  }
-
-  // PUBLIC API
-  window.SKF5S = {
-    renderHome(){
-      ensureSW();
-      const data = load();
-      const agg = aggregate(data);
-      const set = (id, val)=>{ const el = document.getElementById(id); if(el) el.textContent = val; };
-      set('kpiLines', agg.kpiLines);
-      set('kpiAvg', `${agg.globalAvg}%`);
-      set('kpiLate', agg.late);
-      drawBars(document.getElementById('chart'), agg.bars);
-      // chips
-      const chipsEl = document.getElementById('chips');
-      chipsEl.innerHTML = '';
-      Object.keys(agg.chStats).forEach(ch=>{
-        const chip = document.createElement('button');
-        chip.className = 'chip';
-        chip.textContent = ch;
-        chip.addEventListener('click', ()=>{
-          // jump to checklist and anchor by CH
-          location.href = `checklist.html#${encodeURIComponent(ch)}`;
-        });
-        chipsEl.appendChild(chip);
-      });
-    },
-
-    initImportUI(){
-      ensureSW();
-      const fileInput = q('#fileInput');
-      const cards = q('#cards');
-      // render cards
-      function render(){
-        const archive = load();
-        const agg = aggregate(archive);
-        cards.innerHTML = '';
-        Object.keys(agg.chStats).sort().forEach(ch=>{
-          const st = agg.chStats[ch];
-          const card = document.createElement('div');
-          card.className = 'card';
-          card.id = ch;
-          card.innerHTML = `
-            <div class="card-header">
-              <div class="card-title">${ch} <span class="muted">— ${st.area||''}</span></div>
-              <div class="badges">
-                <span class="badge s1">1S ${st.s1}%</span>
-                <span class="badge s2">2S ${st.s2}%</span>
-                <span class="badge s3">3S ${st.s3}%</span>
-                <span class="badge s4">4S ${st.s4}%</span>
-                <span class="badge s5">5S ${st.s5}%</span>
-              </div>
-            </div>
-            <div class="card-body">
-              ${renderDetailsTable(ch, archive)}
-            </div>`;
-          card.querySelector('.card-header').addEventListener('click', ()=> card.classList.toggle('open'));
-          cards.appendChild(card);
-        });
-        // open anchor if any
-        if(location.hash){
-          const id = decodeURIComponent(location.hash.slice(1));
-          const el = document.getElementById(id);
-          if(el){ el.classList.add('open'); el.scrollIntoView({behavior:'smooth', block:'start'}); }
-        }
-      }
-      function renderDetailsTable(ch, archive){
-        const rows = archive.filter(e=>e.channel===ch).sort((a,b)=> String(a.date).localeCompare(String(b.date)));
-        const tr = rows.map(e=>{
-          const p=e.points||{};
-          return `<tr>
-            <td>${e.date||''}</td>
-            <td>${p.s1||0}%</td><td>${p.s2||0}%</td><td>${p.s3||0}%</td><td>${p.s4||0}%</td><td>${p.s5||0}%</td>
-            <td>${(e.notes||[]).length}</td>
-          </tr>`;
-        }).join('');
-        return `<table class="table">
-          <thead><tr><th>Data</th><th>1S</th><th>2S</th><th>3S</th><th>4S</th><th>5S</th><th>Note</th></tr></thead>
-          <tbody>${tr||''}</tbody>
-        </table>
-        <p><a class="btn" href="notes.html">Apri note</a></p>`;
-      }
-
-      fileInput.addEventListener('change', async (ev)=>{
-        const files = Array.from(ev.target.files||[]);
-        if(!files.length) return;
-        let incoming = [];
-        for(const f of files){
-          try{
-            const text = await f.text();
-            const js = JSON.parse(text);
-            // Accept single object or array
-            const arr = Array.isArray(js) ? js : [js];
-            // Normalize
-            for(const it of arr){
-              incoming.push({
-                area: it.area || it.Area || it.zone || 'Area',
-                channel: it.channel || it.CH || it.line || 'CH',
-                date: it.date || it.Data || it.dateISO || it.updatedAt || new Date().toISOString().slice(0,10),
-                points: {
-                  s1: Number((it.points&&it.points.s1) ?? it.s1 ?? 0),
-                  s2: Number((it.points&&it.points.s2) ?? it.s2 ?? 0),
-                  s3: Number((it.points&&it.points.s3) ?? it.s3 ?? 0),
-                  s4: Number((it.points&&it.points.s4) ?? it.s4 ?? 0),
-                  s5: Number((it.points&&it.points.s5) ?? it.s5 ?? 0),
-                },
-                notes: (it.notes||it.note||[]).map(n=> (typeof n==='string') ? {s:'', text:n} : n)
-              });
-            }
-          }catch(e){ console.warn('File JSON ignorato', f.name, e); }
-        }
-        const merged = mergeData(load(), incoming);
-        save(merged);
-        render();
-        // small toast
-        alert(`Import completato: ${incoming.length} record`);
-        // also refresh home KPI if open in another tab will reflect on reload.
-      });
-
-      render();
-    },
-
-    renderNotes(){
-      ensureSW();
-      const target = q('#notes');
-      const archive = load();
-      const all = [];
-      for(const e of archive){
-        for(const n of (e.notes||[])){
-          all.push({
-            ch: e.channel, area: e.area, s: n.s || '?S', date: n.date || e.date || '',
-            text: n.text || '', late: !!n.late
-          });
-        }
-      }
-      all.sort((a,b)=> String(b.date).localeCompare(String(a.date)) || String(a.ch).localeCompare(String(b.ch)));
-      const rows = all.map(n=> `<tr>
-          <td><strong>${n.ch}</strong><br/><span class="muted">${n.area}</span></td>
-          <td>${n.s}</td><td>${n.date||''}</td>
-          <td>${n.text? n.text.replace(/[<>&]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])) : ''}</td>
-          <td>${n.late? '⏰' : ''}</td>
-      </tr>`).join('');
-      target.innerHTML = `<table class="table">
-        <thead><tr><th>CH</th><th>S</th><th>Data</th><th>Nota</th><th>Ritardo</th></tr></thead>
-        <tbody>${rows||''}</tbody>
-      </table>`;
-    },
-
-    exportArchivePIN(){
-      const code = prompt('Inserisci PIN per esportare','');
-      if(code!==PIN){ alert('PIN errato'); return; }
-      const data = load();
-      const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'SKF5S-supervisor-archive.json';
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 300);
-    }
+    setJSON(storageKey("state"), state);
+    refreshTitles();
+    dlg.close();
   };
-})();
+  cancel.onclick = ()=> dlg.close();
+}
+
+/** Utilità ritardi */
+function isLate(k){
+  const d = state.dates[k];
+  if(!d) return false;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const chosen = new Date(d); chosen.setHours(0,0,0,0);
+  return chosen < today;
+}
+function updateStatsAndLate(){
+  const arr = Object.values(state.points);
+  const avg = arr.length ? Math.round(arr.reduce((a,b)=>a+b,0)/arr.length*20) : 0;
+  const lateList = Object.keys(state.dates).filter(k=> isLate(k));
+  document.getElementById("avgScore")?.replaceChildren(document.createTextNode(`${avg}%`));
+  document.getElementById("lateCount")?.replaceChildren(document.createTextNode(String(lateList.length)));
+  ["s1","s2","s3","s4","s5"].forEach(k=>{
+    document.getElementById(`sheet-${k}`)?.classList.toggle("late", isLate(k));
+  });
+}
+
+/** Utilità Note + parsing frasi */
+function parsePoints(txt){
+  const out = [];
+  const re = /\((\d+)\)\s*([^]+?)(?=\s*\(\d+\)\s*|$)/g;
+  let m;
+  while((m = re.exec(txt))){ out.push(m[2].trim()); }
+  return out;
+}
+function squaresSummaryColored(score){
+  // 🟦 = scelto, ⬜ = non scelto
+  const order = [0,1,3,5];
+  return order.map(v => (v===score ? `🟦${v}` : `⬜${v}`)).join(" ");
+}
+function appendNote(k, text, score){
+  const ta = document.querySelector(`#sheet-${k} textarea`);
+  if(!ta) return;
+  const line = `${squaresSummaryColored(score)} — ${text}`;
+  ta.value = (ta.value ? ta.value.replace(/\s*$/,"")+"\n" : "") + line;
+  state.notes[k] = ta.value;
+  setJSON(storageKey("state"), state);
+}
+function nearestScore(mean){
+  const choices = [0,1,3,5];
+  let best = 0, bestDiff = Infinity;
+  for (const c of choices){
+    const d = Math.abs(mean - c);
+    if (d < bestDiff) { bestDiff = d; best = c; }
+  }
+  return best;
+}
+function recalcFromDetailAndApply(k){
+  const picks = Object.values(state.detail[k]||{});
+  if (picks.length===0) return; // niente ancora
+  const mean = picks.reduce((a,b)=>a+b,0) / picks.length;
+  const newScore = nearestScore(mean);
+  // applica alla scheda
+  state.points[k] = newScore;
+  setJSON(storageKey("state"), state);
+  document.querySelectorAll(`#sheet-${k} .points button`).forEach(b=>{
+    b.classList.toggle("active", Number(b.dataset.p)===newScore);
+  });
+  const sv = document.querySelector(`#sheet-${k} .s-value`);
+  if (sv) sv.textContent = `Valore: ${newScore*20}%`;
+  updateStatsAndLate();
+}
+
+/** HOME */
+let chart;
+function renderChart(){
+  const ctx = document.getElementById("progressChart");
+  if(!ctx) return;
+
+  const vals = ["s1","s2","s3","s4","s5"].map(k=> (state.points[k]??0)*20 );
+  const delayed = Object.keys(state.dates).filter(k=> isLate(k)).length;
+
+  if(chart) chart.destroy();
+  chart = new Chart(ctx, {
+    type:"bar",
+    data:{
+      labels:["1S","2S","3S","4S","5S","Ritardi"],
+      datasets:[{
+        data:[...vals, delayed],
+        backgroundColor:["#7c3aed","#ef4444","#f59e0b","#10b981","#2563eb","#ef4444"],
+        borderWidth:0
+      }]
+    },
+    options:{
+      responsive:true,
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          enabled:true,
+          callbacks:{
+            label: (item)=>{
+              // riga valore principale
+              if (item.dataIndex===5) return "Ritardi: " + item.raw;
+              return `${item.label}: ${item.raw}%`;
+            },
+            afterBody: (items)=>{
+              // riassunto Note scelte nel popup per S1..S5
+              const idx = items[0].dataIndex;
+              if (idx<0 || idx>4) return;
+              const key = ["s1","s2","s3","s4","s5"][idx];
+              const det = state.detail[key]||{};
+              const pts = parsePoints(INFO_TEXT[key]||"");
+              const lines = Object.keys(det)
+                .map(n=>Number(n))
+                .sort((a,b)=>a-b)
+                .slice(0,6) // massimo 6 righe per non esagerare
+                .map(n=>{
+                  const score = det[n];
+                  const text  = pts[n] || "";
+                  return `${n+1}) ${squaresSummaryColored(score)} ${text}`;
+                });
+              return lines.length ? lines : ["Nessuna nota selezionata"];
+            }
+          }
+        }
+      },
+      scales:{
+        y:{beginAtZero:true,max:100,grid:{display:false},ticks:{callback:v=>v+"%"}},
+        x:{grid:{display:false},ticks:{maxRotation:0}}
+      }
+    }
+  });
+
+  // pulsanti “in ritardo”
+  const late = [];
+  ["s1","s2","s3","s4","s5"].forEach((k,i)=>{ if(isLate(k)) late.push({k, label:`${i+1}S in ritardo`}); });
+  const box = document.getElementById("lateBtns");
+  if (!box) return;
+  box.innerHTML = "";
+  late.forEach(({k,label})=>{
+    const b = document.createElement("button");
+    b.className = `late-btn ${k}`;
+    b.style.borderColor = COLORS[k];
+    b.textContent = label;
+    b.addEventListener("click", ()=> { window.location.href = `checklist.html#sheet-${k}`; });
+    box.appendChild(b);
+  });
+}
+function setupHome(){
+  refreshTitles();
+  renderChart();
+  document.getElementById("lockBtn")?.addEventListener("click", openPinDialog);
+  document.getElementById("exportBtn")?.addEventListener("click", ()=>{
+    const entered = prompt("Inserisci PIN per esportare");
+    if (entered !== String(state.pin)) return;
+
+    const payload = {
+      area: CONFIG.AREA,
+      channel: state.channel,
+      date: new Date().toISOString(),
+      points: state.points,
+      notes: state.notes,
+      dates: state.dates,
+      detail: state.detail
+    };
+    const blob = new Blob([JSON.stringify(payload,null,2)], {type:"application/json"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `SKF-5S-${CONFIG.AREA}-${state.channel}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+}
+
+/** CHECKLIST */
+function setupChecklist(){
+  refreshTitles();
+  document.getElementById("lockBtn")?.addEventListener("click", openPinDialog);
+
+  const summary = document.getElementById("summaryBadges");
+  ["s1","s2","s3","s4","s5"].forEach(k=>{
+    const v = state.points[k] ?? 0;
+    const el = document.createElement("button");
+    el.className = `s-badge ${k}`;
+    el.textContent = `${k.toUpperCase()} ${v*20}%`;
+    el.addEventListener("click", ()=> {
+      document.getElementById(`sheet-${k}`)?.scrollIntoView({behavior:"smooth",block:"start"});
+    });
+    summary.appendChild(el);
+  });
+
+  document.getElementById("toggleAll")?.addEventListener("click", ()=>{
+    document.querySelectorAll(".s-details").forEach(det=> det.open = !det.open);
+  });
+
+  const wrap = document.getElementById("sheets");
+  const defs = [
+    {k:"s1", name:"1S — Selezionare",   color:COLORS.s1},
+    {k:"s2", name:"2S — Sistemare",     color:COLORS.s2},
+    {k:"s3", name:"3S — Splendere",     color:COLORS.s3},
+    {k:"s4", name:"4S — Standardizzare",color:COLORS.s4},
+    {k:"s5", name:"5S — Sostenere",     color:COLORS.s5},
+  ];
+  const todayStr = ()=> new Date().toISOString().slice(0,10);
+
+  defs.forEach(({k,name,color})=>{
+    const val = state.points[k] ?? 0;
+    const late = isLate(k);
+
+    const card = document.createElement("article");
+    card.className = "sheet" + (late ? " late":"");
+    card.id = `sheet-${k}`;
+    card.innerHTML = `
+      <div class="sheet-head">
+        <span class="s-color" style="background:${color}"></span>
+        <h3 class="s-title" style="color:${color}">${name}</h3>
+        <span class="s-value">Valore: ${(val*20)}%</span>
+        <button class="icon info" aria-label="Info" data-k="${k}">i</button>
+        <button class="icon add" aria-label="Duplica">+</button>
+      </div>
+
+      <details class="s-details" open>
+        <summary>▼ Dettagli</summary>
+
+        <label class="field">
+          <span>Responsabile / Operatore</span>
+          <input placeholder="Inserisci il nome..." value="">
+        </label>
+
+        <label class="field">
+          <span>Note</span>
+          <textarea rows="3" placeholder="Note...">${state.notes[k]??""}</textarea>
+        </label>
+
+        <div class="field">
+          <span>Data</span>
+          <div class="row">
+            <input type="date" value="${state.dates[k]??todayStr()}" data-date="${k}">
+            <div class="points">
+              ${[0,1,3,5].map(p=>`
+                <button data-k="${k}" data-p="${p}" class="${val===p?'active':''}">${p}</button>
+              `).join("")}
+            </div>
+            <button class="icon danger del">🗑</button>
+          </div>
+        </div>
+      </details>
+    `;
+    wrap.appendChild(card);
+  });
+
+  // punteggi scheda (manuali)
+  wrap.addEventListener("click",(e)=>{
+    const btn = e.target.closest(".points button");
+    if(!btn) return;
+    const k = btn.dataset.k;
+    const p = Number(btn.dataset.p);
+    state.points[k] = p;
+    setJSON(storageKey("state"), state);
+    document.querySelectorAll(`.points button[data-k="${k}"]`).forEach(b=>b.classList.toggle("active", Number(b.dataset.p)===p));
+    document.querySelector(`#sheet-${k} .s-value`).textContent = `Valore: ${p*20}%`;
+    updateStatsAndLate();
+  });
+
+  // date → ritardo
+  wrap.addEventListener("change",(e)=>{
+    const inp = e.target.closest('input[type="date"][data-date]');
+    if(!inp) return;
+    const k = inp.dataset.date;
+    state.dates[k] = inp.value;
+    setJSON(storageKey("state"), state);
+    updateStatsAndLate();
+  });
+
+  // elimina con PIN (reset scheda)
+  wrap.addEventListener("click",(e)=>{
+    const del = e.target.closest(".del");
+    if(!del) return;
+    const pin = prompt("Inserisci PIN per eliminare");
+    if (pin !== String(state.pin)) return;
+    const k = del.closest(".sheet").id.replace("sheet-","");
+    state.points[k]=0; state.notes[k]=""; state.dates[k]=null; state.detail[k]={};
+    setJSON(storageKey("state"), state);
+    const s = del.closest(".sheet");
+    s.querySelectorAll(".points button").forEach(b=>b.classList.remove("active"));
+    s.querySelector(".s-value").textContent="Valore: 0%";
+    s.querySelector('textarea').value="";
+    s.querySelector('input[type="date"]').value=new Date().toISOString().slice(0,10);
+    updateStatsAndLate();
+  });
+
+  // info popup
+  wrap.addEventListener("click",(e)=>{
+    const infoBtn = e.target.closest(".info");
+    if(!infoBtn) return;
+    openInfo(infoBtn.dataset.k);
+  });
+
+  // + duplicazione scheda (PIN)
+  wrap.addEventListener("click",(e)=>{
+    const add = e.target.closest(".add");
+    if(!add) return;
+    const pin = prompt("Inserisci PIN per duplicare");
+    if (pin !== String(state.pin)) return;
+    const card = add.closest(".sheet");
+    const clone = card.cloneNode(true);
+    const uid = Math.random().toString(36).slice(2,7);
+    clone.id = card.id + "-x" + uid;
+    clone.querySelectorAll("textarea").forEach(t=> t.value="");
+    clone.querySelectorAll('input[type="date"]').forEach(d=> d.value=new Date().toISOString().slice(0,10));
+    clone.querySelectorAll(".points button").forEach(b=> b.classList.remove("active"));
+    clone.querySelector(".s-value").textContent="Valore: 0%";
+    card.after(clone);
+  });
+
+  document.getElementById("infoCloseBtn")?.addEventListener("click", ()=> {
+    document.getElementById("infoDialog").close();
+  });
+
+  updateStatsAndLate();
+}
+
+/** Popup “i” con punti interattivi + media automatica */
+function openInfo(k){
+  const dlg = document.getElementById("infoDialog");
+  const title = document.getElementById("infoTitle");
+  const cont = document.getElementById("infoContent");
+  title.textContent = `${k.toUpperCase()} — Info`;
+  cont.innerHTML = "";
+
+  if (!state.detail[k]) state.detail[k] = {};
+  const pts = parsePoints(INFO_TEXT[k] || "");
+
+  const ol = document.createElement("ol");
+  pts.forEach((txt, idx)=>{
+    const li = document.createElement("li");
+    const already = state.detail[k][idx] ?? null;
+    const row = document.createElement("div");
+    row.className = "pointline";
+    row.innerHTML = `
+      <div>${idx+1}. ${txt}</div>
+      <div class="pick" data-k="${k}" data-idx="${idx}">
+        ${[0,1,3,5].map(v=>`<button type="button" data-score="${v}" class="${already===v?'picked':''}">${v}</button>`).join("")}
+      </div>
+      <div class="note-mini">Seleziona un valore per aggiungere la riga in Note.</div>
+    `;
+    li.appendChild(row);
+    ol.appendChild(li);
+  });
+  cont.appendChild(ol);
+
+  cont.onclick = (e)=>{
+    const btn = e.target.closest('.pick button');
+    if(!btn) return;
+    const pick = btn.closest('.pick');
+    const score = Number(btn.dataset.score);
+    const key = pick.dataset.k;
+    const idx = Number(pick.dataset.idx);
+    // evidenzia selezione
+    pick.querySelectorAll('button').forEach(b=> b.classList.toggle('picked', b===btn));
+    // salva scelta
+    if (!state.detail[key]) state.detail[key]={};
+    state.detail[key][idx] = score;
+    setJSON(storageKey("state"), state);
+    // aggiunge riga in Note (blu evidenziato via emoji)
+    const text = parsePoints(INFO_TEXT[key]||"")[idx];
+    appendNote(key, text, score);
+    // calcola media e aggiorna scheda
+    recalcFromDetailAndApply(key);
+  };
+
+  dlg.querySelector(".modal-box").style.borderTop = `6px solid ${COLORS[k]||'#0a57d5'}`;
+  dlg.showModal();
+}
+
+/** Router */
+document.addEventListener("DOMContentLoaded", ()=>{
+  refreshTitles();
+  if (document.body.dataset.page==="home") setupHome();
+  if (document.body.dataset.page==="checklist") setupChecklist();
+});
+
+/** ======= COMPAT IMPORT/EXPORT (linea) ======= */
+function canonicalFromState(){
+  return {
+    version:"1.0",
+    area: CONFIG.AREA,
+    channel: state.channel,
+    date: new Date().toISOString(),
+    points: {...state.points},
+    notes: {...state.notes},
+    dates: {...state.dates},
+    detail: {...state.detail}
+  };
+}
+function normalizePointsObject(points){
+  // accetta sia 0..5 che percentuali 0..100
+  const out = {s1:0,s2:0,s3:0,s4:0,s5:0};
+  if (!points || typeof points!=='object') return out;
+  for (const k of ["s1","s2","s3","s4","s5"]){
+    let v = points[k];
+    if (v==null) v = 0;
+    if (typeof v === "string") v = v.trim().replace("%","");
+    v = Number(v);
+    if (isNaN(v)) v = 0;
+    // se sembra percentuale, converti in 0..5
+    if (v>5) v = Math.round(v/20);
+    if (v<0) v=0; if (v>5) v=5;
+    out[k]=v;
+  }
+  return out;
+}
+function normalizeRecordAny(any, preferChannel){
+  // accetta: singolo oggetto linea, oppure array (archivio supervisore)
+  try{
+    const pickOne = (arr)=>{
+      // 1) match sul canale
+      let rec = arr.find(r=> (r?.channel||"").toUpperCase() === (preferChannel||"").toUpperCase());
+      // 2) altrimenti ultimo per data
+      if (!rec){
+        rec = arr.slice().sort((a,b)=> new Date(b?.date||0)-new Date(a?.date||0))[0];
+      }
+      return rec||null;
+    };
+    let obj = any;
+    if (Array.isArray(obj)) obj = pickOne(obj);
+    if (!obj || typeof obj!=="object") return null;
+    const out = {
+      area: String(obj.area ?? CONFIG.AREA),
+      channel: String(obj.channel ?? preferChannel ?? CONFIG.CHANNEL_DEFAULT),
+      date: obj.date || new Date().toISOString(),
+      points: normalizePointsObject(obj.points),
+      notes: obj.notes && typeof obj.notes==="object" ? obj.notes : {s1:"",s2:"",s3:"",s4:"",s5:""},
+      dates: obj.dates && typeof obj.dates==="object" ? obj.dates : {s1:null,s2:null,s3:null,s4:null,s5:null},
+      detail: obj.detail && typeof obj.detail==="object" ? obj.detail : {s1:{},s2:{},s3:{},s4:{},s5:{}}
+    };
+    return out;
+  }catch(e){ console.error(e); return null; }
+}
+function applyCanonicalToState(rec){
+  if(!rec) return false;
+  state.channel = rec.channel || state.channel;
+  state.points  = normalizePointsObject(rec.points);
+  state.notes   = rec.notes || state.notes;
+  state.dates   = rec.dates || state.dates;
+  state.detail  = rec.detail || state.detail;
+  setJSON(storageKey("state"), state);
+  return true;
+}
+function setupLineImportExportCompat(){
+  // EXPORT (sovrascrive handler se presente)
+  const expBtn = document.getElementById("exportBtn");
+  if (expBtn){
+    expBtn.onclick = ()=>{
+      const data = canonicalFromState();
+      const blob = new Blob([JSON.stringify(data,null,2)], {type:"application/json"});
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `SKF-5S_${CONFIG.AREA}_${state.channel}.json`;
+      a.click(); URL.revokeObjectURL(a.href);
+    };
+  }
+  // IMPORT (crea pulsante se manca)
+  let impBtn = document.getElementById("importBtn");
+  if (!impBtn){
+    const top = document.querySelector(".top-actions");
+    if (top){
+      impBtn = document.createElement("button");
+      impBtn.id="importBtn"; impBtn.className="pill"; impBtn.textContent="Importa";
+      top.insertBefore(impBtn, top.firstChild);
+    }
+  }
+  let fileIn = document.getElementById("lineImportInput");
+  if(!fileIn){
+    fileIn = document.createElement("input");
+    fileIn.type="file"; fileIn.id="lineImportInput"; fileIn.accept="application/json"; fileIn.style.display="none";
+    document.body.appendChild(fileIn);
+  }
+  impBtn && impBtn.addEventListener("click", ()=> fileIn.click());
+  fileIn.addEventListener("change", async (ev)=>{
+    const f = ev.target.files?.[0]; if(!f) return;
+    try{
+      const txt = await f.text();
+      const any = JSON.parse(txt);
+      const rec = normalizeRecordAny(any, state.channel);
+      if(!rec) { alert("File non valido"); return; }
+      applyCanonicalToState(rec);
+      // ricalcola e rinfresca UI
+      try{ refreshTitles(); }catch{}
+      location.reload();
+    }catch(e){
+      console.error(e); alert("File non valido");
+    }finally{
+      ev.target.value = "";
+    }
+  });
+}
+
+document.addEventListener("DOMContentLoaded", ()=>{
+  if (document.body.dataset.page==="home" || document.body.dataset.page==="checklist"){
+    try{ setupLineImportExportCompat(); }catch(e){ console.warn(e); }
+  }
+});
+
+/** ====== Supervisor: cards + notes page ====== */
+function sup_all(){ try{ return JSON.parse(localStorage.getItem("skf5s:supervisor:data")) ?? []; }catch{ return []; } }
+function sup_lines(){ return sup_all().slice().sort((a,b)=> (a.channel||"").localeCompare(b.channel||"")); }
+function pct(v){ return Math.round((Number(v)||0)*20); }
+
+function renderSupervisorCards(){
+  const host = document.getElementById("supCards");
+  if(!host) return;
+  const rows = sup_lines();
+  host.innerHTML = "";
+  rows.forEach(r=>{
+    const el = document.createElement("div");
+    el.className = "sup-card";
+    const P = r.points||{s1:0,s2:0,s3:0,s4:0,s5:0};
+    el.innerHTML = `
+      <h4>${r.channel} <span class="note-meta">— ${r.area||""}</span></h4>
+      <div class="kpi-row">
+        <span class="badge s1">1S ${pct(P.s1)}%</span>
+        <span class="badge s2">2S ${pct(P.s2)}%</span>
+        <span class="badge s3">3S ${pct(P.s3)}%</span>
+        <span class="badge s4">4S ${pct(P.s4)}%</span>
+        <span class="badge s5">5S ${pct(P.s5)}%</span>
+      </div>
+      <div class="actions">
+        <a class="pill" href="notes.html?ch=${encodeURIComponent(r.channel)}">Note</a>
+      </div>`;
+    host.appendChild(el);
+  });
+}
+
+function setupNotesPage(){
+  const data = sup_lines();
+  const sel = document.getElementById("filterCh");
+  const list = document.getElementById("notesList");
+  if(!sel || !list) return;
+
+  sel.innerHTML = `<option value="">Tutte le linee</option>` + data.map(r=> `<option value="${r.channel}">${r.channel}</option>`).join("");
+  const params = new URLSearchParams(location.search);
+  const chParam = params.get("ch");
+  if(chParam){ sel.value = chParam; }
+
+  function normalizeNotes(rec){
+    const items = [];
+    const notes = rec.notes || {};
+    const dates = rec.dates || {};
+    ["s1","s2","s3","s4","s5"].forEach((k,i)=>{
+      let v = notes[k];
+      if(!v) return;
+      const due = dates[k] ? new Date(dates[k]) : null;
+      const arr = Array.isArray(v) ? v : [v];
+      arr.forEach(txt=>{
+        if(String(txt).trim().length===0) return;
+        items.push({
+          ch: rec.channel, area: rec.area, s: k.toUpperCase(),
+          text: String(txt),
+          due: due ? due.toISOString().slice(0,10) : null,
+          ts: rec.date || null
+        });
+      });
+    });
+    return items;
+  }
+
+  function refresh(){
+    const flt = sel.value;
+    const all = data.flatMap(normalizeNotes).filter(x=> !flt || x.ch===flt);
+    all.sort((a,b)=> (b.due||"") < (a.due||"") ? -1 : 1);
+    list.innerHTML = "";
+    if(all.length===0){
+      list.innerHTML = "<p class='muted'>Nessuna nota disponibile.</p>";
+      return;
+    }
+    const today = new Date(new Date().toDateString());
+    all.forEach(n=>{
+      const div = document.createElement("div");
+      const sClass = "s"+n.s[0];
+      const overdue = n.due && new Date(n.due) < today;
+      div.className = `note-item ${sClass}`;
+      div.innerHTML = `
+        <div class="note-head">
+          <div><strong>${n.ch}</strong> — <span>${n.s}</span></div>
+          <div class="note-meta">${n.due ? `<span class="${overdue?'overdue':''}">${n.due}</span>` : ""}</div>
+        </div>
+        <div>${n.text}</div>`;
+      list.appendChild(div);
+    });
+  }
+
+  sel.addEventListener("change", refresh);
+  refresh();
+}
+
+document.addEventListener("DOMContentLoaded", ()=>{
+  if (document.body?.dataset?.page === "supervisor"){
+    try{ renderSupervisorCards(); }catch(e){ console.warn(e); }
+  }
+  if (document.body?.dataset?.page === "notes"){
+    try{ setupNotesPage(); }catch(e){ console.warn(e); }
+  }
+});
