@@ -27,9 +27,11 @@
       <input id="supFiles" type="file" multiple accept="application/json" />
       <div class="actions-row">
         <button id="supClear" class="pill">Svuota archivio</button>
+    <button class="pill primary" id="processImportBtn">Importa</button>
         <button id="supExportAll" class="pill blue">Esporta archivio</button>
       </div>
-      <p class="muted">Formato: {area, channel, date, points{s1..s5}, notes, dates, detail}</p>
+      <p class="muted"><div id="supStatus" class="muted" style="margin:.25rem 0 .75rem 0;"></div>
+Formato: {area, channel, date, points{s1..s5}, notes, dates, detail}</p>
     </section>
 
     <section class="card">
