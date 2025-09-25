@@ -98,8 +98,3 @@ a{color:inherit;text-decoration:none}
 /* Forms */
 input,textarea{border:1px solid #cbd5e1;border-radius:10px;padding:.55rem .6rem}
 textarea{resize:vertical}
-
-/* Inline notes inside supervisor cards */
-.notes-group{display:grid;gap:10px;margin-top:.5rem}
-.note-s{border-left:6px solid var(--s1);padding-left:8px;margin:6px 0;background:var(--panel,#fff);border:1px solid #e5e7eb;border-radius:8px;padding:8px}
-.note-s.s1{border-left-color:var(--s1)}.note-s.s2{border-left-color:var(--s2)}.note-s.s3{border-left-color:var(--s3)}.note-s.s4{border-left-color:var(--s4)}.note-s.s5{border-left-color:var(--s5)}
