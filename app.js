@@ -557,3 +557,60 @@ document.addEventListener('DOMContentLoaded', ()=>{
     try{ renderMainFromSupervisor(); }catch(e){ console.warn(e); }
   }
 });
+
+function setupSupervisor(){
+  const status = document.getElementById('importStatus');
+  const fileInp = document.getElementById('supFiles');
+  const clearBtn= document.getElementById('supClear');
+  const expBtn  = document.getElementById('supExportAll');
+  const showBtn = document.getElementById('supShowData');
+  const modal = document.getElementById('modal');
+  const close = document.getElementById('modalClose');
+  const body  = document.getElementById('modalBody');
+
+  function setStatus(msg, cls){ if(status){ status.className='muted '+(cls||''); status.textContent=msg; } }
+
+  fileInp?.addEventListener('change', async ev=>{
+    const files = Array.from(ev.target.files||[]);
+    if(!files.length) return;
+    const items = [];
+    for(const f of files){
+      try{
+        const txt = await f.text();
+        const any = JSON.parse(txt);
+        if(Array.isArray(any)) items.push(...any);
+        else items.push(any);
+      }catch(e){ console.warn('Import JSON non valido:', f.name, e); }
+    }
+    const {merged, imported} = sup_mergeMany(items);
+    setStatus(`Import riuscito: ${imported} record aggiornati. Totale linee: ${merged.length}`, 'success');
+    try{ renderSupervisor && renderSupervisor(); }catch(e){ console.warn(e); }
+    try{ renderMainFromSupervisor && renderMainFromSupervisor(); }catch(e){}
+    ev.target.value = "";
+  });
+
+  clearBtn?.addEventListener('click', ()=>{
+    if(confirm('Svuotare archivio Supervisor?')){
+      sup_set([]); setStatus('Archivio svuotato.', 'error');
+      try{ renderSupervisor && renderSupervisor(); }catch(e){}
+      try{ renderMainFromSupervisor && renderMainFromSupervisor(); }catch(e){}
+    }
+  });
+  expBtn?.addEventListener('click', ()=>{
+    const blob = new Blob([JSON.stringify(sup_get(),null,2)], {type:'application/json'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='SKF-5S-supervisor-archive.json'; a.click();
+    URL.revokeObjectURL(a.href);
+  });
+  showBtn?.addEventListener('click', ()=>{
+    body.textContent = JSON.stringify(sup_get(), null, 2);
+    modal.classList.remove('hidden');
+  });
+  close?.addEventListener('click', ()=> modal.classList.add('hidden'));
+  setStatus('Pronto per importare file .json dalle linee.', '');
+}
+document.addEventListener('DOMContentLoaded', ()=>{
+  if (document.body?.dataset?.page === 'supervisor') {
+    try{ setupSupervisor(); }catch(e){ console.warn(e); }
+    try{ renderSupervisor && renderSupervisor(); }catch(e){}
+  }
+});
