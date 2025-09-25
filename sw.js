@@ -2,7 +2,7 @@ const CACHE = "skf5s-v4";
 const ASSETS = [
   "./",
   "./index.html",
-  "./checklist.html","supervisor.html","notes.html""",
+  "./checklist.html",
   "./style.css",
   "./app.js",
   "./manifest.json",

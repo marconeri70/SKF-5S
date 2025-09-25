@@ -455,225 +455,229 @@ document.addEventListener("DOMContentLoaded", ()=>{
   if (document.body.dataset.page==="checklist") setupChecklist();
 });
 
-/** ======= COMPAT IMPORT/EXPORT (linea) ======= */
-function canonicalFromState(){
-  return {
-    version:"1.0",
-    area: CONFIG.AREA,
-    channel: state.channel,
-    date: new Date().toISOString(),
-    points: {...state.points},
-    notes: {...state.notes},
-    dates: {...state.dates},
-    detail: {...state.detail}
-  };
-}
-function normalizePointsObject(points){
-  // accetta sia 0..5 che percentuali 0..100
-  const out = {s1:0,s2:0,s3:0,s4:0,s5:0};
-  if (!points || typeof points!=='object') return out;
-  for (const k of ["s1","s2","s3","s4","s5"]){
-    let v = points[k];
-    if (v==null) v = 0;
-    if (typeof v === "string") v = v.trim().replace("%","");
-    v = Number(v);
-    if (isNaN(v)) v = 0;
-    // se sembra percentuale, converti in 0..5
+/** ===================== SUPERVISOR CORE ===================== */
+const SUP_STORE = "skf5s:supervisor:data";
+function sup_get(){ try{ return JSON.parse(localStorage.getItem(SUP_STORE)) ?? []; }catch{ return []; } }
+function sup_set(v){ localStorage.setItem(SUP_STORE, JSON.stringify(v)); }
+function sup_key(r){ return `${(r.area||'').toUpperCase()}::${(r.channel||'').toUpperCase()}`; }
+function sup_norm(rec){
+  if(!rec || typeof rec!=='object') return null;
+  const pts = rec.points && typeof rec.points==='object' ? rec.points : {};
+  const normPts = {s1:0,s2:0,s3:0,s4:0,s5:0};
+  for(const k of ['s1','s2','s3','s4','s5']){
+    let v = pts[k] ?? 0;
+    if(typeof v==='string') v = Number(v.replace('%','').trim());
+    v = Number(v); if (isNaN(v)) v=0;
     if (v>5) v = Math.round(v/20);
     if (v<0) v=0; if (v>5) v=5;
-    out[k]=v;
+    normPts[k]=v;
   }
-  return out;
+  return {
+    area: String(rec.area||''),
+    channel: String(rec.channel||''),
+    date: rec.date || new Date().toISOString(),
+    points: normPts,
+    notes: rec.notes && typeof rec.notes==='object' ? rec.notes : {s1:"",s2:"",s3:"",s4:"",s5:""},
+    dates: rec.dates && typeof rec.dates==='object' ? rec.dates : {s1:null,s2:null,s3:null,s4:null,s5:null},
+    detail: rec.detail && typeof rec.detail==='object' ? rec.detail : {s1:{},s2:{},s3:{},s4:{},s5:{}}
+  };
 }
-function normalizeRecordAny(any, preferChannel){
-  // accetta: singolo oggetto linea, oppure array (archivio supervisore)
-  try{
-    const pickOne = (arr)=>{
-      // 1) match sul canale
-      let rec = arr.find(r=> (r?.channel||"").toUpperCase() === (preferChannel||"").toUpperCase());
-      // 2) altrimenti ultimo per data
-      if (!rec){
-        rec = arr.slice().sort((a,b)=> new Date(b?.date||0)-new Date(a?.date||0))[0];
-      }
-      return rec||null;
-    };
-    let obj = any;
-    if (Array.isArray(obj)) obj = pickOne(obj);
-    if (!obj || typeof obj!=="object") return null;
-    const out = {
-      area: String(obj.area ?? CONFIG.AREA),
-      channel: String(obj.channel ?? preferChannel ?? CONFIG.CHANNEL_DEFAULT),
-      date: obj.date || new Date().toISOString(),
-      points: normalizePointsObject(obj.points),
-      notes: obj.notes && typeof obj.notes==="object" ? obj.notes : {s1:"",s2:"",s3:"",s4:"",s5:""},
-      dates: obj.dates && typeof obj.dates==="object" ? obj.dates : {s1:null,s2:null,s3:null,s4:null,s5:null},
-      detail: obj.detail && typeof obj.detail==="object" ? obj.detail : {s1:{},s2:{},s3:{},s4:{},s5:{}}
-    };
-    return out;
-  }catch(e){ console.error(e); return null; }
-}
-function applyCanonicalToState(rec){
-  if(!rec) return false;
-  state.channel = rec.channel || state.channel;
-  state.points  = normalizePointsObject(rec.points);
-  state.notes   = rec.notes || state.notes;
-  state.dates   = rec.dates || state.dates;
-  state.detail  = rec.detail || state.detail;
-  setJSON(storageKey("state"), state);
-  return true;
-}
-function setupLineImportExportCompat(){
-  // EXPORT (sovrascrive handler se presente)
-  const expBtn = document.getElementById("exportBtn");
-  if (expBtn){
-    expBtn.onclick = ()=>{
-      const data = canonicalFromState();
-      const blob = new Blob([JSON.stringify(data,null,2)], {type:"application/json"});
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = `SKF-5S_${CONFIG.AREA}_${state.channel}.json`;
-      a.click(); URL.revokeObjectURL(a.href);
-    };
-  }
-  // IMPORT (crea pulsante se manca)
-  let impBtn = document.getElementById("importBtn");
-  if (!impBtn){
-    const top = document.querySelector(".top-actions");
-    if (top){
-      impBtn = document.createElement("button");
-      impBtn.id="importBtn"; impBtn.className="pill"; impBtn.textContent="Importa";
-      top.insertBefore(impBtn, top.firstChild);
+function sup_mergeMany(list){
+  const acc = sup_get();
+  for(const item of list){
+    const r = sup_norm(item);
+    if(!r || !r.channel) continue;
+    const key = sup_key(r);
+    const at = acc.findIndex(x=> sup_key(x)===key);
+    if(at<0) acc.push(r);
+    else{
+      const old = new Date(acc[at].date||0).getTime();
+      const neu = new Date(r.date||0).getTime();
+      if(neu>=old) acc[at]=r;
     }
   }
-  let fileIn = document.getElementById("lineImportInput");
-  if(!fileIn){
-    fileIn = document.createElement("input");
-    fileIn.type="file"; fileIn.id="lineImportInput"; fileIn.accept="application/json"; fileIn.style.display="none";
-    document.body.appendChild(fileIn);
+  sup_set(acc);
+  return acc;
+}
+function sup_overdueCount(r){
+  const today = new Date(new Date().toDateString());
+  return Object.values(r.dates||{}).filter(d=> d && new Date(d) < today).length;
+}
+function sup_totalPct(r){
+  const p = r.points||{}; const sum = ['s1','s2','s3','s4','s5'].reduce((a,k)=>a+(p[k]||0),0);
+  return Math.round((sum/5)*20);
+}
+function sup_openChecklist(rec){
+  try{
+    const state = {
+      channel: rec.channel,
+      pin: JSON.parse(localStorage.getItem("skf5s:pin")) ?? "6170",
+      points: {...rec.points},
+      notes:  {...rec.notes},
+      dates:  {...rec.dates},
+      detail: {...rec.detail}
+    };
+    localStorage.setItem(`skf5s:${CONFIG.AREA}:state`, JSON.stringify(state));
+    window.location.href = "checklist.html";
+  }catch(e){ console.error(e); }
+}
+let _supChart;
+function setupSupervisor(){
+  const fileInp = document.getElementById('supFiles');
+  const clearBtn= document.getElementById('supClear');
+  const expBtn  = document.getElementById('supExportAll');
+
+  fileInp?.addEventListener('change', async ev=>{
+    const files = Array.from(ev.target.files||[]);
+    if(!files.length) return;
+    const items = [];
+    for(const f of files){
+      try{
+        const txt = await f.text();
+        const any = JSON.parse(txt);
+        if(Array.isArray(any)) items.push(...any);
+        else items.push(any);
+      }catch(e){ console.warn("JSON non valido:", f.name); }
+    }
+    sup_mergeMany(items);
+    renderSupervisor();
+    fileInp.value = "";
+  });
+  clearBtn?.addEventListener('click', ()=>{
+    if(confirm("Svuotare archivio Supervisor?")){ sup_set([]); renderSupervisor(); }
+  });
+  expBtn?.addEventListener('click', ()=>{
+    const blob = new Blob([JSON.stringify(sup_get(),null,2)], {type:"application/json"});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download="SKF-5S-supervisor-archive.json"; a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  renderSupervisor();
+}
+function renderSupervisor(){
+  const data = sup_get();
+
+  document.getElementById('supLines')?.replaceChildren(String(data.length));
+  const avg = data.length ? Math.round(data.reduce((a,r)=>a+sup_totalPct(r),0)/data.length) : 0;
+  document.getElementById('supAvg')?.replaceChildren(String(avg)+'%');
+  const lateTot = data.reduce((n,r)=> n + sup_overdueCount(r), 0);
+  document.getElementById('supLate')?.replaceChildren(String(lateTot));
+
+  const ctx = document.getElementById('supChart');
+  if(ctx){
+    if(_supChart) _supChart.destroy();
+    const labels = data.map(r=> r.channel);
+    const colors = ["#7c3aed","#ef4444","#f59e0b","#10b981","#2563eb"];
+    const keys = ['s1','s2','s3','s4','s5'];
+    const datasets = keys.map((k,i)=>({
+      label: k.toUpperCase(),
+      data: data.map(r=> (r.points?.[k]||0)*20),
+      backgroundColor: colors[i]
+    }));
+    _supChart = new Chart(ctx, {type:"bar", data:{labels, datasets}, options:{
+      responsive:true,
+      plugins:{legend:{position:'bottom'}},
+      scales:{y:{beginAtZero:true,max:100,ticks:{callback:v=>v+'%'}}}
+    }});
   }
-  impBtn && impBtn.addEventListener("click", ()=> fileIn.click());
-  fileIn.addEventListener("change", async (ev)=>{
-    const f = ev.target.files?.[0]; if(!f) return;
-    try{
-      const txt = await f.text();
-      const any = JSON.parse(txt);
-      const rec = normalizeRecordAny(any, state.channel);
-      if(!rec) { alert("File non valido"); return; }
-      applyCanonicalToState(rec);
-      // ricalcola e rinfresca UI
-      try{ refreshTitles(); }catch{}
-      location.reload();
-    }catch(e){
-      console.error(e); alert("File non valido");
-    }finally{
-      ev.target.value = "";
+
+  let btnRow = document.querySelector('.ch-buttons');
+  if(!btnRow){
+    btnRow = document.createElement('div'); btnRow.className='ch-buttons';
+    ctx?.parentElement?.appendChild(btnRow);
+  }
+  btnRow.innerHTML="";
+  data.forEach(r=>{
+    const b=document.createElement('button');
+    b.className='ch-btn'; b.textContent=r.channel;
+    b.title = `Apri scheda ${r.channel}`;
+    b.onclick = ()=> sup_openChecklist(r);
+    btnRow.appendChild(b);
+  });
+
+  let lateBox = document.querySelector('.late-list');
+  if(!lateBox){
+    lateBox = document.createElement('div'); lateBox.className='late-list';
+    ctx?.parentElement?.appendChild(lateBox);
+  }
+  lateBox.innerHTML="";
+  data.forEach(r=>{
+    const cnt = sup_overdueCount(r);
+    if(cnt>0){
+      const tag=document.createElement('span');
+      tag.className='late-item';
+      tag.textContent = `${r.channel}: ${cnt} ritardi`;
+      lateBox.appendChild(tag);
     }
   });
-}
 
-document.addEventListener("DOMContentLoaded", ()=>{
-  if (document.body.dataset.page==="home" || document.body.dataset.page==="checklist"){
-    try{ setupLineImportExportCompat(); }catch(e){ console.warn(e); }
+  const host = document.getElementById('supCards');
+  if(host){
+    host.innerHTML="";
+    data.forEach(r=>{
+      const el=document.createElement('div');
+      el.className='sup-card';
+      const P=r.points||{s1:0,s2:0,s3:0,s4:0,s5:0};
+      el.innerHTML = `
+        <h4>${r.channel} <span class="note-meta">— ${r.area||""}</span></h4>
+        <div class="kpi-row">
+          <span class="badge s1">1S ${Math.round(P.s1*20)}%</span>
+          <span class="badge s2">2S ${Math.round(P.s2*20)}%</span>
+          <span class="badge s3">3S ${Math.round(P.s3*20)}%</span>
+          <span class="badge s4">4S ${Math.round(P.s4*20)}%</span>
+          <span class="badge s5">5S ${Math.round(P.s5*20)}%</span>
+        </div>
+        <div class="actions">
+          <button class="pill" data-act="open" data-ch="${r.channel}">Apri scheda CH</button>
+          <a class="pill" href="notes.html?ch=${encodeURIComponent(r.channel)}">Note</a>
+        </div>`;
+      host.appendChild(el);
+      el.querySelector('[data-act="open"]').onclick = ()=> sup_openChecklist(r);
+    });
   }
+}
+document.addEventListener("DOMContentLoaded", ()=>{
+  if (document.body?.dataset?.page === "supervisor") setupSupervisor();
 });
 
-/** ====== Supervisor: cards + notes page ====== */
-function sup_all(){ try{ return JSON.parse(localStorage.getItem("skf5s:supervisor:data")) ?? []; }catch{ return []; } }
-function sup_lines(){ return sup_all().slice().sort((a,b)=> (a.channel||"").localeCompare(b.channel||"")); }
-function pct(v){ return Math.round((Number(v)||0)*20); }
-
-function renderSupervisorCards(){
-  const host = document.getElementById("supCards");
-  if(!host) return;
-  const rows = sup_lines();
-  host.innerHTML = "";
-  rows.forEach(r=>{
-    const el = document.createElement("div");
-    el.className = "sup-card";
-    const P = r.points||{s1:0,s2:0,s3:0,s4:0,s5:0};
-    el.innerHTML = `
-      <h4>${r.channel} <span class="note-meta">— ${r.area||""}</span></h4>
-      <div class="kpi-row">
-        <span class="badge s1">1S ${pct(P.s1)}%</span>
-        <span class="badge s2">2S ${pct(P.s2)}%</span>
-        <span class="badge s3">3S ${pct(P.s3)}%</span>
-        <span class="badge s4">4S ${pct(P.s4)}%</span>
-        <span class="badge s5">5S ${pct(P.s5)}%</span>
-      </div>
-      <div class="actions">
-        <a class="pill" href="notes.html?ch=${encodeURIComponent(r.channel)}">Note</a>
-      </div>`;
-    host.appendChild(el);
-  });
-}
-
-function setupNotesPage(){
-  const data = sup_lines();
-  const sel = document.getElementById("filterCh");
-  const list = document.getElementById("notesList");
-  if(!sel || !list) return;
-
-  sel.innerHTML = `<option value="">Tutte le linee</option>` + data.map(r=> `<option value="${r.channel}">${r.channel}</option>`).join("");
-  const params = new URLSearchParams(location.search);
-  const chParam = params.get("ch");
-  if(chParam){ sel.value = chParam; }
-
-  function normalizeNotes(rec){
-    const items = [];
-    const notes = rec.notes || {};
-    const dates = rec.dates || {};
-    ["s1","s2","s3","s4","s5"].forEach((k,i)=>{
-      let v = notes[k];
-      if(!v) return;
-      const due = dates[k] ? new Date(dates[k]) : null;
-      const arr = Array.isArray(v) ? v : [v];
-      arr.forEach(txt=>{
-        if(String(txt).trim().length===0) return;
-        items.push({
-          ch: rec.channel, area: rec.area, s: k.toUpperCase(),
-          text: String(txt),
-          due: due ? due.toISOString().slice(0,10) : null,
-          ts: rec.date || null
-        });
+/** ========== NOTES GROUPED (by CH and S) ========== */
+function setupNotesPageGrouped(){
+  const container = document.getElementById('notesList');
+  const sel = document.getElementById('filterCh');
+  if(!container || !sel) return;
+  const data = (function(){
+    try{ return JSON.parse(localStorage.getItem("skf5s:supervisor:data")) ?? []; }catch{ return []; }
+  })();
+  sel.innerHTML = '<option value="">Tutte le linee</option>' + data.map(r=> `<option value="${r.channel}">${r.channel}</option>`).join('');
+  const url = new URLSearchParams(location.search);
+  const ch = url.get('ch'); if(ch) sel.value = ch;
+  function render(){
+    const filt = sel.value;
+    const items = data.filter(r=> !filt || r.channel===filt);
+    container.innerHTML = "";
+    if(items.length===0){ container.innerHTML = "<p class='muted'>Nessuna nota disponibile.</p>"; return; }
+    items.forEach(rec=>{
+      const card=document.createElement('div'); card.className='note-card';
+      card.innerHTML = `<h4>${rec.channel} <span class="note-meta">— ${rec.area||""}</span></h4>`;
+      const wrap=document.createElement('div'); wrap.className='notes-group';
+      ['s1','s2','s3','s4','s5'].forEach(k=>{
+        const n=rec.notes?.[k]; if(!n || (Array.isArray(n) && n.length===0)) return;
+        const arr = Array.isArray(n) ? n : String(n).split(/\n+/).filter(Boolean);
+        const block=document.createElement('div'); block.className='note-s '+k;
+        const due = rec.dates?.[k] ? ` <span class="note-meta">${rec.dates[k]}</span>` : "";
+        block.innerHTML = `<strong>${k.toUpperCase()}</strong>${due}`;
+        const ul=document.createElement('ul'); ul.style.margin="6px 0 0 1rem";
+        arr.forEach(t=>{ const li=document.createElement('li'); li.textContent=t; ul.appendChild(li); });
+        block.appendChild(ul);
+        wrap.appendChild(block);
       });
-    });
-    return items;
-  }
-
-  function refresh(){
-    const flt = sel.value;
-    const all = data.flatMap(normalizeNotes).filter(x=> !flt || x.ch===flt);
-    all.sort((a,b)=> (b.due||"") < (a.due||"") ? -1 : 1);
-    list.innerHTML = "";
-    if(all.length===0){
-      list.innerHTML = "<p class='muted'>Nessuna nota disponibile.</p>";
-      return;
-    }
-    const today = new Date(new Date().toDateString());
-    all.forEach(n=>{
-      const div = document.createElement("div");
-      const sClass = "s"+n.s[0];
-      const overdue = n.due && new Date(n.due) < today;
-      div.className = `note-item ${sClass}`;
-      div.innerHTML = `
-        <div class="note-head">
-          <div><strong>${n.ch}</strong> — <span>${n.s}</span></div>
-          <div class="note-meta">${n.due ? `<span class="${overdue?'overdue':''}">${n.due}</span>` : ""}</div>
-        </div>
-        <div>${n.text}</div>`;
-      list.appendChild(div);
+      card.appendChild(wrap);
+      container.appendChild(card);
     });
   }
-
-  sel.addEventListener("change", refresh);
-  refresh();
+  sel.addEventListener('change', render);
+  render();
 }
-
 document.addEventListener("DOMContentLoaded", ()=>{
-  if (document.body?.dataset?.page === "supervisor"){
-    try{ renderSupervisorCards(); }catch(e){ console.warn(e); }
-  }
-  if (document.body?.dataset?.page === "notes"){
-    try{ setupNotesPage(); }catch(e){ console.warn(e); }
-  }
+  if (document.body?.dataset?.page === "notes") setupNotesPageGrouped();
 });
