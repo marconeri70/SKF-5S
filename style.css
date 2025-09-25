@@ -98,3 +98,19 @@ a{color:inherit;text-decoration:none}
 /* Forms */
 input,textarea{border:1px solid #cbd5e1;border-radius:10px;padding:.55rem .6rem}
 textarea{resize:vertical}
+
+/* Supervisor cards & notes */
+.sup-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.sup-card{border:1px solid var(--edge);border-radius:14px;padding:12px;background:var(--panel);box-shadow:var(--shadow-soft)}
+.sup-card h4{margin:0 0 .25rem 0}
+.kpi-row{display:flex;gap:6px;flex-wrap:wrap;margin:.25rem 0 .5rem}
+.badge{border-radius:999px;padding:.15rem .5rem;border:1px solid #e5e7eb;background:#fff;font-size:.85rem}
+.badge.s1{border-color:var(--s1)} .badge.s2{border-color:var(--s2)} .badge.s3{border-color:var(--s3)} .badge.s4{border-color:var(--s4)} .badge.s5{border-color:var(--s5)}
+.sup-card .actions{display:flex;gap:8px;flex-wrap:wrap}
+/* Notes list */
+.notes-list{display:grid;gap:10px}
+.note-item{border:1px solid var(--edge);border-left:6px solid var(--s1);border-radius:12px;padding:10px;background:var(--panel)}
+.note-head{display:flex;justify-content:space-between;gap:8px;margin-bottom:6px}
+.note-item.s1{border-left-color:var(--s1)} .note-item.s2{border-left-color:var(--s2)} .note-item.s3{border-left-color:var(--s3)} .note-item.s4{border-left-color:var(--s4)} .note-item.s5{border-left-color:var(--s5)}
+.note-meta{color:var(--muted);font-size:.85rem}
+.overdue{color:#b91c1c;font-weight:600}
