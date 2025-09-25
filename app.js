@@ -454,3 +454,106 @@ document.addEventListener("DOMContentLoaded", ()=>{
   if (document.body.dataset.page==="home") setupHome();
   if (document.body.dataset.page==="checklist") setupChecklist();
 });
+
+/* ==== Supervisor data layer (robusto) ==== */
+const SUP_STORE = "skf5s:supervisor:data";
+function sup_get(){ try{ return JSON.parse(localStorage.getItem(SUP_STORE)) ?? []; }catch{ return []; } }
+function sup_set(v){ localStorage.setItem(SUP_STORE, JSON.stringify(v)); }
+function sup_norm(rec){
+  if(!rec || typeof rec!=='object') return null;
+  const pts = rec.points && typeof rec.points==='object' ? rec.points : {};
+  const out = {s1:0,s2:0,s3:0,s4:0,s5:0};
+  for (const k of ['s1','s2','s3','s4','s5']) {
+    let v = pts[k] ?? 0;
+    if (typeof v==='string') v = v.replace('%','').trim();
+    v = Number(v); if (isNaN(v)) v=0;
+    if (v>5) v = Math.round(v/20);
+    if (v<0) v=0; if (v>5) v=5;
+    out[k]=v;
+  }
+  return {
+    area: String(rec.area||''),
+    channel: String(rec.channel||''),
+    date: rec.date || new Date().toISOString(),
+    points: out,
+    notes: rec.notes && typeof rec.notes==='object' ? rec.notes : {s1:"",s2:"",s3:"",s4:"",s5:""},
+    dates: rec.dates && typeof rec.dates==='object' ? rec.dates : {s1:null,s2:null,s3:null,s4:null,s5:null},
+    detail: rec.detail && typeof rec.detail==='object' ? rec.detail : {s1:{},s2:{},s3:{},s4:{},s5:{}}
+  };
+}
+function sup_mergeMany(list){
+  const cur = sup_get();
+  const idx = new Map(cur.map(r => [`${(r.area||'').toUpperCase()}::${(r.channel||'').toUpperCase()}`, r]));
+  for (const any of list){
+    const r = sup_norm(any); if(!r || !r.channel) continue;
+    const key = `${r.area.toUpperCase()}::${r.channel.toUpperCase()}`;
+    const prev = idx.get(key);
+    if (!prev || new Date(r.date||0) >= new Date(prev.date||0)) {
+      idx.set(key, r);
+    }
+  }
+  const merged = Array.from(idx.values());
+  sup_set(merged);
+  return merged;
+}
+function setupSupervisor(){
+  const fileInp = document.getElementById('supFiles');
+  const clearBtn= document.getElementById('supClear');
+  const expBtn  = document.getElementById('supExportAll');
+  fileInp?.addEventListener('change', async (ev)=>{
+    const files = Array.from(ev.target.files||[]);
+    if(!files.length) return;
+    const items = [];
+    for (const f of files){
+      try{
+        const txt = await f.text();
+        const any = JSON.parse(txt);
+        if (Array.isArray(any)) items.push(...any);
+        else items.push(any);
+      }catch(e){ console.warn('Import JSON non valido:', f.name, e); }
+    }
+    sup_mergeMany(items);
+    try{ renderSupervisor(); }catch(e){}
+    try{ renderMainFromSupervisor(); }catch(e){}
+    ev.target.value = "";
+  });
+  clearBtn?.addEventListener('click', ()=>{
+    if (confirm('Svuotare archivio Supervisor?')) { sup_set([]); try{ renderSupervisor(); }catch{} try{ renderMainFromSupervisor(); }catch{} }
+  });
+  expBtn?.addEventListener('click', ()=>{
+    const blob = new Blob([JSON.stringify(sup_get(),null,2)], {type:'application/json'});
+    const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='SKF-5S-supervisor-archive.json'; a.click();
+    URL.revokeObjectURL(a.href);
+  });
+}
+document.addEventListener('DOMContentLoaded', ()=>{
+  if (document.body?.dataset?.page === 'supervisor') {
+    try{ setupSupervisor(); }catch(e){ console.warn(e); }
+    try{ renderSupervisor && renderSupervisor(); }catch(e){}
+  }
+});
+
+/* ==== Aggiorna grafico della home con dati Supervisor (se presente) ==== */
+function renderMainFromSupervisor(){
+  const host = document.getElementById('mainChart');
+  if(!host) return;
+  const data = (function(){ try{ return JSON.parse(localStorage.getItem("skf5s:supervisor:data")) ?? []; }catch{ return []; } })();
+  if (!window.Chart) return;
+  const labels = data.map(r=> r.channel);
+  const colors = ["#7c3aed","#ef4444","#f59e0b","#10b981","#2563eb"];
+  const keys = ['s1','s2','s3','s4','s5'];
+  const datasets = keys.map((k,i)=>({
+    label: k.toUpperCase(),
+    data: data.map(r=> (r.points?.[k]||0)*20),
+    backgroundColor: colors[i]
+  }));
+  if (window._mainChart) window._mainChart.destroy();
+  window._mainChart = new Chart(host, {type:'bar', data:{labels, datasets},
+    options:{responsive:true, plugins:{legend:{position:'bottom'}}, scales:{y:{beginAtZero:true,max:100,ticks:{callback:v=>v+'%'}}}}
+  });
+}
+document.addEventListener('DOMContentLoaded', ()=>{
+  if (document.body?.dataset?.page === 'home' || document.body?.dataset?.page === 'index'){
+    try{ renderMainFromSupervisor(); }catch(e){ console.warn(e); }
+  }
+});
