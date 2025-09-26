@@ -1,295 +1,221 @@
-/** CONFIGURAZIONE */
+/** ========= CONFIG ========= */
 const CONFIG = {
-  AREA: "Rettifica",           // Per Montaggio cambia qui in "Montaggio"
+  AREA: "Rettifica",             // Cambia in "Montaggio" per l'altra repo
   CHANNEL_DEFAULT: "CH 24",
   DEFAULT_PIN: "6170"
 };
-const COLORS = {
-  s1:"#7c3aed", s2:"#ef4444", s3:"#f59e0b", s4:"#10b981", s5:"#2563eb"
-};
+const COLORS = { s1:"#7c3aed", s2:"#ef4444", s3:"#f59e0b", s4:"#10b981", s5:"#2563eb" };
 
-/** TESTI INFO – formato "(1) ... (2) ... (3) ..." */
+/** ========= INFO TESTI (compatti) ========= */
 const INFO_TEXT = {
-  s1: "(1) L'area pedonale è libera da ostacoli e pericoli di inciampo. (2) Nessun materiale/attrezzo non identificato sul pavimento. (3) Solo materiali/strumenti necessari presenti; il resto è rimosso. (4) Solo materiale necessario per il lavoro in corso. (5) Documenti/visualizzazioni necessari, aggiornati, in buono stato. (6) Definiti team e processo etichetta rossa; processo attivo. (7) Lavagna 5S aggiornata (piano, foto prima/dopo, audit). (8) Evidenze che garantiscono la sostenibilità di 1S. (9) 5S/1S compresi dal team; responsabilità definite. (10) Tutti i membri partecipano alle attività dell'area.",
-  s2: "(1) Area e team definiti; nessuna cosa non necessaria in zona. (2) Articoli di sicurezza chiaramente contrassegnati e accessibili. (3) Uscite/interruttori emergenza visibili e liberi. (4) Stazioni qualità definite e organizzate. (5) SWC seguito. (6) Posizioni prefissate per utenze/strumenti/pulizia con indicatori min/max. (7) Posizioni definite per contenitori e rifiuti con identificazione chiara. (8) WIP/accettati/rifiutati/quarantena con posizioni e identificazione. (9) Materie prime/componenti con posizioni designate. (10) Layout con corridoi/aree/pedonali e DPI definito. (11) File/documenti identificati e organizzati al punto d'uso. (12) Miglioramenti one-touch/poka-yoke/ergonomia. (13) Evidenze di sostenibilità 2S. (14) 5S/2S compresi; responsabilità definite. (15) Partecipazione di tutti.",
-  s3: "(1) Non si trovano cose inutili. (2) Miglioramenti 2S mantenuti. (3) Verifiche regolari e azioni su deviazioni. (4) Area/team definiti; 1S/2S compresi. (5) Pavimenti/pareti puliti e senza detriti/oli/trucioli ecc. (6) Segnali/etichette puliti, corretti e leggibili. (7) Documenti in buone condizioni e protetti. (8) Luci/ventilazione/AC in ordine e pulite. (9) Fonti sporco identificate e note. (10) Piani d'azione per eliminare fonti sporco. (11) Azioni eseguite. (12) Miglioramenti per prevenire pulizia (meno tappe, eliminazione fonte). (13) Riciclaggio attivo con corretto smistamento. (14) Demarcazioni rese permanenti. (15) Evidenze di sostenibilità 3S. (16) 5S/3S compresi; responsabilità definite; partecipazione di tutti.",
-  s4: "(1) Visual management/kanban/Min-Max implementati (gestire a vista). (2) Colori/segni standard per lubrificazioni, tubazioni, valvole, ecc. (3) Standard 5S consolidati e aggiornati come training/guida. (4) Istruzioni 5S integrate nella gestione quotidiana.",
-  s5: "(1) Tutti formati sugli standard 5S e coinvolti. (2) 5S come abitudine; standard seguiti da tutti. (3) Layered audit programmati. (4) Foto prima/dopo mantenute come riferimento. (5) Obiettivi 5S esposti."
+  s1:"(1) Area pedonale libera da ostacoli. (2) Nessun materiale non identificato a pavimento. (3) Solo materiali/strumenti necessari: il resto è rimosso. (4) Solo materiale necessario per il lavoro in corso. (5) Documenti/visual aggiornati e in buono stato. (6) Team e processo etichetta rossa definiti. (7) Lavagna 5S aggiornata (piano/foto/audit). (8) Evidenze sostenibilità 1S. (9) 5S/1S compresi; responsabilità definite. (10) Tutti partecipano.",
+  s2:"(1) Area/team definiti; niente cose inutili. (2) Sicurezza segnalata e accessibile. (3) Emergenze visibili/libere. (4) Stazioni qualità organizzate. (5) SWC seguito. (6) Posizioni e min/max per utenze/strumenti/pulizia. (7) Posizioni chiare per contenitori/rifiuti. (8) WIP/accettati/rifiutati/quarantena identificati. (9) Materie prime/componenti con posizioni designate. (10) Layout corridoi/DPI. (11) Documenti al punto d’uso. (12) Miglioramenti one-touch/poka-yoke/ergonomia. (13) Evidenze sostenibilità 2S. (14) 5S/2S compresi; responsabilità definite.",
+  s3:"(1) Niente cose inutili. (2) Miglioramenti 2S mantenuti. (3) Verifiche regolari e azioni. (4) 1S/2S compresi. (5) Pavimenti/pareti puliti. (6) Segnali puliti e leggibili. (7) Documenti protetti. (8) Luci/ventilazione ok. (9) Fonti sporco note. (10) Piano per eliminarle. (11) Azioni eseguite. (12) Prevenzione pulizia. (13) Riciclo attivo. (14) Demarcazioni permanenti. (15) Evidenze sostenibilità 3S.",
+  s4:"(1) Visual mgmt/Min-Max a vista. (2) Colori standard per lubrificazioni/tubi/valvole. (3) Standard 5S consolidati e aggiornati. (4) Istruzioni integrate nella gestione quotidiana.",
+  s5:"(1) Tutti formati e coinvolti. (2) 5S come abitudine. (3) Layered audit programmati. (4) Foto prima/dopo mantenute. (5) Obiettivi 5S in evidenza."
 };
 
-/** Helpers storage */
-const storageKey = k => `skf5s:${CONFIG.AREA}:${k}`;
-const getJSON = (k,d)=>{ try{ return JSON.parse(localStorage.getItem(k)) ?? d; }catch{ return d; } };
-const setJSON = (k,v)=> localStorage.setItem(k, JSON.stringify(v));
+/** ========= STORAGE HELPERS ========= */
+const K = (k)=>`skf5s:${CONFIG.AREA}:${k}`;
+const Jget=(k,d)=>{ try{ return JSON.parse(localStorage.getItem(k)) ?? d; }catch{ return d; } };
+const Jset=(k,v)=> localStorage.setItem(k, JSON.stringify(v));
 
-/** Service worker */
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", ()=> navigator.serviceWorker.register("sw.js"));
+/** ========= SERVICE WORKER ========= */
+if ("serviceWorker" in navigator){
+  addEventListener("load", ()=> navigator.serviceWorker.register("sw.js"));
 }
 
-/** Stato */
-let state = getJSON(storageKey("state"), {
-  channel: CONFIG.CHANNEL_DEFAULT,
-  pin: getJSON("skf5s:pin", CONFIG.DEFAULT_PIN),
-  points: { s1:0, s2:0, s3:0, s4:0, s5:0 },
-  notes:  { s1:"", s2:"", s3:"", s4:"", s5:"" },
-  dates:  { s1:null, s2:null, s3:null, s4:null, s5:null },
-  // scelte dei punti nel popup, per calcolare la media
-  detail: { s1:{}, s2:{}, s3:{}, s4:{}, s5:{} }
+/** ========= STATO =========
+ * archivio multi-CH:
+ * state.archive = { "CH 24": {points,notes,dates,detail}, "CH 25": {...}, ... }
+ */
+let state = Jget(K("state"), {
+  pin: Jget("skf5s:pin", CONFIG.DEFAULT_PIN),
+  active: CONFIG.CHANNEL_DEFAULT,
+  archive: {}   // viene popolato all'uso
 });
-function savePin(p){ state.pin = p; setJSON(storageKey("state"), state); localStorage.setItem("skf5s:pin", JSON.stringify(p)); }
+function savePin(p){ state.pin=p; Jset("skf5s:pin",p); Jset(K("state"),state); }
 
-/** Titoli dinamici */
-function refreshTitles(){
-  const chartTitle = document.getElementById("chartTitle");
-  if (chartTitle) chartTitle.textContent = `Andamento ${state.channel} — ${CONFIG.AREA}`;
-  const pageTitle = document.getElementById("pageTitle");
-  if (pageTitle) pageTitle.textContent = `${state.channel} — ${CONFIG.AREA}`;
+function ensureCH(ch){
+  if(!state.archive[ch]){
+    state.archive[ch] = {
+      points:{s1:0,s2:0,s3:0,s4:0,s5:0},
+      notes:{s1:"",s2:"",s3:"",s4:"",s5:""},
+      dates:{s1:null,s2:null,s3:null,s4:null,s5:null},
+      detail:{s1:{},s2:{},s3:{},s4:{},s5:{}}
+    };
+  }
+  return state.archive[ch];
 }
 
-/** PIN dialog (con cambio PIN offline) */
+/** ========= TITOLI ========= */
+function refreshTitles(){
+  const t = document.getElementById("chartTitle");
+  if (t) t.textContent = `Andamento ${state.active} — ${CONFIG.AREA}`;
+}
+
+/** ========= PIN DIALOG ========= */
 function openPinDialog(){
   const dlg = document.getElementById("pinDialog");
-  if (!dlg) return;
-
-  dlg.showModal();
+  if(!dlg) return;
   const pinInput = document.getElementById("pinInput");
-  const chInput  = document.getElementById("channelInput");
+  const channelInput = document.getElementById("channelInput");
   const np1 = document.getElementById("newPin1");
   const np2 = document.getElementById("newPin2");
-  const okBtn = document.getElementById("pinConfirmBtn");
+  const ok = document.getElementById("pinConfirmBtn");
   const cancel = document.getElementById("pinCancel");
 
-  pinInput.value = "";
-  chInput.value = state.channel ?? CONFIG.CHANNEL_DEFAULT;
-  np1.value = ""; np2.value = "";
+  pinInput.value=""; channelInput.value = state.active; np1.value=""; np2.value="";
+  dlg.showModal();
 
-  okBtn.onclick = ()=>{
-    const entered = pinInput.value.trim();
-    if (entered !== String(state.pin)) { alert("PIN errato"); return; }
-    state.channel = chInput.value.trim() || CONFIG.CHANNEL_DEFAULT;
-
+  ok.onclick = ()=>{
+    if (pinInput.value !== String(state.pin)) { alert("PIN errato"); return; }
+    state.active = (channelInput.value||CONFIG.CHANNEL_DEFAULT).trim();
     if (np1.value || np2.value){
       if (np1.value !== np2.value) { alert("I due PIN non coincidono"); return; }
       if (!/^\d{3,8}$/.test(np1.value)) { alert("PIN non valido"); return; }
       savePin(np1.value);
     }
-    setJSON(storageKey("state"), state);
+    ensureCH(state.active);
+    Jset(K("state"), state);
     refreshTitles();
     dlg.close();
+    location.reload();
   };
   cancel.onclick = ()=> dlg.close();
 }
 
-/** Utilità ritardi */
-function isLate(k){
-  const d = state.dates[k];
+/** ========= UTILITY RITARDI & NOTE ========= */
+function isLate(ch,k){
+  const d = ensureCH(ch).dates[k];
   if(!d) return false;
   const today = new Date(); today.setHours(0,0,0,0);
-  const chosen = new Date(d); chosen.setHours(0,0,0,0);
-  return chosen < today;
+  const due = new Date(d); due.setHours(0,0,0,0);
+  return due < today;
 }
-function updateStatsAndLate(){
-  const arr = Object.values(state.points);
-  const avg = arr.length ? Math.round(arr.reduce((a,b)=>a+b,0)/arr.length*20) : 0;
-  const lateList = Object.keys(state.dates).filter(k=> isLate(k));
-  document.getElementById("avgScore")?.replaceChildren(document.createTextNode(`${avg}%`));
-  document.getElementById("lateCount")?.replaceChildren(document.createTextNode(String(lateList.length)));
-  ["s1","s2","s3","s4","s5"].forEach(k=>{
-    document.getElementById(`sheet-${k}`)?.classList.toggle("late", isLate(k));
-  });
-}
-
-/** Utilità Note + parsing frasi */
-function parsePoints(txt){
-  const out = [];
-  const re = /\((\d+)\)\s*([^]+?)(?=\s*\(\d+\)\s*|$)/g;
-  let m;
-  while((m = re.exec(txt))){ out.push(m[2].trim()); }
+const parsePoints = (txt)=>{
+  const out=[]; const re=/\((\d+)\)\s*([^]+?)(?=\s*\(\d+\)\s*|$)/g; let m;
+  while((m=re.exec(txt))) out.push(m[2].trim());
   return out;
-}
-function squaresSummaryColored(score){
-  // 🟦 = scelto, ⬜ = non scelto
-  const order = [0,1,3,5];
-  return order.map(v => (v===score ? `🟦${v}` : `⬜${v}`)).join(" ");
-}
-function appendNote(k, text, score){
-  const ta = document.querySelector(`#sheet-${k} textarea`);
-  if(!ta) return;
-  const line = `${squaresSummaryColored(score)} — ${text}`;
-  ta.value = (ta.value ? ta.value.replace(/\s*$/,"")+"\n" : "") + line;
-  state.notes[k] = ta.value;
-  setJSON(storageKey("state"), state);
-}
-function nearestScore(mean){
-  const choices = [0,1,3,5];
-  let best = 0, bestDiff = Infinity;
-  for (const c of choices){
-    const d = Math.abs(mean - c);
-    if (d < bestDiff) { bestDiff = d; best = c; }
-  }
-  return best;
-}
-function recalcFromDetailAndApply(k){
-  const picks = Object.values(state.detail[k]||{});
-  if (picks.length===0) return; // niente ancora
-  const mean = picks.reduce((a,b)=>a+b,0) / picks.length;
-  const newScore = nearestScore(mean);
-  // applica alla scheda
-  state.points[k] = newScore;
-  setJSON(storageKey("state"), state);
-  document.querySelectorAll(`#sheet-${k} .points button`).forEach(b=>{
-    b.classList.toggle("active", Number(b.dataset.p)===newScore);
-  });
-  const sv = document.querySelector(`#sheet-${k} .s-value`);
-  if (sv) sv.textContent = `Valore: ${newScore*20}%`;
-  updateStatsAndLate();
-}
+};
+const squares = (score)=> [0,1,3,5].map(v=> v===score?`🟦${v}`:`⬜${v}`).join(" ");
+function nearestScore(mean){ const c=[0,1,3,5]; return c.reduce((a,b)=> Math.abs(b-mean)<Math.abs(a-mean)?b:a,0); }
 
-/** HOME */
+/** ========= HOME ========= */
 let chart;
 function renderChart(){
-  const ctx = document.getElementById("progressChart");
-  if(!ctx) return;
-
-  const vals = ["s1","s2","s3","s4","s5"].map(k=> (state.points[k]??0)*20 );
-  const delayed = Object.keys(state.dates).filter(k=> isLate(k)).length;
+  const ctx = document.getElementById("progressChart"); if(!ctx) return;
+  const rec = ensureCH(state.active);
+  const vals = ["s1","s2","s3","s4","s5"].map(k=> (rec.points[k]??0)*20 );
+  const delayed = Object.keys(rec.dates).filter(k=> isLate(state.active,k)).length;
 
   if(chart) chart.destroy();
-  chart = new Chart(ctx, {
+  chart = new Chart(ctx,{
     type:"bar",
-    data:{
-      labels:["1S","2S","3S","4S","5S","Ritardi"],
-      datasets:[{
-        data:[...vals, delayed],
-        backgroundColor:["#7c3aed","#ef4444","#f59e0b","#10b981","#2563eb","#ef4444"],
-        borderWidth:0
-      }]
-    },
+    data:{ labels:["1S","2S","3S","4S","5S","Ritardi"],
+      datasets:[{ data:[...vals, delayed],
+        backgroundColor:["#7c3aed","#ef4444","#f59e0b","#10b981","#2563eb","#ef4444"], borderWidth:0 }]},
     options:{
       responsive:true,
       plugins:{
         legend:{display:false},
         tooltip:{
-          enabled:true,
           callbacks:{
-            label: (item)=>{
-              if (item.dataIndex===5) return "Ritardi: " + item.raw;
-              return `${item.label}: ${item.raw}%`;
-            },
-            afterBody: (items)=>{
-              const idx = items[0].dataIndex;
-              if (idx<0 || idx>4) return;
-              const key = ["s1","s2","s3","s4","s5"][idx];
-              const det = state.detail[key]||{};
-              const pts = parsePoints(INFO_TEXT[key]||"");
-              const lines = Object.keys(det)
-                .map(n=>Number(n))
-                .sort((a,b)=>a-b)
-                .slice(0,6)
-                .map(n=>{
-                  const score = det[n];
-                  const text  = pts[n] || "";
-                  return `${n+1}) ${squaresSummaryColored(score)} ${text}`;
-                });
-              return lines.length ? lines : ["Nessuna nota selezionata"];
+            label:(it)=> it.dataIndex===5? `Ritardi: ${it.raw}` : `${it.label}: ${it.raw}%`,
+            afterBody:(items)=>{
+              const i=items[0].dataIndex; if(i<0||i>4) return;
+              const key=["s1","s2","s3","s4","s5"][i];
+              const det=rec.detail[key]||{}; const pts=parsePoints(INFO_TEXT[key]||"");
+              const lines=Object.keys(det).map(n=>+n).sort((a,b)=>a-b).slice(0,6)
+                .map(n=>`${n+1}) ${squares(det[n])} ${pts[n]||""}`);
+              return lines.length?lines:["Nessuna nota selezionata"];
             }
           }
         }
       },
-      scales:{
-        y:{beginAtZero:true,max:100,grid:{display:false},ticks:{callback:v=>v+"%"}},
-        x:{grid:{display:false},ticks:{maxRotation:0}}
-      }
+      scales:{y:{beginAtZero:true,max:100,grid:{display:false},ticks:{callback:v=>v+"%"}},x:{grid:{display:false}}}
     }
   });
 
-  // pulsanti “in ritardo”
-  const late = [];
-  ["s1","s2","s3","s4","s5"].forEach((k,i)=>{ if(isLate(k)) late.push({k, label:`${i+1}S in ritardo`}); });
-  const box = document.getElementById("lateBtns");
-  if (!box) return;
-  box.innerHTML = "";
-  late.forEach(({k,label})=>{
-    const b = document.createElement("button");
-    b.className = `late-btn ${k}`;
-    b.style.borderColor = COLORS[k];
-    b.textContent = label;
-    b.addEventListener("click", ()=> { window.location.href = `checklist.html#sheet-${k}`; });
-    box.appendChild(b);
+  // pulsanti in ritardo
+  const lateBox = document.getElementById("lateBtns"); if(!lateBox) return;
+  lateBox.innerHTML="";
+  ["s1","s2","s3","s4","s5"].forEach((k,i)=>{
+    if (isLate(state.active,k)){
+      const b=document.createElement("button");
+      b.className=`late-btn ${k}`; b.style.borderColor=COLORS[k]; b.textContent=`${i+1}S in ritardo`;
+      b.onclick=()=> location.href="checklist.html#"+encodeURIComponent(state.active)+"::"+k;
+      lateBox.appendChild(b);
+    }
   });
 }
 function setupHome(){
   refreshTitles();
+  ensureCH(state.active);
   renderChart();
-  document.getElementById("lockBtn")?.addEventListener("click", openPinDialog);
-  document.getElementById("exportBtn")?.addEventListener("click", ()=>{
-    const entered = prompt("Inserisci PIN per esportare");
-    if (entered !== String(state.pin)) return;
-
-    const payload = {
-      area: CONFIG.AREA,
-      channel: state.channel,
-      date: new Date().toISOString(),
-      points: state.points,
-      notes: state.notes,
-      dates: state.dates,
-      detail: state.detail
-    };
-    const blob = new Blob([JSON.stringify(payload,null,2)], {type:"application/json"});
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `SKF-5S-${CONFIG.AREA}-${state.channel}.json`;
-    a.click();
-    URL.revokeObjectURL(a.href);
+  document.getElementById("lockBtn")?.addEventListener("click",openPinDialog);
+  document.getElementById("exportBtn")?.addEventListener("click",()=>{
+    const pin=prompt("Inserisci PIN per esportare"); if(pin!==String(state.pin)) return;
+    const rec = ensureCH(state.active);
+    const payload = {version:"1.0", area:CONFIG.AREA, channel:state.active, date:new Date().toISOString(), ...rec};
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}));
+    a.download=`SKF-5S_${CONFIG.AREA}_${state.active}.json`; a.click(); URL.revokeObjectURL(a.href);
   });
 }
 
-/** CHECKLIST */
-function setupChecklist(){
-  refreshTitles();
-  document.getElementById("lockBtn")?.addEventListener("click", openPinDialog);
+/** ========= CHECKLIST (MULTI-CH) ========= */
+function renderOneCH(ch){
+  const rec = ensureCH(ch);
+  const wrap = document.createElement("section");
+  wrap.className="ch-card"; wrap.dataset.ch=ch;
 
-  const summary = document.getElementById("summaryBadges");
-  ["s1","s2","s3","s4","s5"].forEach(k=>{
-    const v = state.points[k] ?? 0;
-    const el = document.createElement("button");
-    el.className = `s-badge ${k}`;
-    el.textContent = `${k.toUpperCase()} ${v*20}%`;
-    el.addEventListener("click", ()=> {
-      document.getElementById(`sheet-${k}`)?.scrollIntoView({behavior:"smooth",block:"start"});
-    });
-    summary.appendChild(el);
-  });
+  // KPI card head
+  const avg = Math.round(Object.values(rec.points).reduce((a,b)=>a+b,0)/5*20);
+  const late = Object.keys(rec.dates).filter(k=>isLate(ch,k)).length;
 
-  document.getElementById("toggleAll")?.addEventListener("click", ()=>{
-    document.querySelectorAll(".s-details").forEach(det=> det.open = !det.open);
-  });
+  wrap.innerHTML = `
+    <div class="ch-head">
+      <div class="ch-title">${ch} — ${CONFIG.AREA}</div>
+      <div class="ch-ctrls">
+        <div class="kpis">
+          <span class="chip s1">S1 ${rec.points.s1*20}%</span>
+          <span class="chip s2">S2 ${rec.points.s2*20}%</span>
+          <span class="chip s3">S3 ${rec.points.s3*20}%</span>
+          <span class="chip s4">S4 ${rec.points.s4*20}%</span>
+          <span class="chip s5">S5 ${rec.points.s5*20}%</span>
+          <span class="pill ghost">Voto medio ${avg}%</span>
+          <span class="pill ghost">Ritardi ${late}</span>
+        </div>
+        <button class="pill ch-toggle">Comprimi / Espandi</button>
+      </div>
+    </div>
+    <div class="sheets"></div>
+  `;
 
-  const wrap = document.getElementById("sheets");
-  const defs = [
+  // 5 schede S
+  const S = [
     {k:"s1", name:"1S — Selezionare",   color:COLORS.s1},
     {k:"s2", name:"2S — Sistemare",     color:COLORS.s2},
     {k:"s3", name:"3S — Splendere",     color:COLORS.s3},
     {k:"s4", name:"4S — Standardizzare",color:COLORS.s4},
     {k:"s5", name:"5S — Sostenere",     color:COLORS.s5},
   ];
-  const todayStr = ()=> new Date().toISOString().slice(0,10);
+  const today=()=> new Date().toISOString().slice(0,10);
+  const sheets = wrap.querySelector(".sheets");
 
-  defs.forEach(({k,name,color})=>{
-    const val = state.points[k] ?? 0;
-    const late = isLate(k);
-
-    const card = document.createElement("article");
-    card.className = "sheet" + (late ? " late":"");
-    card.id = `sheet-${k}`;
-    card.innerHTML = `
+  S.forEach(({k,name,color})=>{
+    const val = rec.points[k]??0;
+    const lateS = isLate(ch,k);
+    const art = document.createElement("article");
+    art.className = "sheet"+(lateS?" late":""); art.id=`${ch}::${k}`;
+    art.innerHTML = `
       <div class="sheet-head">
         <span class="s-color" style="background:${color}"></span>
         <h3 class="s-title" style="color:${color}">${name}</h3>
-        <span class="s-value">Valore: ${(val*20)}%</span>
-        <button class="icon info" aria-label="Info" data-k="${k}">i</button>
-        <button class="icon add" aria-label="Duplica">+</button>
+        <span class="s-value">Valore: ${val*20}%</span>
+        <button class="icon info" data-k="${k}" data-ch="${ch}">i</button>
+        <button class="icon add">+</button>
       </div>
 
       <details class="s-details" open>
@@ -297,409 +223,250 @@ function setupChecklist(){
 
         <label class="field">
           <span>Responsabile / Operatore</span>
-          <input placeholder="Inserisci il nome..." value="">
+          <input placeholder="Inserisci il nome...">
         </label>
 
         <label class="field">
           <span>Note</span>
-          <textarea rows="3" placeholder="Note...">${state.notes[k]??""}</textarea>
+          <textarea rows="3" placeholder="Note...">${rec.notes[k]||""}</textarea>
         </label>
 
         <div class="field">
           <span>Data</span>
           <div class="row">
-            <input type="date" value="${state.dates[k]??todayStr()}" data-date="${k}">
+            <input type="date" data-ch="${ch}" data-k="${k}" value="${rec.dates[k]||today()}">
             <div class="points">
-              ${[0,1,3,5].map(p=>`
-                <button data-k="${k}" data-p="${p}" class="${val===p?'active':''}">${p}</button>
-              `).join("")}
+              ${[0,1,3,5].map(p=>`<button data-ch="${ch}" data-k="${k}" data-p="${p}" class="${val===p?'active':''}">${p}</button>`).join("")}
             </div>
             <button class="icon danger del">🗑</button>
           </div>
         </div>
       </details>
     `;
-    wrap.appendChild(card);
+    sheets.appendChild(art);
   });
 
-  // punteggi scheda (manuali)
+  // eventi interni CH
+  // toggle CH (apre/chiude tutte le details)
+  wrap.querySelector(".ch-toggle").onclick = ()=>{
+    const anyOpen = [...wrap.querySelectorAll(".s-details")].some(d=>d.open);
+    wrap.querySelectorAll(".s-details").forEach(d=> d.open = !anyOpen);
+  };
+
+  // set punti
   wrap.addEventListener("click",(e)=>{
-    const btn = e.target.closest(".points button");
-    if(!btn) return;
-    const k = btn.dataset.k;
-    const p = Number(btn.dataset.p);
-    state.points[k] = p;
-    setJSON(storageKey("state"), state);
-    document.querySelectorAll(`.points button[data-k="${k}"]`).forEach(b=>b.classList.toggle("active", Number(b.dataset.p)===p));
-    document.querySelector(`#sheet-${k} .s-value`).textContent = `Valore: ${p*20}%`;
-    updateStatsAndLate();
+    const btn = e.target.closest(".points button"); if(!btn) return;
+    const kc = btn.dataset.k; const chn = btn.dataset.ch; const p=Number(btn.dataset.p);
+    const r = ensureCH(chn); r.points[kc]=p; Jset(K("state"),state);
+    btn.parentElement.querySelectorAll("button").forEach(b=> b.classList.toggle("active", b===btn));
+    wrap.querySelector(`#\\3A ${chn}::${kc.replace('s','s')}`); // safe noop
+    btn.closest(".sheet").querySelector(".s-value").textContent = `Valore: ${p*20}%`;
+    renderChecklistHeader(wrap, chn);
   });
 
   // date → ritardo
   wrap.addEventListener("change",(e)=>{
-    const inp = e.target.closest('input[type="date"][data-date]');
-    if(!inp) return;
-    const k = inp.dataset.date;
-    state.dates[k] = inp.value;
-    setJSON(storageKey("state"), state);
-    updateStatsAndLate();
+    const d = e.target.closest('input[type="date"][data-ch]'); if(!d) return;
+    const r=ensureCH(d.dataset.ch); r.dates[d.dataset.k]=d.value; Jset(K("state"),state);
+    d.closest(".sheet").classList.toggle("late", isLate(d.dataset.ch,d.dataset.k));
+    renderChecklistHeader(wrap, d.dataset.ch);
   });
 
-  // elimina con PIN (reset scheda)
+  // delete reset scheda
   wrap.addEventListener("click",(e)=>{
-    const del = e.target.closest(".del");
-    if(!del) return;
-    const pin = prompt("Inserisci PIN per eliminare");
-    if (pin !== String(state.pin)) return;
-    const k = del.closest(".sheet").id.replace("sheet-","");
-    state.points[k]=0; state.notes[k]=""; state.dates[k]=null; state.detail[k]={};
-    setJSON(storageKey("state"), state);
-    const s = del.closest(".sheet");
-    s.querySelectorAll(".points button").forEach(b=>b.classList.remove("active"));
-    s.querySelector(".s-value").textContent="Valore: 0%";
-    s.querySelector('textarea').value="";
-    s.querySelector('input[type="date"]').value=new Date().toISOString().slice(0,10);
-    updateStatsAndLate();
+    const del = e.target.closest(".del"); if(!del) return;
+    const pin = prompt("PIN per eliminare"); if (pin!==String(state.pin)) return;
+    const sheet = del.closest(".sheet");
+    const [chn,kc] = sheet.id.split("::");
+    const r=ensureCH(chn);
+    r.points[kc]=0; r.notes[kc]=""; r.dates[kc]=null; r.detail[kc]={}; Jset(K("state"),state);
+    sheet.querySelectorAll(".points button").forEach(b=> b.classList.remove("active"));
+    sheet.querySelector(".s-value").textContent="Valore: 0%";
+    sheet.querySelector("textarea").value="";
+    sheet.classList.remove("late");
+    renderChecklistHeader(wrap, chn);
   });
 
-  // info popup
+  // info
   wrap.addEventListener("click",(e)=>{
-    const infoBtn = e.target.closest(".info");
-    if(!infoBtn) return;
-    openInfo(infoBtn.dataset.k);
+    const info = e.target.closest(".info"); if(!info) return;
+    openInfo(info.dataset.ch, info.dataset.k);
   });
 
-  // + duplicazione scheda (PIN)
-  wrap.addEventListener("click",(e)=>{
-    const add = e.target.closest(".add");
-    if(!add) return;
-    const pin = prompt("Inserisci PIN per duplicare");
-    if (pin !== String(state.pin)) return;
-    const card = add.closest(".sheet");
-    const clone = card.cloneNode(true);
-    const uid = Math.random().toString(36).slice(2,7);
-    clone.id = card.id + "-x" + uid;
-    clone.querySelectorAll("textarea").forEach(t=> t.value="");
-    clone.querySelectorAll('input[type="date"]').forEach(d=> d.value=new Date().toISOString().slice(0,10));
-    clone.querySelectorAll(".points button").forEach(b=> b.classList.remove("active"));
-    clone.querySelector(".s-value").textContent="Valore: 0%";
-    card.after(clone);
-  });
-
-  document.getElementById("infoCloseBtn")?.addEventListener("click", ()=> {
-    document.getElementById("infoDialog").close();
-  });
-
-  updateStatsAndLate();
+  return wrap;
 }
 
-/** Popup “i” con punti interattivi + media automatica */
-function openInfo(k){
-  const dlg = document.getElementById("infoDialog");
-  const title = document.getElementById("infoTitle");
-  const cont = document.getElementById("infoContent");
-  title.textContent = `${k.toUpperCase()} — Info`;
-  cont.innerHTML = "";
+// aggiorna KPI nel titolo CH
+function renderChecklistHeader(chCard, ch){
+  const r=ensureCH(ch);
+  const avg = Math.round(Object.values(r.points).reduce((a,b)=>a+b,0)/5*20);
+  const late = Object.keys(r.dates).filter(k=>isLate(ch,k)).length;
+  const chips = chCard.querySelectorAll(".kpis .chip");
+  chips[0].textContent=`S1 ${r.points.s1*20}%`;
+  chips[1].textContent=`S2 ${r.points.s2*20}%`;
+  chips[2].textContent=`S3 ${r.points.s3*20}%`;
+  chips[3].textContent=`S4 ${r.points.s4*20}%`;
+  chips[4].textContent=`S5 ${r.points.s5*20}%`;
+  chCard.querySelectorAll(".kpis .pill.ghost")[0].textContent=`Voto medio ${avg}%`;
+  chCard.querySelectorAll(".kpis .pill.ghost")[1].textContent=`Ritardi ${late}`;
+}
 
-  if (!state.detail[k]) state.detail[k] = {};
-  const pts = parsePoints(INFO_TEXT[k] || "");
+function setupChecklist(){
+  // bottone lock nella appbar
+  document.getElementById("lockBtn")?.addEventListener("click", openPinDialog);
 
-  const ol = document.createElement("ol");
-  pts.forEach((txt, idx)=>{
-    const li = document.createElement("li");
-    const already = state.detail[k][idx] ?? null;
-    const row = document.createElement("div");
-    row.className = "pointline";
-    row.innerHTML = `
-      <div>${idx+1}. ${txt}</div>
-      <div class="pick" data-k="${k}" data-idx="${idx}">
-        ${[0,1,3,5].map(v=>`<button type="button" data-score="${v}" class="${already===v?'picked':''}">${v}</button>`).join("")}
-      </div>
-      <div class="note-mini">Seleziona un valore per aggiungere la riga in Note.</div>
-    `;
-    li.appendChild(row);
+  // render di TUTTI i CH presenti
+  const host = document.getElementById("channelsWrap");
+  host.innerHTML="";
+  const chList = Object.keys(state.archive).length ? Object.keys(state.archive) : [state.active];
+  chList.forEach(ch=>{
+    ensureCH(ch);
+    host.appendChild(renderOneCH(ch));
+  });
+
+  // comprimi/espandi TUTTI i CH
+  document.getElementById("toggleAllCH")?.addEventListener("click", ()=>{
+    const cards=[...document.querySelectorAll(".ch-card")];
+    const someOpen = cards.some(c=> [...c.querySelectorAll(".s-details")].some(d=>d.open));
+    cards.forEach(c=> c.querySelectorAll(".s-details").forEach(d=> d.open = !someOpen));
+  });
+
+  // se arriviamo con #CH::sX scorri alla scheda
+  if (location.hash){
+    const id = decodeURIComponent(location.hash.slice(1));
+    document.getElementById(id)?.scrollIntoView({behavior:"smooth",block:"start"});
+  }
+}
+
+/** ========= POPUP INFO (inserimento in Note e media) ========= */
+function openInfo(ch,k){
+  const dlg=document.getElementById("infoDialog");
+  const title=document.getElementById("infoTitle");
+  const content=document.getElementById("infoContent");
+  const rec=ensureCH(ch);
+  title.textContent=`${k.toUpperCase()} — Info`;
+  content.innerHTML="";
+  const pts=parsePoints(INFO_TEXT[k]||"");
+
+  const ol=document.createElement("ol");
+  pts.forEach((txt,idx)=>{
+    const li=document.createElement("li");
+    const chosen=rec.detail[k]?.[idx] ?? null;
+    li.innerHTML = `
+      <div class="pointline">
+        <div>${idx+1}. ${txt}</div>
+        <div class="pick" data-ch="${ch}" data-k="${k}" data-idx="${idx}">
+          ${[0,1,3,5].map(v=>`<button type="button" data-score="${v}" class="${chosen===v?'picked':''}">${v}</button>`).join("")}
+        </div>
+        <div class="note-mini">Seleziona per aggiungere la riga colorata nelle Note.</div>
+      </div>`;
     ol.appendChild(li);
   });
-  cont.appendChild(ol);
-
-  cont.onclick = (e)=>{
-    const btn = e.target.closest('.pick button');
-    if(!btn) return;
-    const pick = btn.closest('.pick');
-    const score = Number(btn.dataset.score);
-    const key = pick.dataset.k;
-    const idx = Number(pick.dataset.idx);
-    // evidenzia selezione
-    pick.querySelectorAll('button').forEach(b=> b.classList.toggle('picked', b===btn));
-    // salva scelta
-    if (!state.detail[key]) state.detail[key]={};
-    state.detail[key][idx] = score;
-    setJSON(storageKey("state"), state);
-    // aggiunge riga in Note (blu evidenziato via emoji)
-    const text = parsePoints(INFO_TEXT[key]||"")[idx];
-    appendNote(key, text, score);
-    // calcola media e aggiorna scheda
-    recalcFromDetailAndApply(key);
-  };
-
-  dlg.querySelector(".modal-box").style.borderTop = `6px solid ${COLORS[k]||'#0a57d5'}`;
+  content.appendChild(ol);
+  dlg.querySelector(".modal-box").style.borderTop=`6px solid ${COLORS[k]}`;
   dlg.showModal();
-}
 
-/** Router base */
-document.addEventListener("DOMContentLoaded", ()=>{
-  refreshTitles();
-  if (document.body.dataset.page==="home") setupHome();
-  if (document.body.dataset.page==="checklist") setupChecklist();
-});
+  content.onclick=(e)=>{
+    const b=e.target.closest(".pick button"); if(!b) return;
+    const pick=b.closest(".pick"); const score=+b.dataset.score;
+    const chn=pick.dataset.ch; const key=pick.dataset.k; const idx=+pick.dataset.idx;
+    pick.querySelectorAll("button").forEach(x=> x.classList.toggle("picked", x===b));
 
-/** ======= Import/Export compat linea + MULTI-CH ======= */
-function canonicalFromState(){
-  return {
-    version:"1.0",
-    area: CONFIG.AREA,
-    channel: state.channel,
-    date: new Date().toISOString(),
-    points: {...state.points},
-    notes: {...state.notes},
-    dates: {...state.dates},
-    detail: {...state.detail}
+    const rec=ensureCH(chn); if(!rec.detail[key]) rec.detail[key]={};
+    rec.detail[key][idx]=score;
+
+    // append nota con riquadri colorati
+    const txt=parsePoints(INFO_TEXT[key]||"")[idx] || "";
+    const ta=document.querySelector(`#${CSS.escape(chn)}\\:\\:${key} textarea`);
+    if (ta){
+      const line=`${squares(score)} — ${txt}`;
+      ta.value = (ta.value?ta.value.replace(/\s*$/,"")+"\n":"")+line;
+      rec.notes[key]=ta.value;
+    }
+
+    // media → punto scheda
+    const arr=Object.values(rec.detail[key]); const mean=arr.reduce((a,b)=>a+b,0)/arr.length;
+    const pt=nearestScore(mean); rec.points[key]=pt;
+
+    // riflessi UI
+    const sheet=document.getElementById(`${chn}::${key}`);
+    sheet.querySelectorAll(".points button").forEach(x=> x.classList.toggle("active", +x.dataset.p===pt));
+    sheet.querySelector(".s-value").textContent=`Valore: ${pt*20}%`;
+
+    Jset(K("state"),state);
+    renderChecklistHeader(sheet.closest(".ch-card"), chn);
   };
 }
+
+/** ========= IMPORT / EXPORT (multi-CH) ========= */
 function normalizePointsObject(points){
-  const out = {s1:0,s2:0,s3:0,s4:0,s5:0};
-  if (!points || typeof points!=='object') return out;
-  for (const k of ["s1","s2","s3","s4","s5"]){
-    let v = points[k];
-    if (v==null) v = 0;
-    if (typeof v === "string") v = v.trim().replace("%","");
-    v = Number(v);
-    if (isNaN(v)) v = 0;
-    if (v>5) v = Math.round(v/20);
-    if (v<0) v=0; if (v>5) v=5;
-    out[k]=v;
+  const out={s1:0,s2:0,s3:0,s4:0,s5:0};
+  if (!points||typeof points!=="object") return out;
+  for(const k of ["s1","s2","s3","s4","s5"]){
+    let v=points[k]; if(v==null) v=0;
+    if(typeof v==="string") v=v.trim().replace("%","");
+    v=+v; if(isNaN(v)) v=0; if(v>5) v=Math.round(v/20);
+    v=Math.min(5,Math.max(0,v)); out[k]=v;
   }
   return out;
 }
-function normalizeRecordAny(any, preferChannel){
-  try{
-    const pickOne = (arr)=>{
-      let rec = arr.find(r=> (r?.channel||"").toUpperCase() === (preferChannel||"").toUpperCase());
-      if (!rec){
-        rec = arr.slice().sort((a,b)=> new Date(b?.date||0)-new Date(a?.date||0))[0];
-      }
-      return rec||null;
-    };
-    let obj = any;
-    if (Array.isArray(obj)) obj = pickOne(obj);
-    if (!obj || typeof obj!=="object") return null;
-    return {
-      area: String(obj.area ?? CONFIG.AREA),
-      channel: String(obj.channel ?? preferChannel ?? CONFIG.CHANNEL_DEFAULT),
-      date: obj.date || new Date().toISOString(),
-      points: normalizePointsObject(obj.points),
-      notes: obj.notes && typeof obj.notes==="object" ? obj.notes : {s1:"",s2:"",s3:"",s4:"",s5:""},
-      dates: obj.dates && typeof obj.dates==="object" ? obj.dates : {s1:null,s2:null,s3:null,s4:null,s5:null},
-      detail: obj.detail && typeof obj.detail==="object" ? obj.detail : {s1:{},s2:{},s3:{},s4:{},s5:{}}
-    };
-  }catch(e){ console.error(e); return null; }
+function normalizeRecord(obj, fallbackChannel){
+  if(!obj||typeof obj!=="object") return null;
+  const ch=String(obj.channel||fallbackChannel||CONFIG.CHANNEL_DEFAULT);
+  return {
+    channel: ch,
+    points: normalizePointsObject(obj.points),
+    notes: obj.notes && typeof obj.notes==="object" ? obj.notes : {s1:"",s2:"",s3:"",s4:"",s5:""},
+    dates: obj.dates && typeof obj.dates==="object" ? obj.dates : {s1:null,s2:null,s3:null,s4:null,s5:null},
+    detail: obj.detail && typeof obj.detail==="object" ? obj.detail : {s1:{},s2:{},s3:{},s4:{},s5:{}}
+  };
 }
+function importSetup(){
+  // Aggiungo input file invisibile se manca
+  let fin=document.getElementById("lineImportInput");
+  if(!fin){ fin=document.createElement("input"); fin.type="file"; fin.accept="application/json";
+    fin.id="lineImportInput"; fin.style.display="none"; document.body.appendChild(fin); }
+  const btn=document.getElementById("importBtn");
+  btn && btn.addEventListener("click",()=> fin.click());
 
-/* Archivio supervisore */
-function sup_all(){ try{ return JSON.parse(localStorage.getItem("skf5s:supervisor:data")) ?? []; }catch{ return []; } }
-function sup_save(all){ localStorage.setItem("skf5s:supervisor:data", JSON.stringify(all)); }
-function sup_merge(records){
-  const byCh = new Map(sup_all().map(r=>[`${(r.area||'')}/${(r.channel||'')}`.toUpperCase(), r]));
-  records.forEach(r=>{
-    byCh.set(`${(r.area||'')}/${(r.channel||'')}`.toUpperCase(), r);
-  });
-  const merged = Array.from(byCh.values());
-  sup_save(merged);
-  return merged;
-}
-
-function applyCanonicalToState(rec){
-  if(!rec) return false;
-  state.channel = rec.channel || state.channel;
-  state.points  = normalizePointsObject(rec.points);
-  state.notes   = rec.notes || state.notes;
-  state.dates   = rec.dates || state.dates;
-  state.detail  = rec.detail || state.detail;
-  setJSON(storageKey("state"), state);
-  return true;
-}
-
-function setupLineImportExportCompat(){
-  // EXPORT
-  const expBtn = document.getElementById("exportBtn");
-  if (expBtn){
-    expBtn.onclick = ()=>{
-      const data = canonicalFromState();
-      const blob = new Blob([JSON.stringify(data,null,2)], {type:"application/json"});
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = `SKF-5S_${CONFIG.AREA}_${state.channel}.json`;
-      a.click(); URL.revokeObjectURL(a.href);
-    };
-  }
-
-  // IMPORT
-  let impBtn = document.getElementById("importBtn");
-  if (!impBtn){
-    const top = document.querySelector(".top-actions");
-    if (top){
-      impBtn = document.createElement("button");
-      impBtn.id="importBtn"; impBtn.className="pill"; impBtn.textContent="Importa";
-      top.insertBefore(impBtn, top.firstChild);
-    }
-  }
-  let fileIn = document.getElementById("lineImportInput");
-  if(!fileIn){
-    fileIn = document.createElement("input");
-    fileIn.type="file"; fileIn.id="lineImportInput"; fileIn.accept="application/json"; fileIn.style.display="none";
-    document.body.appendChild(fileIn);
-  }
-  impBtn && impBtn.addEventListener("click", ()=> fileIn.click());
-
-  fileIn.addEventListener("change", async (ev)=>{
-    const f = ev.target.files?.[0]; if(!f) return;
+  fin.addEventListener("change", async (ev)=>{
+    const f=ev.target.files?.[0]; if(!f) return;
     try{
-      const txt = await f.text();
-      const any = JSON.parse(txt);
+      const any=JSON.parse(await f.text());
+      let records=[];
+      if(Array.isArray(any)) records = any.map(o=>normalizeRecord(o,state.active)).filter(Boolean);
+      else records = [normalizeRecord(any,state.active)].filter(Boolean);
 
-      // === Caso MULTI-CH (array) ===
-      if (Array.isArray(any)){
-        const recs = any.map(obj => normalizeRecordAny(obj, state.channel)).filter(Boolean);
-        if (recs.length===0) throw new Error("Array vuoto");
-        sup_merge(recs); // aggiorna archivio supervisore
+      if(!records.length){ alert("File non valido"); return; }
 
-        // chiedi quale CH attivare
-        const choices = recs.map(r => `${r.channel} — ${r.area}`).join("\n");
-        const pick = prompt(`Import completato.\nScegli il CH da attivare (scrivi il nome esatto):\n\n${choices}\n\nValore attuale: ${state.channel}`, state.channel);
-        const chosen = recs.find(r => r.channel === pick) || recs[0];
-        applyCanonicalToState(chosen);
-        refreshTitles();
-        location.reload();
-        return;
-      }
-
-      // === Caso singolo record ===
-      const rec = normalizeRecordAny(any, state.channel);
-      if(!rec) { alert("File non valido"); return; }
-      applyCanonicalToState(rec);
-      refreshTitles();
-      location.reload();
-
-    }catch(e){
-      console.error(e); alert("File non valido");
-    }finally{
-      ev.target.value = "";
-    }
-  });
-}
-
-document.addEventListener("DOMContentLoaded", ()=>{
-  if (document.body.dataset.page==="home" || document.body.dataset.page==="checklist"){
-    try{ setupLineImportExportCompat(); }catch(e){ console.warn(e); }
-  }
-});
-
-/** ====== Supervisor: cards + notes page ====== */
-function sup_lines(){ return sup_all().slice().sort((a,b)=> (a.channel||"").localeCompare(b.channel||"")); }
-function pct(v){ return Math.round((Number(v)||0)*20); }
-
-function renderSupervisorCards(){
-  const host = document.getElementById("supCards");
-  if(!host) return;
-  const rows = sup_lines();
-  host.innerHTML = "";
-  rows.forEach(r=>{
-    const el = document.createElement("div");
-    el.className = "sup-card";
-    const P = r.points||{s1:0,s2:0,s3:0,s4:0,s5:0};
-    el.innerHTML = `
-      <h4>${r.channel} <span class="note-meta">— ${r.area||""}</span></h4>
-      <div class="kpi-row">
-        <span class="badge s1">1S ${pct(P.s1)}%</span>
-        <span class="badge s2">2S ${pct(P.s2)}%</span>
-        <span class="badge s3">3S ${pct(P.s3)}%</span>
-        <span class="badge s4">4S ${pct(P.s4)}%</span>
-        <span class="badge s5">5S ${pct(P.s5)}%</span>
-      </div>
-      <div class="actions">
-        <a class="pill" href="notes.html?ch=${encodeURIComponent(r.channel)}">Note</a>
-      </div>`;
-    host.appendChild(el);
-  });
-}
-
-function setupNotesPage(){
-  const data = sup_lines();
-  const sel = document.getElementById("filterCh");
-  const list = document.getElementById("notesList");
-  if(!sel || !list) return;
-
-  sel.innerHTML = `<option value="">Tutte le linee</option>` + data.map(r=> `<option value="${r.channel}">${r.channel}</option>`).join("");
-  const params = new URLSearchParams(location.search);
-  const chParam = params.get("ch");
-  if(chParam){ sel.value = chParam; }
-
-  function normalizeNotes(rec){
-    const items = [];
-    const notes = rec.notes || {};
-    const dates = rec.dates || {};
-    ["s1","s2","s3","s4","s5"].forEach((k,i)=>{
-      let v = notes[k];
-      if(!v) return;
-      const due = dates[k] ? new Date(dates[k]) : null;
-      const arr = Array.isArray(v) ? v : [v];
-      arr.forEach(txt=>{
-        if(String(txt).trim().length===0) return;
-        items.push({
-          ch: rec.channel, area: rec.area, s: k.toUpperCase(),
-          text: String(txt),
-          due: due ? due.toISOString().slice(0,10) : null,
-          ts: rec.date || null
-        });
+      // merge nell'archivio
+      records.forEach(r=>{
+        state.archive[r.channel] = {
+          points:r.points, notes:r.notes, dates:r.dates, detail:r.detail
+        };
       });
-    });
-    return items;
-  }
-
-  function refresh(){
-    const flt = sel.value;
-    const all = data.flatMap(normalizeNotes).filter(x=> !flt || x.ch===flt);
-    all.sort((a,b)=> (b.due||"") < (a.due||"") ? -1 : 1);
-    list.innerHTML = "";
-    if(all.length===0){
-      list.innerHTML = "<p class='muted'>Nessuna nota disponibile.</p>";
-      return;
-    }
-    const today = new Date(new Date().toDateString());
-    all.forEach(n=>{
-      const div = document.createElement("div");
-      const sClass = "s"+n.s[0];
-      const overdue = n.due && new Date(n.due) < today;
-      div.className = `note-item ${sClass}`;
-      div.innerHTML = `
-        <div class="note-head">
-          <div><strong>${n.ch}</strong> — <span>${n.s}</span></div>
-          <div class="note-meta">${n.due ? `<span class="${overdue?'overdue':''}">${n.due}</span>` : ""}</div>
-        </div>
-        <div>${n.text}</div>`;
-      list.appendChild(div);
-    });
-  }
-
-  sel.addEventListener("change", refresh);
-  refresh();
+      // attiva un CH (se import multiplo chiedi)
+      let target=records[0].channel;
+      if(records.length>1){
+        const list=records.map(r=>r.channel).join(", ");
+        const pick=prompt(`Import completato. Quale CH vuoi attivare? (${list})`, state.active||records[0].channel);
+        if(pick && state.archive[pick]) target=pick;
+      }
+      state.active = target;
+      ensureCH(state.active);
+      Jset(K("state"),state);
+      alert(`Import OK. Attivo: ${state.active}`);
+      location.reload();
+    }catch(e){ console.error(e); alert("File non valido"); }
+    finally{ ev.target.value=""; }
+  });
 }
 
+/** ========= SUPERVISOR NOTES (se usi notes.html) ========= */
+function renderSupervisorCards(){} // non usato in questa consegna
+
+/** ========= ROUTER ========= */
 document.addEventListener("DOMContentLoaded", ()=>{
-  if (document.body?.dataset?.page === "supervisor"){
-    try{ renderSupervisorCards(); }catch(e){ console.warn(e); }
-  }
-  if (document.body?.dataset?.page === "notes"){
-    try{ setupNotesPage(); }catch(e){ console.warn(e); }
-  }
+  if (document.body.dataset.page==="home"){ refreshTitles(); ensureCH(state.active); importSetup(); setupHome(); }
+  if (document.body.dataset.page==="checklist"){ importSetup(); setupChecklist(); }
 });
