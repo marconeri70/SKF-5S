@@ -1,10 +1,10 @@
 {
   "name": "SKF 5S — Supervisor",
-  "short_name": "SKF 5S",
-  "start_url": "./index.html",
+  "short_name": "5S Supervisor",
+  "start_url": "index.html",
   "display": "standalone",
-  "background_color": "#0b5ed7",
-  "theme_color": "#0b5ed7",
+  "background_color": "#0d47a1",
+  "theme_color": "#0d47a1",
   "icons": [
     {
       "src": "assets/skf-192.png",

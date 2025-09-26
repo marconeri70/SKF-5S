@@ -1,30 +1,36 @@
 
 :root{
-  --blue:#0b5ed7;
-  --bg:#f6f8fb;
-  --card:#fff;
-  --text:#0b1220;
-  --muted:#6b7280;
-  --s1:#7c4dff; --s2:#ef4444; --s3:#f59e0b; --s4:#22c55e; --s5:#2563eb;
+  --brand:#0d47a1; --brand-2:#1565c0; --card:#ffffff; --muted:#f2f5fb; --text:#1a1f2e;
+  --s1:#7e57c2; --s2:#ef5350; --s3:#ffa000; --s4:#43a047; --s5:#1e88e5; --late:#d32f2f;
+  --chip:#eef2ff;
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu}
-.appbar{position:sticky;top:0;z-index:5;background:var(--blue);color:#fff;display:flex;gap:12px;align-items:center;justify-content:space-between;padding:10px 14px}
-.brand{display:flex;align-items:center;gap:10px}
-.logo{width:28px;height:28px}
-.title{font-weight:700}
-.badge{background:rgba(255,255,255,.18);padding:3px 8px;border-radius:99px;margin-left:6px}
-.actions{display:flex;gap:8px;align-items:center}
-.btn{background:#fff;color:#111;border:none;border-radius:999px;padding:8px 14px;text-decoration:none;cursor:pointer}
-.btn.primary{background:#fff;color:#111;font-weight:600}
-.container{max-width:1100px;margin:24px auto;padding:0 16px}
-.card{background:var(--card);border-radius:14px;box-shadow:0 6px 20px rgba(2,8,20,.06);padding:18px;margin-bottom:16px}
-.hero-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:16px;align-items:center}
-.hero-5s{max-width:320px;width:100%;height:auto;display:block;margin-inline:auto}
-.five-list{padding-left:18px}
-.pill{color:#fff;border-radius:999px;padding:4px 10px;font-weight:700;display:inline-block;min-width:140px;text-align:center}
-.pill.s1{background:var(--s1)} .pill.s2{background:var(--s2)} .pill.s3{background:var(--s3)}
-.pill.s4{background:var(--s4)} .pill.s5{background:var(--s5)}
-.placeholder-chart{height:220px;border:2px dashed #e5e7eb;border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
-.footer{opacity:.6;text-align:center;padding:12px 0;margin-bottom:24px}
-@media (max-width:800px){.hero-grid{grid-template-columns:1fr}.pill{min-width:unset}}
+body{margin:0;background:#f6f8fd;color:var(--text);font:16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif}
+.topbar{position:sticky;top:0;z-index:10;background:var(--brand);color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.container{max-width:1060px;margin:0 auto;padding:0 14px}
+.row{display:flex;align-items:center;gap:10px;padding:10px 0}
+.logo{display:flex;align-items:center;gap:8px;font-weight:700}
+.logo img{width:24px;height:24px}
+.btn{border:0;border-radius:24px;background:#fff;color:var(--brand);padding:8px 14px;font-weight:600;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.1)}
+.btn.secondary{background:transparent;color:#fff;border:2px solid rgba(255,255,255,.35)}
+.btn:disabled{opacity:.6;cursor:not-allowed}
+.card{background:var(--card);border-radius:16px;padding:16px;box-shadow:0 6px 16px rgba(13,71,161,.06);}
+.grid{display:grid;grid-template-columns:1fr;gap:16px}
+@media(min-width:900px){.grid{grid-template-columns:1fr 1fr}}
+.hero{display:flex;gap:16px;align-items:center;justify-content:space-between}
+.hero img{max-width:260px;height:auto}
+.badge{display:inline-block;padding:6px 10px;border-radius:18px;color:#fff;font-weight:700;margin:4px 8px 4px 0}
+.s1{background:var(--s1)} .s2{background:var(--s2)} .s3{background:var(--s3)} .s4{background:var(--s4)} .s5{background:var(--s5)}
+h1{margin:0 0 8px 0;font-size:22px}
+h2{margin:0 0 12px 0;font-size:20px}
+.kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:12px 0}
+.kpi .box{background:var(--muted);border-radius:12px;padding:12px;text-align:center}
+.small{font-size:12px;color:#475569}
+.section{margin:16px 0}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:var(--chip);border:1px solid rgba(13,71,161,.2);border-radius:999px;padding:8px 12px;font-weight:700;cursor:pointer}
+.footer{opacity:.6;text-align:center;margin:24px 0 12px}
+.chartbox{background:var(--card);border-radius:16px;padding:12px;border:1px dashed #cfd8dc}
+.table{width:100%;border-collapse:collapse}
+.table th,.table td{border-bottom:1px solid #e5e7eb;padding:8px 6px;text-align:left}
+.file{display:none}

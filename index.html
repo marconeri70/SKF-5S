@@ -1,64 +1,55 @@
+
 <!doctype html>
 <html lang="it">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>SKF 5S — Supervisor</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="assets/skf-192.png">
-  <link rel="apple-touch-icon" href="assets/skf-192.png">
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
-  <header class="appbar">
-    <div class="brand">
-      <img src="assets/skf-logo.png" alt="SKF" class="logo">
-      <span class="title">SKF 5S <span class="badge">Supervisor</span></span>
-    </div>
-    <nav class="actions">
-      <a class="btn" href="notes.html">Note</a>
-      <button id="btnImport" class="btn">Importa</button>
-      <a class="btn primary" href="checklist.html">Vai alla checklist →</a>
-    </nav>
-  </header>
-
-  <main class="container">
-    <section class="card hero">
-      <div class="hero-grid">
-        <div class="hero-text">
-          <h2>Cosa è 5S</h2>
-          <ul class="five-list">
-            <li><span class="pill s1">1S Selezionare</span> — Eliminare il superfluo.</li>
-            <li><span class="pill s2">2S Sistemare</span> — Un posto per tutto e tutto al suo posto.</li>
-            <li><span class="pill s3">3S Splendere</span> — Pulire e prevenire lo sporco.</li>
-            <li><span class="pill s4">4S Standardizzare</span> — Regole e segnali chiari.</li>
-            <li><span class="pill s5">5S Sostenere</span> — Abitudine e miglioramento continuo.</li>
-          </ul>
+<body data-page="index">
+  <div class="topbar">
+    <div class="container">
+      <div class="row" style="justify-content:space-between">
+        <div class="logo">
+          <img src="assets/skf-logo.png" alt="SKF">
+          <div>SKF 5S <span class="small" style="opacity:.8;margin-left:6px;background:rgba(255,255,255,.2);padding:2px 8px;border-radius:999px">Supervisor</span></div>
         </div>
-        <div class="hero-figure">
-          <img src="assets/5s.png" alt="Schema 5S" class="hero-5s">
+        <div style="display:flex;gap:8px;align-items:center">
+          <a class="btn secondary" href="notes.html">Note</a>
+          <button id="importBtn" class="btn">Importa</button>
+          <a class="btn" href="checklist.html">Vai alla checklist →</a>
         </div>
       </div>
-    </section>
+    </div>
+  </div>
 
-    <section class="card">
-      <h3>Andamento CH 24 — Rettifica</h3>
-      <div class="placeholder-chart">[Grafico qui]</div>
-    </section>
-  </main>
+  <input id="importFiles" class="file" type="file" accept=".json,application/json" multiple>
 
-  <footer class="footer">v2.1.0 • PWA ready</footer>
+  <div class="container">
+    <div class="section card hero">
+      <div>
+        <h1>Cosa è 5S</h1>
+        <div>
+          <span class="badge s1">1S Selezionare</span> — Eliminare il superfluo.<br>
+          <span class="badge s2">2S Sistemare</span> — Un posto per tutto e tutto al suo posto.<br>
+          <span class="badge s3">3S Splendere</span> — Pulire e prevenire lo sporco.<br>
+          <span class="badge s4">4S Standardizzare</span> — Regole e segnali chiari.<br>
+          <span class="badge s5">5S Sostenere</span> — Abitudine e miglioramento continuo.
+        </div>
+      </div>
+      <img src="assets/5s.png" alt="Schema 5S" />
+    </div>
+
+    <div class="section">
+      <h2>Andamento — Tutti i CH</h2>
+      <div id="chWrap" class="grid"></div>
+    </div>
+
+    <div class="footer">v2.1.1 • PWA ready</div>
+  </div>
 
   <script src="app.js"></script>
-  <script>
-    document.getElementById('btnImport').addEventListener('click', async () => {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = 'application/json';
-      input.multiple = true;
-      input.onchange = () => alert(input.files.length + ' file selezionati');
-      input.click();
-    });
-  </script>
 </body>
 </html>

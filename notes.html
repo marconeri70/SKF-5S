@@ -1,26 +1,42 @@
+
 <!doctype html>
 <html lang="it">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>SKF 5S — Note</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="assets/skf-192.png">
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
-  <header class="appbar">
-    <a href="index.html" class="btn">← Home</a>
-    <div class="brand">
-      <img src="assets/skf-logo.png" alt="SKF" class="logo">
-      <span class="title">SKF 5S <span class="badge">Supervisor</span></span>
+<body data-page="notes">
+  <div class="topbar">
+    <div class="container">
+      <div class="row" style="justify-content:space-between">
+        <div class="logo">
+          <a href="index.html" class="btn secondary">← Indietro</a>
+          <img src="assets/skf-logo.png" alt="SKF">
+          <div>SKF 5S <span class="small" style="opacity:.8;margin-left:6px;background:rgba(255,255,255,.2);padding:2px 8px;border-radius:999px">Supervisor</span></div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn" onclick="document.getElementById('importFiles').click()">Importa</button>
+        </div>
+      </div>
     </div>
-  </header>
-  <main class="container">
-    <section class="card">
-      <h2>Note</h2>
-      <p>Qui verranno mostrate le note raggruppate per CH e 5S.</p>
-    </section>
-  </main>
+  </div>
+
+  <input id="importFiles" class="file" type="file" accept=".json,application/json" multiple>
+
+  <div class="container">
+    <div class="section card">
+      <h2>Note aggregate</h2>
+      <div class="small">Le note vengono lette dai file JSON importati. Ordinamento: più recenti in alto.</div>
+      <table class="table">
+        <thead><tr><th>Data</th><th>CH</th><th>S</th><th>Area</th><th>Nota</th></tr></thead>
+        <tbody id="notesBody"></tbody>
+      </table>
+    </div>
+    <div class="footer">v2.1.1 • PWA ready</div>
+  </div>
+  <script src="app.js"></script>
 </body>
 </html>
