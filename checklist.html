@@ -1,45 +1,91 @@
 <!doctype html>
 <html lang="it">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>SKF 5S — Checklist Supervisore</title>
-  <link rel="manifest" href="manifest.json"/>
-  <link rel="icon" href="assets/skf-logo.png"/>
-  <link rel="apple-touch-icon" href="assets/pwa-192.png"/>
-  <link rel="stylesheet" href="style.css"/>
-  <!-- jsPDF per PDF CH -->
-  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SKF 5S — Checklist</title>
+
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#0a57d5" />
+  <link rel="icon" href="assets/pwa-192.png" />
+
+  <link rel="stylesheet" href="style.css" />
   <script defer src="app.js"></script>
 </head>
 <body data-page="checklist">
-  <header class="appbar">
-    <a class="back" href="index.html">← Indietro</a>
+  <!-- HEADER -->
+  <header class="topbar">
     <div class="brand">
-      <img src="assets/skf-logo.png" alt="SKF" class="logo"/>
-      <span class="brand-text"><span class="skf">SKF</span>&nbsp;<span class="five">5S</span></span>
+      <a class="back" href="index.html">← Indietro</a>
+      <img src="assets/skf-logo.png" alt="SKF" class="brand-logo" />
+      <span class="brand-text"><strong>SKF</strong> <em>5S</em></span>
     </div>
     <div class="top-actions">
-      <button id="importBtn" class="pill">Importa</button>
-      <a href="notes.html" class="pill ghost">Note</a>
-      <button id="lockBtn" class="icon-btn" aria-label="Impostazioni/PIN">🔒</button>
+      <span id="pageTitle" class="page-title">CH 24 — Rettifica</span>
+      <button id="lockBtn" class="icon-btn" aria-label="Impostazioni (PIN)">
+        <span class="lock-ico">🔒</span>
+      </button>
     </div>
   </header>
 
   <main class="container">
-    <section class="row">
-      <button id="toggleAllCH" class="pill">Comprimi / Espandi tutti i CH</button>
+    <!-- Statistiche -->
+    <section class="stats">
+      <div class="stat">
+        <span>Voto medio</span>
+        <strong id="avgScore">0%</strong>
+      </div>
+      <div class="stat">
+        <span>Azioni in ritardo</span>
+        <strong id="lateCount">0</strong>
+      </div>
     </section>
 
-    <div id="channelsWrap" class="channels-wrap"></div>
+    <!-- Badge riassuntivi -->
+    <div id="summaryBadges" class="summary-badges"></div>
+    <div class="actions-row">
+      <button id="toggleAll" class="pill blue">Comprimi / Espandi</button>
+    </div>
+
+    <!-- Schede -->
+    <section id="sheets" class="sheets"></section>
   </main>
 
-  <!-- Dialog INFO -->
+  <!-- DIALOG INFO (punti interattivi) -->
   <dialog id="infoDialog" class="modal">
     <form method="dialog" class="modal-box">
-      <button id="infoCloseBtn" type="button" class="floating-close pill">Chiudi</button>
-      <h3 id="infoTitle">S — Info</h3>
+      <div class="sticky-top">
+        <h4 id="infoTitle">Info</h4>
+        <button id="infoCloseBtn" class="pill blue small">Chiudi</button>
+      </div>
       <div id="infoContent" class="info-content"></div>
+    </form>
+  </dialog>
+
+  <!-- DIALOG PIN (stesso della home) -->
+  <dialog id="pinDialog" class="modal">
+    <form method="dialog" class="modal-box">
+      <h4>Impostazioni canale & PIN</h4>
+
+      <label class="field">
+        <span>PIN attuale</span>
+        <input id="pinInput" inputmode="numeric" pattern="[0-9]*" placeholder="••••" />
+      </label>
+
+      <label class="field">
+        <span>Canale (es. CH 24)</span>
+        <input id="channelInput" />
+      </label>
+
+      <div class="grid2">
+        <label class="field"><span>Nuovo PIN</span><input id="newPin1" inputmode="numeric" pattern="[0-9]*" placeholder="(opzionale)" /></label>
+        <label class="field"><span>Ripeti PIN</span><input id="newPin2" inputmode="numeric" pattern="[0-9]*" placeholder="(opzionale)" /></label>
+      </div>
+
+      <div class="modal-actions">
+        <button id="pinCancel" class="pill">Annulla</button>
+        <button id="pinConfirmBtn" class="pill blue">Salva</button>
+      </div>
     </form>
   </dialog>
 </body>
