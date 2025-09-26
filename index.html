@@ -3,12 +3,14 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>SKF 5S — Rettifica</title>
+  <title>SKF 5S — Supervisore</title>
   <link rel="manifest" href="manifest.json"/>
   <link rel="icon" href="assets/skf-logo.png"/>
   <link rel="apple-touch-icon" href="assets/pwa-192.png"/>
   <link rel="stylesheet" href="style.css"/>
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <!-- jsPDF per PDF -->
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script defer src="app.js"></script>
 </head>
 <body data-page="home">
@@ -20,6 +22,11 @@
 
     <div class="top-actions">
       <button id="importBtn" class="pill">Importa</button>
+      <a href="notes.html" class="pill ghost">Note</a>
+      <label class="filter-wrap">
+        <span>Filtro CH</span>
+        <select id="filterSelect" class="filter"></select>
+      </label>
       <button id="lockBtn" class="icon-btn" aria-label="Impostazioni/PIN">🔒</button>
       <a class="cta" href="checklist.html">Vai alla checklist <span class="arrow">→</span></a>
     </div>
@@ -43,9 +50,10 @@
     </section>
 
     <section class="card">
-      <h2 id="chartTitle">Andamento CH 24 — Rettifica</h2>
-      <canvas id="progressChart" height="140"></canvas>
-      <div id="lateBtns" class="late-box"></div>
+      <h2>Andamento — Tutti i CH</h2>
+      <div id="chartsWrap" class="charts-wrap"></div>
+
+      <div id="channelsNav" class="channels-nav mt"></div>
 
       <div class="row mt">
         <button id="exportBtn" class="pill">Esporta dati per Supervisore (PIN)</button>
@@ -56,14 +64,10 @@
   <!-- PIN dialog -->
   <dialog id="pinDialog" class="modal">
     <form method="dialog" class="modal-box">
-      <h3>Impostazioni</h3>
+      <h3>Impostazioni Supervisore</h3>
       <label class="field">
         <span>PIN attuale</span>
         <input id="pinInput" type="password" inputmode="numeric" autocomplete="off" />
-      </label>
-      <label class="field">
-        <span>Canale attivo (CH)</span>
-        <input id="channelInput" placeholder="Es. CH 24"/>
       </label>
       <details class="mt">
         <summary>Cambia PIN</summary>
@@ -76,7 +80,6 @@
           <input id="newPin2" type="password" inputmode="numeric"/>
         </label>
       </details>
-
       <div class="actions">
         <button id="pinCancel" type="reset" class="pill ghost">Annulla</button>
         <button id="pinConfirmBtn" class="pill">Conferma</button>
