@@ -35,7 +35,7 @@ let state = getJSON(storageKey("state"), {
   notes:  { s1:"", s2:"", s3:"", s4:"", s5:"" },
   dates:  { s1:null, s2:null, s3:null, s4:null, s5:null },
   // scelte dei punti nel popup, per calcolare la media
-  detail: { s1:{}, s2:{}, s3:{}, s4:{}, s5:{} }   // es. detail.s1[0]=3  -> punto #1 di S1 valutato 3
+  detail: { s1:{}, s2:{}, s3:{}, s4:{}, s5:{} }
 });
 function savePin(p){ state.pin = p; setJSON(storageKey("state"), state); localStorage.setItem("skf5s:pin", JSON.stringify(p)); }
 
@@ -174,12 +174,10 @@ function renderChart(){
           enabled:true,
           callbacks:{
             label: (item)=>{
-              // riga valore principale
               if (item.dataIndex===5) return "Ritardi: " + item.raw;
               return `${item.label}: ${item.raw}%`;
             },
             afterBody: (items)=>{
-              // riassunto Note scelte nel popup per S1..S5
               const idx = items[0].dataIndex;
               if (idx<0 || idx>4) return;
               const key = ["s1","s2","s3","s4","s5"][idx];
@@ -188,7 +186,7 @@ function renderChart(){
               const lines = Object.keys(det)
                 .map(n=>Number(n))
                 .sort((a,b)=>a-b)
-                .slice(0,6) // massimo 6 righe per non esagerare
+                .slice(0,6)
                 .map(n=>{
                   const score = det[n];
                   const text  = pts[n] || "";
@@ -448,14 +446,14 @@ function openInfo(k){
   dlg.showModal();
 }
 
-/** Router */
+/** Router base */
 document.addEventListener("DOMContentLoaded", ()=>{
   refreshTitles();
   if (document.body.dataset.page==="home") setupHome();
   if (document.body.dataset.page==="checklist") setupChecklist();
 });
 
-/** ======= COMPAT IMPORT/EXPORT (linea) ======= */
+/** ======= Import/Export compat linea + MULTI-CH ======= */
 function canonicalFromState(){
   return {
     version:"1.0",
@@ -469,7 +467,6 @@ function canonicalFromState(){
   };
 }
 function normalizePointsObject(points){
-  // accetta sia 0..5 che percentuali 0..100
   const out = {s1:0,s2:0,s3:0,s4:0,s5:0};
   if (!points || typeof points!=='object') return out;
   for (const k of ["s1","s2","s3","s4","s5"]){
@@ -478,7 +475,6 @@ function normalizePointsObject(points){
     if (typeof v === "string") v = v.trim().replace("%","");
     v = Number(v);
     if (isNaN(v)) v = 0;
-    // se sembra percentuale, converti in 0..5
     if (v>5) v = Math.round(v/20);
     if (v<0) v=0; if (v>5) v=5;
     out[k]=v;
@@ -486,12 +482,9 @@ function normalizePointsObject(points){
   return out;
 }
 function normalizeRecordAny(any, preferChannel){
-  // accetta: singolo oggetto linea, oppure array (archivio supervisore)
   try{
     const pickOne = (arr)=>{
-      // 1) match sul canale
       let rec = arr.find(r=> (r?.channel||"").toUpperCase() === (preferChannel||"").toUpperCase());
-      // 2) altrimenti ultimo per data
       if (!rec){
         rec = arr.slice().sort((a,b)=> new Date(b?.date||0)-new Date(a?.date||0))[0];
       }
@@ -500,7 +493,7 @@ function normalizeRecordAny(any, preferChannel){
     let obj = any;
     if (Array.isArray(obj)) obj = pickOne(obj);
     if (!obj || typeof obj!=="object") return null;
-    const out = {
+    return {
       area: String(obj.area ?? CONFIG.AREA),
       channel: String(obj.channel ?? preferChannel ?? CONFIG.CHANNEL_DEFAULT),
       date: obj.date || new Date().toISOString(),
@@ -509,9 +502,22 @@ function normalizeRecordAny(any, preferChannel){
       dates: obj.dates && typeof obj.dates==="object" ? obj.dates : {s1:null,s2:null,s3:null,s4:null,s5:null},
       detail: obj.detail && typeof obj.detail==="object" ? obj.detail : {s1:{},s2:{},s3:{},s4:{},s5:{}}
     };
-    return out;
   }catch(e){ console.error(e); return null; }
 }
+
+/* Archivio supervisore */
+function sup_all(){ try{ return JSON.parse(localStorage.getItem("skf5s:supervisor:data")) ?? []; }catch{ return []; } }
+function sup_save(all){ localStorage.setItem("skf5s:supervisor:data", JSON.stringify(all)); }
+function sup_merge(records){
+  const byCh = new Map(sup_all().map(r=>[`${(r.area||'')}/${(r.channel||'')}`.toUpperCase(), r]));
+  records.forEach(r=>{
+    byCh.set(`${(r.area||'')}/${(r.channel||'')}`.toUpperCase(), r);
+  });
+  const merged = Array.from(byCh.values());
+  sup_save(merged);
+  return merged;
+}
+
 function applyCanonicalToState(rec){
   if(!rec) return false;
   state.channel = rec.channel || state.channel;
@@ -522,8 +528,9 @@ function applyCanonicalToState(rec){
   setJSON(storageKey("state"), state);
   return true;
 }
+
 function setupLineImportExportCompat(){
-  // EXPORT (sovrascrive handler se presente)
+  // EXPORT
   const expBtn = document.getElementById("exportBtn");
   if (expBtn){
     expBtn.onclick = ()=>{
@@ -535,7 +542,8 @@ function setupLineImportExportCompat(){
       a.click(); URL.revokeObjectURL(a.href);
     };
   }
-  // IMPORT (crea pulsante se manca)
+
+  // IMPORT
   let impBtn = document.getElementById("importBtn");
   if (!impBtn){
     const top = document.querySelector(".top-actions");
@@ -552,17 +560,36 @@ function setupLineImportExportCompat(){
     document.body.appendChild(fileIn);
   }
   impBtn && impBtn.addEventListener("click", ()=> fileIn.click());
+
   fileIn.addEventListener("change", async (ev)=>{
     const f = ev.target.files?.[0]; if(!f) return;
     try{
       const txt = await f.text();
       const any = JSON.parse(txt);
+
+      // === Caso MULTI-CH (array) ===
+      if (Array.isArray(any)){
+        const recs = any.map(obj => normalizeRecordAny(obj, state.channel)).filter(Boolean);
+        if (recs.length===0) throw new Error("Array vuoto");
+        sup_merge(recs); // aggiorna archivio supervisore
+
+        // chiedi quale CH attivare
+        const choices = recs.map(r => `${r.channel} — ${r.area}`).join("\n");
+        const pick = prompt(`Import completato.\nScegli il CH da attivare (scrivi il nome esatto):\n\n${choices}\n\nValore attuale: ${state.channel}`, state.channel);
+        const chosen = recs.find(r => r.channel === pick) || recs[0];
+        applyCanonicalToState(chosen);
+        refreshTitles();
+        location.reload();
+        return;
+      }
+
+      // === Caso singolo record ===
       const rec = normalizeRecordAny(any, state.channel);
       if(!rec) { alert("File non valido"); return; }
       applyCanonicalToState(rec);
-      // ricalcola e rinfresca UI
-      try{ refreshTitles(); }catch{}
+      refreshTitles();
       location.reload();
+
     }catch(e){
       console.error(e); alert("File non valido");
     }finally{
@@ -578,7 +605,6 @@ document.addEventListener("DOMContentLoaded", ()=>{
 });
 
 /** ====== Supervisor: cards + notes page ====== */
-function sup_all(){ try{ return JSON.parse(localStorage.getItem("skf5s:supervisor:data")) ?? []; }catch{ return []; } }
 function sup_lines(){ return sup_all().slice().sort((a,b)=> (a.channel||"").localeCompare(b.channel||"")); }
 function pct(v){ return Math.round((Number(v)||0)*20); }
 
