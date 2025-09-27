@@ -1,79 +1,90 @@
-
 <!doctype html>
 <html lang="it">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>SKF 5S — Supervisor</title>
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="assets/skf-512.png">
-<link rel="stylesheet" href="style.css">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>SKF 5S — Supervisore</title>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="icon" href="assets/skf-logo.png"/>
+  <link rel="apple-touch-icon" href="assets/pwa-192.png"/>
+  <link rel="stylesheet" href="style.css"/>
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <!-- jsPDF per PDF -->
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script defer src="app.js"></script>
 </head>
-<body data-page="index">
-<header class="header">
-  <div class="bar container">
+<body data-page="home">
+  <header class="appbar">
     <div class="brand">
-      <img src="assets/skf-512.png" alt="SKF">
-      <strong>SKF 5S</strong>
-      <span class="badge" style="background:rgba(255,255,255,.15);color:#fff">Supervisor</span>
+      <img src="assets/skf-logo.png" alt="SKF" class="logo"/>
+      <span class="brand-text"><span class="skf">SKF</span>&nbsp;<span class="five">5S</span></span>
     </div>
-    <div class="actions">
-      <a class="btn ghost" href="notes.html">Note</a>
-      <button class="btn" id="importBtn">Importa</button>
-      <a class="btn" href="checklist.html">Vai alla checklist →</a>
-    </div>
-  </div>
-</header>
 
-<main class="container">
-  <div class="card">
-    <div class="grid">
-      <div>
-        <h2>Cosa è 5S</h2>
-        <div class="pills">
-          <span class="pill p1">1S Selezionare</span>
-          <span>— Eliminare il superfluo.</span>
-        </div>
-        <div class="pills">
-          <span class="pill p2">2S Sistemare</span>
-          <span>— Un posto per tutto e tutto al suo posto.</span>
-        </div>
-        <div class="pills">
-          <span class="pill p3">3S Splendere</span>
-          <span>— Pulire e prevenire lo sporco.</span>
-        </div>
-        <div class="pills">
-          <span class="pill p4">4S Standardizzare</span>
-          <span>— Regole e segnali chiari.</span>
-        </div>
-        <div class="pills">
-          <span class="pill p5">5S Sostenere</span>
-          <span>— Abitudine e miglioramento continuo.</span>
+    <div class="top-actions">
+      <button id="importBtn" class="pill">Importa</button>
+      <a href="notes.html" class="pill ghost">Note</a>
+      <label class="filter-wrap">
+        <span>Filtro CH</span>
+        <select id="filterSelect" class="filter"></select>
+      </label>
+      <button id="lockBtn" class="icon-btn" aria-label="Impostazioni/PIN">🔒</button>
+      <a class="cta" href="checklist.html">Vai alla checklist <span class="arrow">→</span></a>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card hero">
+      <div class="hero-grid">
+        <img src="assets/5s-hero.png" class="hero-img" alt="Cosa è 5S"/>
+        <div>
+          <h2>Cosa è 5S</h2>
+          <ul class="what5s">
+            <li><span class="chip s1">1S Selezionare</span> — Eliminare il superfluo.</li>
+            <li><span class="chip s2">2S Sistemare</span> — Un posto per tutto e tutto al suo posto.</li>
+            <li><span class="chip s3">3S Splendere</span> — Pulire e prevenire lo sporco.</li>
+            <li><span class="chip s4">4S Standardizzare</span> — Regole e segnali chiari.</li>
+            <li><span class="chip s5">5S Sostenere</span> — Abitudine e miglioramento continuo.</li>
+          </ul>
         </div>
       </div>
-      <div style="text-align:right">
-        <img class="hero" src="assets/5s.png" alt="Schema 5S">
+    </section>
+
+    <section class="card">
+      <h2>Andamento — Tutti i CH</h2>
+      <div id="chartsWrap" class="charts-wrap"></div>
+
+      <div id="channelsNav" class="channels-nav mt"></div>
+
+      <div class="row mt">
+        <button id="exportBtn" class="pill">Esporta dati per Supervisore (PIN)</button>
       </div>
-    </div>
-  </div>
+    </section>
+  </main>
 
-  <div class="card">
-    <h3>Andamento 5S complessivo</h3>
-    <canvas id="overallChart" class="chart" height="260"></canvas>
-  </div>
-
-  <div class="card">
-    <h3>Linee (CH)</h3>
-    <div id="cardsWrap"></div>
-  </div>
-</main>
-
-<footer class="footer">v2.2.0 • PWA ready</footer>
-
-<script src="app.js"></script>
-<script>
-if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(console.warn); }
-</script>
+  <!-- PIN dialog -->
+  <dialog id="pinDialog" class="modal">
+    <form method="dialog" class="modal-box">
+      <h3>Impostazioni Supervisore</h3>
+      <label class="field">
+        <span>PIN attuale</span>
+        <input id="pinInput" type="password" inputmode="numeric" autocomplete="off" />
+      </label>
+      <details class="mt">
+        <summary>Cambia PIN</summary>
+        <label class="field">
+          <span>Nuovo PIN</span>
+          <input id="newPin1" type="password" inputmode="numeric"/>
+        </label>
+        <label class="field">
+          <span>Ripeti PIN</span>
+          <input id="newPin2" type="password" inputmode="numeric"/>
+        </label>
+      </details>
+      <div class="actions">
+        <button id="pinCancel" type="reset" class="pill ghost">Annulla</button>
+        <button id="pinConfirmBtn" class="pill">Conferma</button>
+      </div>
+    </form>
+  </dialog>
 </body>
 </html>

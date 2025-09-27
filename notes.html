@@ -1,40 +1,30 @@
-
 <!doctype html>
 <html lang="it">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>SKF 5S — Note</title>
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="assets/skf-512.png">
-<link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SKF 5S — Note</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#0a57d5" />
+  <link rel="stylesheet" href="style.css" />
+  <script defer src="app.js"></script>
 </head>
 <body data-page="notes">
-<header class="header">
-  <div class="bar container">
-    <div class="brand">
-      <img src="assets/skf-512.png" alt="SKF">
-      <strong>SKF 5S</strong>
-      <span class="badge" style="background:rgba(255,255,255,.15);color:#fff">Supervisor</span>
-    </div>
-    <div class="actions">
-      <a class="btn" href="index.html">Indietro</a>
-    </div>
+<header class="topbar">
+  <div class="brand">
+    <a class="back" href="supervisor.html">← Supervisore</a>
+    <span class="brand-text"><strong>SKF</strong> <em>5S</em> — Note</span>
+  </div>
+  <div class="top-actions">
+    <select id="filterCh" class="pill"></select>
   </div>
 </header>
 
 <main class="container">
-  <div class="card">
-    <h2>Note aggregate</h2>
-    <div id="notesWrap"></div>
-  </div>
+  <section class="card">
+    <h3>Note per data e S</h3>
+    <div id="notesList" class="notes-list"></div>
+  </section>
 </main>
-
-<footer class="footer">v2.2.0</footer>
-
-<script src="app.js"></script>
-<script>
-if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(console.warn); }
-</script>
 </body>
 </html>
