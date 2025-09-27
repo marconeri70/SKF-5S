@@ -1,36 +1,10 @@
-
-<!doctype html>
-<html lang="it">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>SKF 5S — Schede (Supervisor)</title>
-  <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="style.css">
-</head>
-<body data-page="checklist">
-  <div class="topbar">
-    <div class="container">
-      <div class="row" style="justify-content:space-between">
-        <div class="logo">
-          <a href="index.html" class="btn secondary">← Indietro</a>
-          <img src="assets/skf-logo.png" alt="SKF">
-          <div>SKF 5S <span class="small" style="opacity:.8;margin-left:6px;background:rgba(255,255,255,.2);padding:2px 8px;border-radius:999px">Supervisor</span></div>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <a class="btn secondary" href="notes.html">Note</a>
-          <button class="btn" onclick="document.getElementById('importFiles').click()">Importa</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <input id="importFiles" class="file" type="file" accept=".json,application/json" multiple>
-
-  <div class="container">
-    <div id="cards" class="grid section"></div>
-    <div class="footer">v2.1.1 • PWA ready</div>
-  </div>
-  <script src="app.js"></script>
-</body>
-</html>
+<!DOCTYPE html>
+<html lang="it"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>SKF 5S — Schede</title><link rel="stylesheet" href="style.css"/><script defer src="app.js"></script></head>
+<body onload="SKF5S.loadChecklist()">
+<header class="appbar"><div class="brand"><img src="assets/skf-192.png" width="28" height="28"><span>SKF 5S</span><span class="badge">Supervisor</span></div>
+<div class="bar-actions"><button id="lockBtn" class="btn" onclick="SKF5S.toggleLock()">Blocca</button>
+<label class="btn" for="imp2">Importa</label><input id="imp2" type="file" multiple accept="application/json" class="hidden" onchange="SKF5S.handleImport(this.files);SKF5S.loadChecklist();">
+<a class="btn" href="index.html">Indietro</a></div></header>
+<main class="container"><div class="card"><div class="section-title">Schede di valutazione</div><div id="ch-list"></div></div><div class="footer">v2.1.2</div></main>
+</body></html>
