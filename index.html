@@ -1,35 +1,79 @@
-<!DOCTYPE html>
-<html lang="it"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>SKF 5S — Supervisor</title><link rel="manifest" href="manifest.json"><link rel="stylesheet" href="style.css"/><script defer src="app.js"></script></head>
-<body onload="SKF5S.populateHome()">
-<header class="appbar"><div class="brand"><img src="assets/skf-192.png" width="28" height="28"><span>SKF 5S</span><span class="badge">Supervisor</span></div>
-<div class="bar-actions"><a class="btn" href="notes.html">Note</a><label class="btn" for="fileInput">Importa</label><input id="fileInput" type="file" accept="application/json" multiple class="hidden" onchange="SKF5S.handleImport(this.files)"><a class="btn" href="checklist.html">Vai alla checklist →</a></div></header>
+
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>SKF 5S — Supervisor</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="assets/skf-512.png">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body data-page="index">
+<header class="header">
+  <div class="bar container">
+    <div class="brand">
+      <img src="assets/skf-512.png" alt="SKF">
+      <strong>SKF 5S</strong>
+      <span class="badge" style="background:rgba(255,255,255,.15);color:#fff">Supervisor</span>
+    </div>
+    <div class="actions">
+      <a class="btn ghost" href="notes.html">Note</a>
+      <button class="btn" id="importBtn">Importa</button>
+      <a class="btn" href="checklist.html">Vai alla checklist →</a>
+    </div>
+  </div>
+</header>
+
 <main class="container">
-<section class="card"><div class="row"><div class="pills">
-<div class="section-title">Cosa è 5S</div>
-<div class="pill p-purple"><span class="dot"></span>1S <span class="small">Selezionare</span></div>
-<div class="pill p-red"><span class="dot"></span>2S <span class="small">Sistemare</span></div>
-<div class="pill p-amber"><span class="dot"></span>3S <span class="small">Splendere</span></div>
-<div class="pill p-green"><span class="dot"></span>4S <span class="small">Standardizzare</span></div>
-<div class="pill p-blue"><span class="dot"></span>5S <span class="small">Sostenere</span></div>
-</div><div class="illustration">
-<svg viewBox="0 0 120 120" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
- <defs>
-  <linearGradient id="g1" x1="0" x2="0" y1="1" y2="0"><stop offset="0" stop-color="#c7d2fe"/><stop offset="1" stop-color="#60a5fa"/></linearGradient>
-  <linearGradient id="g2" x1="0" x2="0" y1="1" y2="0"><stop offset="0" stop-color="#fecaca"/><stop offset="1" stop-color="#f87171"/></linearGradient>
-  <linearGradient id="g3" x1="0" x2="0" y1="1" y2="0"><stop offset="0" stop-color="#fde68a"/><stop offset="1" stop-color="#fb923c"/></linearGradient>
-  <linearGradient id="g4" x1="0" x2="0" y1="1" y2="0"><stop offset="0" stop-color="#bbf7d0"/><stop offset="1" stop-color="#34d399"/></linearGradient>
-  <linearGradient id="g5" x1="0" x2="0" y1="1" y2="0"><stop offset="0" stop-color="#ddd6fe"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient>
- </defs>
- <g transform="translate(60,60)">
-  <path d="M0 0 L0 -46 A46 46 0 0 1 39 22 Z" fill="url(#g1)"/>
-  <path d="M0 0 L39 22 A46 46 0 0 1 6 46 Z" fill="url(#g4)"/>
-  <path d="M0 0 L6 46 A46 46 0 0 1 -33 32 Z" fill="url(#g3)"/>
-  <path d="M0 0 L-33 32 A46 46 0 0 1 -46 -8 Z" fill="url(#g2)"/>
-  <path d="M0 0 L-46 -8 A46 46 0 0 1 0 -46 Z" fill="url(#g5)"/>
- </g>
-</svg>
-</div></div></section>
-<section class="card"><div class="section-title">Andamento — Tutti i CH</div><div id="charts"></div></section>
-<div class="footer">v2.1.2 • PWA ready</div></main>
-<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}</script></body></html>
+  <div class="card">
+    <div class="grid">
+      <div>
+        <h2>Cosa è 5S</h2>
+        <div class="pills">
+          <span class="pill p1">1S Selezionare</span>
+          <span>— Eliminare il superfluo.</span>
+        </div>
+        <div class="pills">
+          <span class="pill p2">2S Sistemare</span>
+          <span>— Un posto per tutto e tutto al suo posto.</span>
+        </div>
+        <div class="pills">
+          <span class="pill p3">3S Splendere</span>
+          <span>— Pulire e prevenire lo sporco.</span>
+        </div>
+        <div class="pills">
+          <span class="pill p4">4S Standardizzare</span>
+          <span>— Regole e segnali chiari.</span>
+        </div>
+        <div class="pills">
+          <span class="pill p5">5S Sostenere</span>
+          <span>— Abitudine e miglioramento continuo.</span>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <img class="hero" src="assets/5s.png" alt="Schema 5S">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Andamento 5S complessivo</h3>
+    <canvas id="overallChart" class="chart" height="260"></canvas>
+  </div>
+
+  <div class="card">
+    <h3>Linee (CH)</h3>
+    <div id="cardsWrap"></div>
+  </div>
+</main>
+
+<footer class="footer">v2.2.0 • PWA ready</footer>
+
+<script src="app.js"></script>
+<script>
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(console.warn); }
+</script>
+</body>
+</html>
