@@ -2,27 +2,30 @@
 <!doctype html>
 <html lang="it">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>SKF 5S — Note</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>SKF 5S — Note (Supervisor)</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="assets/skf-192.png">
-  <meta name="theme-color" content="#0a57d5">
-  <link rel="stylesheet" href="style.css">
-  <script defer src="app.js"></script>
+  <link rel="stylesheet" href="style.css"/>
 </head>
-<body data-page="notes">
-<header class="appbar">
-  <a class="back" href="index.html">← Indietro</a>
-  <div class="brand">
-    <img class="logo" src="assets/skf-logo.png" alt="SKF">
-    <div class="brand-text"><span class="skf">SKF</span> <span class="five">5S</span> <span class="tag">Supervisor</span></div>
+<body>
+<header class="topbar">
+  <div class="container row">
+    <a href="index.html" class="brand"><img src="assets/skf-logo.png" alt="SKF">SKF 5S <span class="badge s5">Supervisor</span></a>
+    <div class="toolbar">
+      <a class="ghost small" href="index.html">Home</a>
+    </div>
   </div>
 </header>
 
-<main class="container">
-  <h2>Note dai CH</h2>
-  <div id="notesWrap" class="channels-wrap"></div>
+<main class="container grid" style="margin-top:14px">
+  <section class="card">
+    <h2 class="section-title">Tutte le note</h2>
+    <table class="table-notes" id="tblNotes"></table>
+  </section>
 </main>
+
+<div class="container footer">v2.1.5</div>
+<script src="app.js"></script>
 </body>
 </html>

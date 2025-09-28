@@ -2,59 +2,63 @@
 <!doctype html>
 <html lang="it">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>SKF 5S — Supervisor</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="assets/skf-192.png">
-  <meta name="theme-color" content="#0a57d5">
-  <link rel="stylesheet" href="style.css">
-  <script defer src="app.js"></script>
+  <link rel="stylesheet" href="style.css"/>
 </head>
-<body data-page="index">
-<header class="appbar">
-  <div class="brand">
-    <img class="logo" src="assets/skf-logo.png" alt="SKF">
-    <div class="brand-text"><span class="skf">SKF</span> <span class="five">5S</span> <span class="tag">Supervisor</span></div>
+<body>
+<header class="topbar">
+  <div class="container row">
+    <div class="brand">
+      <img src="assets/skf-logo.png" alt="SKF"/>
+      <div>SKF 5S <span class="badge s5">Supervisor</span></div>
+    </div>
+    <div class="toolbar">
+      <a class="ghost small" href="notes.html">Note</a>
+      <label class="label-file small" for="file-import">Importa</label>
+      <input id="file-import" type="file" multiple accept=".json,application/json"/>
+      <button id="btnExport" class="small">Esporta dati (PIN)</button>
+      <a class="ghost small" href="checklist.html">Vai alla checklist →</a>
+    </div>
   </div>
-  <nav class="row" style="margin-left:auto;gap:8px">
-    <a class="icon-btn" href="notes.html">Note</a>
-    <button id="btnImport" class="pill">Importa</button>
-    <button id="btnExport" class="pill ghost">Esporta dati (PIN)</button>
-    <a class="cta" href="checklist.html">Vai alla checklist →</a>
-  </nav>
 </header>
 
-<main class="container">
-  <section class="card hero-grid">
+<main class="container grid" style="margin-top:14px">
+  <section class="card hero">
     <div>
-      <h2>Cosa è 5S</h2>
-      <ul class="list5s">
-        <li class="row"><span class="chip s1">1S Selezionare</span><span>— Eliminare il superfluo.</span></li>
-        <li class="row"><span class="chip s2">2S Sistemare</span><span>— Un posto per tutto e tutto al suo posto.</span></li>
-        <li class="row"><span class="chip s3">3S Splendere</span><span>— Pulire e prevenire lo sporco.</span></li>
-        <li class="row"><span class="chip s4">4S Standardizzare</span><span>— Regole e segnali chiari.</span></li>
-        <li class="row"><span class="chip s5">5S Sostenere</span><span>— Abitudine e miglioramento continuo.</span></li>
-      </ul>
+      <h2 class="section-title">Cosa è 5S</h2>
+      <ol class="ol5s">
+        <li><span class="badge s1">1S Selezionare</span> — Eliminare il superfluo.</li>
+        <li><span class="badge s2">2S Sistemare</span> — Un posto per tutto e tutto al suo posto.</li>
+        <li><span class="badge s3">3S Splendere</span> — Pulire e prevenire lo sporco.</li>
+        <li><span class="badge s4">4S Standardizzare</span> — Regole e segnali chiari.</li>
+        <li><span class="badge s5">5S Sostenere</span> — Abitudine e miglioramento continuo.</li>
+      </ol>
     </div>
-    <img class="hero-img" src="assets/5s-hero.png" onerror="this.src='assets/5S.png'" alt="Schema 5S">
+    <img src="assets/5S.png" alt="Schema 5S" style="max-width:360px;justify-self:end">
   </section>
 
   <section class="card">
-    <div class="row" style="justify-content:space-between;align-items:center">
-      <h2 style="margin:0">Andamento — <span id="titleScope">Tutti i CH</span></h2>
-      <div class="filter-wrap">
-        <label for="chFilter">Filtro CH</label>
-        <select id="chFilter" class="filter"></select>
-      </div>
+    <h3 class="section-title">Andamento — Tutti i CH</h3>
+    <div id="channels" class="channels"></div>
+    <div class="row-actions" style="margin-top:12px">
+      <div id="chips"></div>
     </div>
-    <div id="charts" class="charts-wrap mt"></div>
-    <div id="channelsNav" class="channels-nav mt"></div>
   </section>
 
-  <p class="muted mt" id="ver">v2.1.4c</p>
+  <section class="card">
+    <h3 class="section-title">KPI</h3>
+    <div class="kpi">
+      <div class="item"><div class="v" id="kpiLines">0</div>Linee</div>
+      <div class="item"><div class="v" id="kpiAvg">0%</div>Punteggio medio</div>
+      <div class="item"><div class="v" id="kpiLate">0</div>Azioni in ritardo</div>
+    </div>
+  </section>
 </main>
 
-<input id="fileInput" type="file" accept=".json,application/json" multiple hidden>
+<div class="container footer">v2.1.5 • PWA ready</div>
+<script src="app.js"></script>
 </body>
 </html>
