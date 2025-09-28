@@ -6,45 +6,51 @@
   <title>SKF 5S — Supervisor</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="assets/skf-192.png">
-  <style>/* inlined minimal to avoid FOUC */</style>
+  <link rel="apple-touch-icon" href="assets/skf-192.png">
+  <meta name="theme-color" content="#0b5ed7">
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
-  <header class="topbar">
+<body class="page-home">
+  <header class="appbar">
     <div class="brand">
-      <img src="assets/skf-logo.png" alt="SKF" class="logo">
-      <span class="appname">SKF 5S</span>
-      <span class="badge badge-invert">Supervisor</span>
+      <img src="assets/skf-logo.png" alt="SKF" class="brand-logo">
+      <span class="brand-title">SKF 5S</span>
+      <span class="badge soft">Supervisor</span>
     </div>
     <nav class="actions">
-      <a href="notes.html" class="btn ghost" id="btn-notes-link">Note</a>
-      <label class="btn primary"><input id="import-input" type="file" accept="application/json" multiple hidden>Importa</label>
+      <a class="btn ghost" href="notes.html">Note</a>
+      <label class="btn primary">
+        Importa
+        <input type="file" id="import-input" accept="application/json" multiple hidden>
+      </label>
       <button class="btn ghost" id="btn-export">Esporta dati (PIN)</button>
-      <a href="checklist.html" class="btn link">Vai alla checklist →</a>
+      <a class="btn link" href="checklist.html">Vai alla checklist →</a>
       <button class="btn icon" id="btn-lock" title="Blocca/Sblocca">🔒</button>
     </nav>
   </header>
 
   <main class="container">
-    <section class="card hero">
-      <div class="hero-text">
+    <section class="hero">
+      <div class="what">
         <h1>Cosa è 5S</h1>
         <ol class="what5s">
-          <li><span class="chip s1">1S Selezionare</span> — Eliminare il superfluo.</li>
-          <li><span class="chip s2">2S Sistemare</span> — Un posto per tutto e tutto al suo posto.</li>
-          <li><span class="chip s3">3S Splendere</span> — Pulire e prevenire lo sporco.</li>
-          <li><span class="chip s4">4S Standardizzare</span> — Regole e segnali chiari.</li>
-          <li><span class="chip s5">5S Sostenere</span> — Abitudine e miglioramento continuo.</li>
+          <li><span class="pill s1">1S Selezionare</span> — Eliminare il superfluo.</li>
+          <li><span class="pill s2">2S Sistemare</span> — Un posto per tutto e tutto al suo posto.</li>
+          <li><span class="pill s3">3S Splendere</span> — Pulire e prevenire lo sporco.</li>
+          <li><span class="pill s4">4S Standardizzare</span> — Regole e segnali chiari.</li>
+          <li><span class="pill s5">5S Sostenere</span> — Abitudine e miglioramento continuo.</li>
         </ol>
       </div>
-      <img src="assets/5S.png" alt="Schema 5S" class="hero-img">
+      <div class="ill">
+        <img src="assets/5S.png" alt="Schema 5S">
+      </div>
     </section>
 
-    <section class="card">
-      <h2>Andamento — Tutti i CH</h2>
+    <section class="panel">
+      <div class="panel-title">Andamento — <strong>Tutti i CH</strong></div>
       <div id="boards" class="boards"></div>
-      <div id="chip-strip" class="chip-strip"></div>
-      <div class="footer-actions">
+      <div id="chip-strip" class="chips"></div>
+      <div class="mt">
         <button class="btn ghost" id="btn-export-supervisor">Esporta dati per Supervisore (PIN)</button>
       </div>
     </section>

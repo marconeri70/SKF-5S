@@ -6,27 +6,31 @@
   <title>SKF 5S — Note</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="assets/skf-192.png">
+  <meta name="theme-color" content="#0b5ed7">
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
-  <header class="topbar">
-    <div class="brand">
-      <a href="index.html" class="btn ghost">← Supervisore</a>
-      <span class="appname">SKF 5S</span>
-      <span class="badge">— Note</span>
-    </div>
-    <div class="actions">
-      <span id="notes-count" class="muted"></span>
-    </div>
+<body class="page-notes">
+  <header class="appbar">
+    <a class="btn link" href="index.html">← Supervisore</a>
+    <div class="brand mid"><span class="brand-title">SKF 5S</span><span class="badge soft">— Note</span></div>
+    <nav class="actions">
+      <div class="input-inline">
+        <label>Da <input type="date" id="from-date"></label>
+        <label>A <input type="date" id="to-date"></label>
+        <input type="text" id="search-ch" placeholder="Filtra CH…">
+        <button class="btn ghost" id="btn-filter">Filtra</button>
+        <button class="btn ghost" id="btn-clear">Pulisci</button>
+      </div>
+      <span class="muted" id="notes-count">0 note</span>
+    </nav>
   </header>
 
   <main class="container">
-    <section class="card">
-      <h2>Note per data e S</h2>
-      <div id="notes-list"></div>
+    <section class="panel">
+      <div class="panel-title">Note per data e S</div>
+      <div id="notes-list" class="notes"></div>
     </section>
   </main>
-
   <footer class="foot">v2.2.3</footer>
   <script src="app.js"></script>
 </body>
