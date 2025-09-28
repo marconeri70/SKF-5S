@@ -2,36 +2,39 @@
 <html lang="it">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>SKF 5S — Note</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="assets/skf-192.png">
-  <meta name="theme-color" content="#0b5ed7">
+  <meta name="theme-color" content="#0d63d6">
   <link rel="stylesheet" href="style.css">
 </head>
-<body class="page-notes">
+<body data-page="notes">
   <header class="appbar">
-    <a class="btn link" href="index.html">← Supervisore</a>
-    <div class="brand mid"><span class="brand-title">SKF 5S</span><span class="badge soft">— Note</span></div>
+    <div class="brand">
+      <a href="index.html" class="btn back">← Supervisore</a>
+      <img src="assets/skf-logo.png" alt="SKF" class="brand-logo">
+      <span class="brand-title">SKF 5S</span>
+      <span class="brand-badge">— Note</span>
+    </div>
     <nav class="actions">
-      <div class="input-inline">
-        <label>Da <input type="date" id="from-date"></label>
-        <label>A <input type="date" id="to-date"></label>
-        <input type="text" id="search-ch" placeholder="Filtra CH…">
-        <button class="btn ghost" id="btn-filter">Filtra</button>
-        <button class="btn ghost" id="btn-clear">Pulisci</button>
+      <div class="filters">
+        <label>Da <input type="date" id="f-from"></label>
+        <label>A <input type="date" id="f-to"></label>
+        <label>CH <input type="text" id="f-ch" placeholder="Es. CH 24"></label>
+        <button id="f-apply" class="btn outline">Filtra</button>
       </div>
-      <span class="muted" id="notes-count">0 note</span>
     </nav>
   </header>
 
   <main class="container">
-    <section class="panel">
-      <div class="panel-title">Note per data e S</div>
-      <div id="notes-list" class="notes"></div>
+    <section class="card">
+      <h2>Note per data e S <small id="note-count"></small></h2>
+      <div id="notes-list"></div>
     </section>
   </main>
-  <footer class="foot">v2.2.3</footer>
+
+  <footer class="version">v2.2.4</footer>
   <script src="app.js"></script>
 </body>
 </html>

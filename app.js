@@ -5,7 +5,7 @@
   const $ = (sel, root=document) => root.querySelector(sel);
   const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
 
-  // Basic store (localStorage)
+  // ---------- Store in localStorage
   const store = {
     load() {
       try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
@@ -14,73 +14,113 @@
     save(arr) { localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); }
   };
 
-  // Merge imported records
+  // ---------- Lock state (persist per session)
+  function isLocked(){ return sessionStorage.getItem('skf5s:lock') === '1'; }
+  function setLocked(v){
+    sessionStorage.setItem('skf5s:lock', v ? '1':'0');
+    paintLock();
+    applyLockToUI();
+  }
+  function paintLock(){
+    const btn = $('#btn-lock');
+    if (btn) btn.textContent = isLocked() ? '🔓' : '🔒';
+    if (btn) btn.title = isLocked() ? 'Sblocca (import disabilitato)' : 'Blocca';
+  }
+  function applyLockToUI(){
+    const input = $('#import-input');
+    const btnImp = $('#btn-import');
+    const locked = isLocked();
+    if (input) input.disabled = locked;
+    if (btnImp) { btnImp.disabled = locked; btnImp.classList.toggle('disabled', locked); }
+  }
+
+  // ---------- Helpers
+  function toArray(x){
+    if (!x) return [];
+    if (Array.isArray(x)) return x;
+    if (x.records && Array.isArray(x.records)) return x.records;
+    return [x];
+  }
+  function parseOne(raw){
+    // Try to accept several shapes
+    let area = raw.area || raw.Area || raw.zona || raw.Zona || '';
+    let channel = raw.channel || raw.Channel || raw.ch || raw.CH || raw.linea || raw.Linea || '';
+    let date = raw.date || raw.data || raw.createdAt || raw.updatedAt || '';
+    let points = raw.points || raw.punteggi || {};
+    // sometimes s1..s5 are on root
+    points = {
+      s1: Number(points.s1 ?? raw.s1 ?? 0),
+      s2: Number(points.s2 ?? raw.s2 ?? 0),
+      s3: Number(points.s3 ?? raw.s3 ?? 0),
+      s4: Number(points.s4 ?? raw.s4 ?? 0),
+      s5: Number(points.s5 ?? raw.s5 ?? 0),
+    };
+    // notes array in different forms
+    let notes = [];
+    if (Array.isArray(raw.notes)) notes = raw.notes;
+    else if (Array.isArray(raw.note)) notes = raw.note;
+    else if (raw.details || raw.detail) {
+      const t = String(raw.details || raw.detail || '');
+      if (t.trim()) notes = [{ s:'', text:t, date }];
+    }
+    return { area, channel, date, points, notes };
+  }
+
   async function handleImport(files) {
     if (!files || !files.length) return;
+    if (isLocked()){ alert('Bloccato: sblocca per importare (icona lucchetto).'); return; }
+
     const current = store.load();
     const byKey = new Map(current.map(r => [r.area + '|' + r.channel + '|' + r.date, r]));
 
     for (const f of files) {
       try {
-        const text = await f.text();
-        const rec = JSON.parse(text);
-        // expected: {area, channel, date, points:{s1..s5}, notes:[...], delays:number}
-        if (rec && rec.area && rec.channel && rec.points) {
+        const txt = await f.text();
+        const json = JSON.parse(txt);
+        const arr = toArray(json).map(parseOne);
+        for (const rec of arr) {
+          if (!rec.channel) continue;
           const k = rec.area + '|' + rec.channel + '|' + rec.date;
-          byKey.set(k, rec); // replace same timestamp import, keep others
+          byKey.set(k, rec);
         }
       } catch (e) {
+        console.error(e);
         alert('File non valido: ' + f.name);
       }
     }
     const merged = Array.from(byKey.values()).sort((a,b)=> (a.channel||'').localeCompare(b.channel||''));
     store.save(merged);
-    render();
+    alert('Import completato. Totale record: '+ merged.length);
+    render(); // re-render current page
   }
 
-  // Simple chart renderer (SVG). Expects container and value array [s1..s5]
-  function renderBars(el, values, labels=['1S','2S','3S','4S','5S']){
-    el.innerHTML = '';
+  // ---------- Charts (simple SVG bars)
+  function svgBars(values, labels){
     const max = Math.max(100, ...values);
-    const svgNS = 'http://www.w3.org/2000/svg';
-    const w = el.clientWidth || 300, h = el.clientHeight || 180;
-    const pad = 24;
-    const barW = (w - pad*2) / values.length - 10;
-    const svg = document.createElementNS(svgNS,'svg');
-    svg.setAttribute('viewBox',`0 0 ${w} ${h}`);
-    svg.style.width = '100%'; svg.style.height = '100%';
+    const W = 320, H = 140, pad = 24;
+    const bw = (W - pad*2) / values.length * 0.6;
+    const gap = (W - pad*2) / values.length * 0.4;
+    let x = pad;
     const colors = ['var(--s1)','var(--s2)','var(--s3)','var(--s4)','var(--s5)'];
-
+    let bars = '';
     values.forEach((v,i)=>{
-      const x = pad + i*(barW+10);
-      const bh = Math.round((v/max) * (h - pad*2));
-      const y = h - pad - bh;
-      const rect = document.createElementNS(svgNS,'rect');
-      rect.setAttribute('x',x); rect.setAttribute('y',y);
-      rect.setAttribute('width',barW); rect.setAttribute('height',bh);
-      rect.setAttribute('rx','6'); rect.setAttribute('fill',colors[i]);
-      svg.appendChild(rect);
-
-      const tx = document.createElementNS(svgNS,'text');
-      tx.setAttribute('x', x + barW/2); tx.setAttribute('y', y - 6);
-      tx.setAttribute('text-anchor','middle'); tx.setAttribute('font-size','11');
-      tx.textContent = v + '%'; svg.appendChild(tx);
-
-      const lb = document.createElementNS(svgNS,'text');
-      lb.setAttribute('x', x + barW/2); lb.setAttribute('y', h - pad/2);
-      lb.setAttribute('text-anchor','middle'); lb.setAttribute('font-size','11'); lb.setAttribute('fill','#555');
-      lb.textContent = labels[i]; svg.appendChild(lb);
+      const h = Math.round((v/max)*(H-pad));
+      const y = H - pad - h;
+      bars += `<rect x="${x}" y="${y}" width="${bw}" height="${h}" rx="6" ry="6" fill="${colors[i%colors.length]}"></rect>`;
+      bars += `<text x="${x+bw/2}" y="${H-8}" text-anchor="middle" font-size="12" fill="#475569">${labels[i]}</text>`;
+      x += bw + gap;
     });
-    el.appendChild(svg);
+    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="grafico"><rect x="0" y="0" width="${W}" height="${H}" fill="url(#g)"></rect>
+      <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f8fafc"/><stop offset="100%" stop-color="#eef2f7"/></linearGradient></defs>
+      ${bars}</svg>`;
   }
 
-  // Build boards on home
-  function renderHome() {
+  // ---------- Render HOME
+  function renderHome(){
+    if (document.body.dataset.page !== 'home') return;
     const data = store.load();
     const boards = $('#boards');
     const chips = $('#chip-strip');
-    if (!boards) return;
-
     boards.innerHTML = '';
     chips.innerHTML = '';
 
@@ -92,7 +132,6 @@
       arr.push(r); byCh.set(key, arr);
     }
 
-    // chips
     for (const ch of byCh.keys()) {
       const chip = document.createElement('button');
       chip.className = 'chip';
@@ -101,46 +140,41 @@
       chips.appendChild(chip);
     }
 
-    // boards with last snapshot per CH
     for (const [ch, arr] of byCh) {
-      const last = arr.sort((a,b)=> new Date(a.date)-new Date(b.date)).slice(-1)[0];
+      const last = arr.slice().sort((a,b)=> new Date(a.date)-new Date(b.date)).pop();
+      const vals = [last?.points?.s1||0,last?.points?.s2||0,last?.points?.s3||0,last?.points?.s4||0,last?.points?.s5||0];
       const card = document.createElement('div');
       card.className = 'board';
       card.innerHTML = `<h3>${ch} <small class="muted">${last?.area||''}</small></h3>
-        <div class="chart" id="chart-${CSS.escape(ch)}"></div>
-        <div class="muted" style="margin-top:.4rem">Ultimo: ${last?.date||'-'}</div>
+        <div class="chart">${svgBars(vals,['1S','2S','3S','4S','5S'])}</div>
+        <div class="muted" style="margin-top:.4rem">Ultimo: ${last?.date || '-'}</div>
         <div style="display:flex;gap:.5rem;margin-top:.4rem">
-          <button class="btn" onclick="window.location.href='checklist.html#${encodeURIComponent(ch)}'">Apri in checklist</button>
-          <button class="btn" onclick="printChart('${CSS.escape(ch)}')">Stampa PDF</button>
+          <button class="btn" onclick="window.open('checklist.html#${encodeURIComponent(ch)}','_self')">Apri in checklist</button>
+          <button class="btn" onclick="printSingle('${encodeURIComponent(ch)}')">Stampa PDF</button>
         </div>`;
       boards.appendChild(card);
-      const vals = [last?.points?.s1||0, last?.points?.s2||0, last?.points?.s3||0, last?.points?.s4||0, last?.points?.s5||0];
-      renderBars($('#chart-'+CSS.escape(ch)), vals);
     }
   }
 
-  // Build checklist lines per CH
-  function renderChecklist() {
+  // ---------- Render CHECKLIST
+  function renderChecklist(){
+    if (document.body.dataset.page !== 'checklist') return;
     const wrap = $('#cards');
-    if (!wrap) return;
     const data = store.load();
-
     const byCh = new Map();
     for (const r of data) {
       const key = r.channel || 'CH?';
       const arr = byCh.get(key) || [];
       arr.push(r); byCh.set(key, arr);
     }
-
     wrap.innerHTML = '';
     for (const [ch, arr] of byCh) {
-      const last = arr.sort((a,b)=> new Date(a.date)-new Date(b.date)).slice(-1)[0];
-      const kpis = last?.points || {s1:0,s2:0,s3:0,s4:0,s5:0};
-      const avg = Math.round((kpis.s1+kpis.s2+kpis.s3+kpis.s4+kpis.s5)/5);
-
+      const last = arr.slice().sort((a,b)=> new Date(a.date)-new Date(b.date)).pop();
+      const p = last?.points || {s1:0,s2:0,s3:0,s4:0,s5:0};
+      const avg = Math.round((p.s1+p.s2+p.s3+p.s4+p.s5)/5);
       const card = document.createElement('div');
       card.className = 'card-line';
-      card.id = 'card-' + ch.replace(/\s/g,'-');
+      card.id = `line-${CSS.escape(ch)}`;
       card.innerHTML = `
         <div class="top">
           <div>
@@ -148,44 +182,35 @@
             <div class="muted" style="font-size:.9rem">${last?.area||''} • Ultimo: ${last?.date||'-'}</div>
           </div>
           <div class="pills">
-            <span class="pill s1">S1 ${kpis.s1}%</span>
-            <span class="pill s2">S2 ${kpis.s2}%</span>
-            <span class="pill s3">S3 ${kpis.s3}%</span>
-            <span class="pill s4">S4 ${kpis.s4}%</span>
-            <span class="pill s5">S5 ${kpis.s5}%</span>
-            <span class="badge">Voto medio ${avg}%</span>
+            <span class="pill s1">S1 ${p.s1}%</span>
+            <span class="pill s2">S2 ${p.s2}%</span>
+            <span class="pill s3">S3 ${p.s3}%</span>
+            <span class="pill s4">S4 ${p.s4}%</span>
+            <span class="pill s5">S5 ${p.s5}%</span>
           </div>
-          <div><button class="btn ghost" onclick="printOnly('${'card-' + ch.replace(/\s,g','-')}')">Stampa PDF</button></div>
+          <div class="kpi"><span class="badge">Voto medio ${avg}%</span></div>
+          <div><button class="btn" onclick="printCard('${encodeURIComponent(ch)}')">Stampa PDF</button></div>
         </div>
-        <details open>
-          <summary>Checklist S1…S5</summary>
-          <div class="muted">Vista riassuntiva per il supervisore (solo punteggi).</div>
-        </details>
       `;
       wrap.appendChild(card);
     }
-
-    // master toggle
-    const toggler = $('#btn-toggle-all');
-    if (toggler) {
-      let open = true;
-      toggler.onclick = () => {
-        open = !open;
-        $$('details', wrap).forEach(d => d.open = open);
+    // Toggle all
+    const toggleAll = $('#btn-toggle-all');
+    if (toggleAll){
+      let collapsed = false;
+      toggleAll.onclick = () => {
+        collapsed = !collapsed;
+        // here we might add details in future; currently only header exists, so no-op.
+        alert(collapsed ? 'Comprimi: (demo, nessun dettaglio aggiuntivo da comprimere).' : 'Espandi: (demo)');
       };
     }
-    // print all
-    const printAll = $('#btn-print-all');
-    if (printAll) printAll.onclick = () => window.print();
   }
 
-  // Build notes page
-  function renderNotes() {
+  // ---------- Render NOTES
+  function renderNotes(){
+    if (document.body.dataset.page !== 'notes') return;
     const box = $('#notes-list');
-    if (!box) return;
     const data = store.load();
-    box.innerHTML = '';
-
     const rows = [];
     for (const r of data) {
       const arr = Array.isArray(r.notes) ? r.notes : [];
@@ -193,45 +218,80 @@
         rows.push({
           ch: r.channel,
           area: r.area,
-          s: n.s || n.S || n.type || '',
-          text: n.text || n.note || '',
+          s: (n.s||n.S||n.type||'').toString(),
+          text: n.text||n.note||'',
           date: n.date || r.date || ''
         });
       }
     }
-    const count = $('#notes-count');
-    if (!rows.length) {
+    const from = $('#f-from')?.value;
+    const to = $('#f-to')?.value;
+    const fch = $('#f-ch')?.value?.trim();
+    let filtered = rows;
+    if (from) filtered = filtered.filter(r => (r.date||'') >= from);
+    if (to) filtered = filtered.filter(r => (r.date||'') <= to + 'T99:99');
+    if (fch) filtered = filtered.filter(r => (r.ch||'').toLowerCase().includes(fch.toLowerCase()));
+    filtered.sort((a,b)=> (b.date||'').localeCompare(a.date||''));
+
+    $('#note-count').textContent = filtered.length ? `(${filtered.length} note)` : '0 note';
+    box.innerHTML = '';
+    if (!filtered.length){
       box.innerHTML = '<div class="muted">Nessuna nota importata.</div>';
-      if (count) count.textContent = '0 note';
       return;
     }
-    function applyFilters(){
-      const df = $('#from-date')?.value, dt = $('#to-date')?.value, sch = $('#search-ch')?.value?.toLowerCase() || '';
-      const filtered = rows.filter(n => {
-        const okCh = !sch || (n.ch||'').toLowerCase().includes(sch);
-        const d = n.date ? new Date(n.date) : null;
-        const okFrom = !df || (d && d >= new Date(df));
-        const okTo = !dt || (d && d <= new Date(dt+'T23:59:59'));
-        return okCh && okFrom && okTo;
-      }).sort((a,b)=> new Date(b.date)-new Date(a.date));
-      box.innerHTML='';
-      filtered.forEach(n=>{
-        const el = document.createElement('div');
-        el.className = 'note';
-        el.innerHTML = `<div style="display:flex;justify-content:space-between;gap:.5rem;flex-wrap:wrap">
-          <div><strong>${n.ch}</strong> • <span class="pill ${n.s?('s'+n.s[0]):''}">${n.s||''}</span></div>
-          <div class="muted">${n.date}</div></div>
-          <div style="margin-top:.4rem">${(n.text||'').replaceAll('\\n','<br>')}</div>`;
-        box.appendChild(el);
-      });
-      if (count) count.textContent = filtered.length + ' note';
+    for (const n of filtered) {
+      const el = document.createElement('div');
+      el.className = 'note';
+      const pillClass = n.s ? ('s'+String(n.s).replace(/\D/g,'')) : '';
+      el.innerHTML = `<div style="display:flex;justify-content:space-between;gap:.5rem;flex-wrap:wrap">
+        <div><strong>${n.ch}</strong> • <span class="pill ${pillClass}">${n.s||''}</span></div>
+        <div class="muted">${n.date}</div></div>
+        <div style="margin-top:.4rem; white-space:pre-wrap">${n.text}</div>`;
+      box.appendChild(el);
     }
-    $('#btn-filter')?.addEventListener('click', applyFilters);
-    $('#btn-clear')?.addEventListener('click', ()=>{ $('#from-date').value=''; $('#to-date').value=''; $('#search-ch').value=''; applyFilters();});
-    applyFilters();
   }
 
-  // Export protected (demo PIN 1234)
+  // ---------- Printing
+  window.printCard = (chEnc) => {
+    const ch = decodeURIComponent(chEnc);
+    const node = document.getElementById('line-'+CSS.escape(ch));
+    if (!node) return;
+    const w = window.open('', '_blank');
+    w.document.write(`<!doctype html><html><head><title>CH ${ch}</title>
+      <meta charset="utf-8"><link rel="stylesheet" href="style.css"></head><body>
+      <div class="container">${node.outerHTML}</div></body></html>`);
+    w.document.close(); w.focus(); w.print();
+  };
+  window.printSingle = (chEnc) => { window.location.href = 'checklist.html#'+chEnc; };
+
+  // ---------- Common init
+  function initCommon(){
+    const btnImp = $('#btn-import');
+    const input = $('#import-input');
+    if (btnImp && input){
+      btnImp.onclick = () => { if (isLocked()) { alert('Bloccato: sblocca per importare.'); return; } input.click(); };
+      input.onchange = () => handleImport(input.files);
+    }
+
+    const exp = $('#btn-export');
+    if (exp) exp.onclick = exportWithPin;
+
+    const exp2 = $('#btn-export-supervisor');
+    if (exp2) exp2.onclick = exportWithPin;
+
+    const notes = $('#btn-notes');
+    if (notes) notes.onclick = () => location.href = 'notes.html';
+
+    const lock = $('#btn-lock');
+    if (lock){
+      paintLock(); applyLockToUI();
+      lock.onclick = () => setLocked(!isLocked());
+    }
+
+    const fapply = $('#f-apply');
+    if (fapply) fapply.onclick = () => renderNotes();
+  }
+
   function exportWithPin(){
     const pin = prompt('Inserisci PIN (demo 1234):');
     if (pin !== '1234'){ alert('PIN errato'); return; }
@@ -242,51 +302,15 @@
     a.click();
   }
 
-  // Lock button
-  function initLock(){
-    const btn = $('#btn-lock');
-    if (!btn) return;
-    let locked = sessionStorage.getItem('lock') === '1';
-    const paint = () => { btn.textContent = locked ? '🔓' : '🔒'; document.body.classList.toggle('is-locked', locked); };
-    paint();
-    btn.onclick = () => { locked = !locked; sessionStorage.setItem('lock', locked?'1':'0'); paint(); };
-    const input = $('#import-input');
-    if (input) input.disabled = locked;
-  }
-
-  // Print helpers
-  window.printOnly = (id) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    const w = window.open('', '_blank');
-    w.document.write(`<!doctype html><title>Stampa</title><link rel="stylesheet" href="style.css"><body>`);
-    w.document.write(el.outerHTML);
-    w.document.write('</body>');
-    w.document.close(); w.focus(); w.print(); w.close();
-  };
-  window.printChart = (chId) => window.print();
-
-  // Attach common listeners
-  function initCommon(){
-    const input = $('#import-input');
-    if (input) input.onchange = () => handleImport(input.files);
-    const exp = $('#btn-export');
-    if (exp) exp.onclick = exportWithPin;
-    const exp2 = $('#btn-export-supervisor');
-    if (exp2) exp2.onclick = exportWithPin;
-  }
-
   function render(){
     renderHome();
     renderChecklist();
     renderNotes();
   }
 
-  // Run
   window.addEventListener('DOMContentLoaded', () => {
     initCommon();
-    initLock();
     render();
-    if ('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js'); }
+    if ('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
   });
 })();
