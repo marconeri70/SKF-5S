@@ -3,24 +3,30 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="manifest" href="manifest.json">
   <title>SKF 5S — Supervisor</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="assets/skf-192.png">
+  <link rel="apple-touch-icon" href="assets/skf-512.png">
+  <meta name="theme-color" content="#1565d8">
   <link rel="stylesheet" href="style.css">
 </head>
 <body class="page-home">
   <header class="topbar">
     <div class="brand">
-      <img src="assets/skf-192.png" alt="SKF" class="logo">
-      <span class="appname">SKF 5S</span>
-      <span class="supervisor">Supervisor</span>
+      <img src="assets/skf-logo.png" alt="SKF" class="logo">
+      <span class="title">SKF 5S</span>
+      <span class="badge badge-light">Supervisor</span>
     </div>
-    <div class="actions">
-      <a class="btn ghost" href="notes.html">Note</a>
-      <input id="import-input" type="file" accept=".json,application/json" multiple hidden>
-      <button class="btn primary" id="btn-import" onclick="document.getElementById('import-input').click()">Importa</button>
-      <button class="btn ghost" id="btn-export">Esporta dati (PIN)</button>
-      <a class="btn ghost" href="checklist.html">Vai alla checklist →</a>
-    </div>
+
+    <nav class="actions">
+      <a class="btn link" href="notes.html">Note</a>
+      <label class="btn primary">
+        <input id="import-input" type="file" accept="application/json" multiple hidden>
+        Importa
+      </label>
+      <button id="btn-export" class="btn">Esporta dati (PIN)</button>
+      <a class="btn link" href="checklist.html">Vai alla checklist →</a>
+    </nav>
   </header>
 
   <main class="container">
@@ -35,19 +41,23 @@
           <li><span class="pill s5">5S Sostenere</span> — Abitudine e miglioramento continuo.</li>
         </ol>
       </div>
-      <div class="hero-img">
+      <div class="hero-art">
         <img src="assets/5S.png" alt="Schema 5S">
       </div>
     </section>
 
     <section class="card">
-      <div class="section-title">Andamento — <strong>Tutti i CH</strong></div>
+      <div class="card-title">
+        <h3>Andamento — <span id="subtitle-ch">Tutti i CH</span></h3>
+      </div>
       <div id="boards" class="boards"></div>
       <div id="chip-strip" class="chips"></div>
-      <button class="btn ghost" id="btn-export-supervisor">Esporta dati per Supervisore (PIN)</button>
+      <div class="mt">
+        <button id="btn-export-supervisor" class="btn primary">Esporta dati per Supervisore (PIN)</button>
+      </div>
     </section>
 
-    <footer class="muted small center">v2.2.1 • PWA ready</footer>
+    <footer class="muted center mt-lg">v2.2.2 • PWA ready</footer>
   </main>
 
   <script src="app.js"></script>

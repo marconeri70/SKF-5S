@@ -1,180 +1,283 @@
-// SKF 5S Supervisor — single JS for all pages
-(()=>{
-  const STORAGE_KEY='skf5s:supervisor:data';
+// SKF 5S Supervisor — single JS for all pages 
+(() => {
+  const STORAGE_KEY = 'skf5s:supervisor:data';
 
-  const $=(s,r=document)=>r.querySelector(s);
-  const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+  const $ = (sel, root=document) => root.querySelector(sel);
+  const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
 
-  const store={
-    load(){ try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]')}catch(e){return[]} },
-    save(a){ localStorage.setItem(STORAGE_KEY, JSON.stringify(a)) }
+  // Basic store (localStorage)
+  const store = {
+    load() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+      catch(e){ console.warn(e); return []; }
+    },
+    save(arr) { localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); }
   };
 
-  async function handleImport(files){
-    if(!files || !files.length) return;
-    const now = store.load();
-    const map = new Map(now.map(r=>[(r.area||'')+'|'+(r.channel||'')+'|'+(r.date||''), r]));
-    let imported=0;
-    for(const f of files){
-      try{
-        const rec = JSON.parse(await f.text());
-        if(rec && rec.area && rec.channel && rec.points){
-          const key=(rec.area||'')+'|'+(rec.channel||'')+'|'+(rec.date||'');
-          map.set(key, rec);
-          imported++;
-        }else{
-          alert('File non valido: '+f.name);
-        }
-      }catch(e){ alert('Errore lettura: '+f.name); }
-    }
-    const merged=[...map.values()].sort((a,b)=> String(a.channel).localeCompare(String(b.channel)));
-    store.save(merged);
-    if(imported) alert(`Import completato: ${imported} file, ${merged.length} record totali`);
-    render();
+  // Normalize a record coming from various CH apps
+  function normalizeRecord(obj){
+    if (!obj) return null;
+    // Some exports may already be normalized:
+    if (obj.points && obj.area && obj.channel) return obj;
+    // Alternate shape: {area, channel, date, s1..s5, notes}
+    const points = obj.points || {s1:obj.s1??0,s2:obj.s2??0,s3:obj.s3??0,s4:obj.s4??0,s5:obj.s5??0};
+    const notes = obj.notes || obj.note || [];
+    const rec = {
+      area: obj.area || obj.Area || '',
+      channel: obj.channel || obj.CH || obj.ch || '',
+      date: obj.date || obj.updatedAt || new Date().toISOString(),
+      points: {
+        s1: Number(points.s1||0), s2:Number(points.s2||0),
+        s3: Number(points.s3||0), s4:Number(points.s4||0), s5:Number(points.s5||0)
+      },
+      notes: Array.isArray(notes) ? notes : []
+    };
+    return rec.channel ? rec : null;
   }
 
-  function renderBars(el, values){
-    if(!el) return;
-    el.innerHTML='';
-    const max=Math.max(100, ...values);
-    ['1S','2S','3S','4S','5S'].forEach((lab,i)=>{
-      const v=values[i]||0;
-      const d=document.createElement('div');
-      d.className='bar s'+(i+1);
-      d.style.height = Math.round(v/max*100)+'%';
-      const sp=document.createElement('span'); sp.textContent=lab;
-      d.appendChild(sp); el.appendChild(d);
+  // Merge imported records
+  async function handleImport(files) {
+    if (!files || !files.length) return;
+    const current = store.load();
+    const byKey = new Map(current.map(r => [r.area + '|' + r.channel + '|' + r.date, r]));
+
+    for (const f of files) {
+      try {
+        const text = await f.text();
+        let parsed = JSON.parse(text);
+        // allow a single object or an array of objects
+        const arr = Array.isArray(parsed) ? parsed : [parsed];
+        for (const raw of arr) {
+          const rec = normalizeRecord(raw);
+          if (rec) {
+            const k = rec.area + '|' + rec.channel + '|' + rec.date;
+            byKey.set(k, rec);
+          }
+        }
+      } catch (e) {
+        alert('File non valido: ' + f.name);
+      }
+    }
+    const merged = Array.from(byKey.values()).sort((a,b)=> (a.channel||'').localeCompare(b.channel||''));
+    store.save(merged);
+    render(); // live update
+  }
+
+  // Simple chart renderer (no libs). Expects container and value array [s1..s5]
+  function renderBars(el, values, labels=['1S','2S','3S','4S','5S']){
+    el.innerHTML = '';
+    const max = 100;
+    labels.forEach((lab, i) => {
+      const v = Math.max(0, Math.min(100, Number(values[i]||0)));
+      const col = 's' + (i+1);
+      const bar = document.createElement('div');
+      bar.className = 'bar ' + col;
+      bar.style.height = (v/max*100) + '%';
+      const span = document.createElement('span');
+      span.textContent = lab;
+      bar.appendChild(span);
+      el.appendChild(bar);
     });
   }
 
-  function renderHome(){
-    const boards=$('#boards'); if(!boards) return;
-    const chips=$('#chip-strip');
-    boards.innerHTML=''; chips.innerHTML='';
+  // Build boards on home
+  function renderHome() {
+    const boards = $('#boards');
+    if (!boards) return;
+    const chips = $('#chip-strip');
+    const data = store.load();
 
-    const data=store.load();
-    const byCh=new Map();
-    for(const r of data){
-      const key=r.channel||'CH';
-      (byCh.get(key)||byCh.set(key,[]).get(key)).push(r);
+    boards.innerHTML = '';
+    chips.innerHTML = '';
+
+    if (!data.length){
+      boards.innerHTML = '<div class="muted">Importa i file JSON dei CH per vedere i grafici.</div>';
+      return;
     }
-    // Chips + Boards
-    for(const [ch,arr] of byCh){
-      const last=arr.sort((a,b)=> new Date(a.date)-new Date(b.date)).slice(-1)[0];
-      const card=document.createElement('div');
-      card.className='board';
-      card.innerHTML=`<h3>${ch} <small class="muted">${last?.area||''}</small></h3>
+
+    // group by channel
+    const byCh = new Map();
+    for (const r of data) {
+      const key = r.channel || 'CH?';
+      const arr = byCh.get(key) || [];
+      arr.push(r); byCh.set(key, arr);
+    }
+
+    // chips
+    for (const ch of byCh.keys()) {
+      const chip = document.createElement('button');
+      chip.className = 'chip';
+      chip.textContent = ch;
+      chip.onclick = () => location.href = 'checklist.html#' + encodeURIComponent(ch);
+      chips.appendChild(chip);
+    }
+
+    // boards with last snapshot per CH
+    for (const [ch, arr] of byCh) {
+      const last = arr.sort((a,b)=> new Date(a.date)-new Date(b.date)).slice(-1)[0];
+      const card = document.createElement('div');
+      card.className = 'board';
+      card.innerHTML = `<h3>${ch} <small class="muted">${last?.area||''}</small></h3>
         <div class="chart" id="chart-${CSS.escape(ch)}"></div>
-        <div class="muted small">Ultimo: ${last?.date||'-'}</div>
+        <div class="muted" style="margin-top:.4rem">Ultimo: ${last?.date||'-'}</div>
         <div style="display:flex;gap:.5rem;margin-top:.4rem">
           <a class="btn" href="checklist.html#${encodeURIComponent(ch)}">Apri in checklist</a>
           <button class="btn" onclick="window.print()">Stampa PDF</button>
         </div>`;
       boards.appendChild(card);
-      const vals=[last?.points?.s1||0,last?.points?.s2||0,last?.points?.s3||0,last?.points?.s4||0,last?.points?.s5||0];
+      const vals = [last?.points?.s1||0, last?.points?.s2||0, last?.points?.s3||0, last?.points?.s4||0, last?.points?.s5||0];
       renderBars($('#chart-'+CSS.escape(ch)), vals);
-
-      const chip=document.createElement('button');
-      chip.className='chip'; chip.textContent=ch;
-      chip.onclick=()=>location.href='checklist.html#'+encodeURIComponent(ch);
-      chips.appendChild(chip);
     }
   }
 
-  function renderChecklist(){
-    const wrap=$('#cards'); if(!wrap) return;
-    const data=store.load();
-    const byCh=new Map();
-    for(const r of data){
-      const key=r.channel||'CH';
-      (byCh.get(key)||byCh.set(key,[]).get(key)).push(r);
+  // Build checklist lines per CH
+  function renderChecklist() {
+    const wrap = $('#cards');
+    if (!wrap) return;
+    const data = store.load();
+
+    const byCh = new Map();
+    for (const r of data) {
+      const key = r.channel || 'CH?';
+      const arr = byCh.get(key) || [];
+      arr.push(r); byCh.set(key, arr);
     }
-    wrap.innerHTML='';
-    for(const [ch,arr] of byCh){
-      const last=arr.sort((a,b)=>new Date(a.date)-new Date(b.date)).slice(-1)[0];
-      const p=last?.points||{s1:0,s2:0,s3:0,s4:0,s5:0};
-      const avg=Math.round((p.s1+p.s2+p.s3+p.s4+p.s5)/5);
-      const card=document.createElement('div'); card.className='card-line';
-      card.innerHTML=`
+
+    if (!byCh.size){
+      wrap.innerHTML = '<div class="muted">Nessun dato. Torna alla home e importa i JSON.</div>';
+      return;
+    }
+
+    wrap.innerHTML = '';
+    for (const [ch, arr] of byCh) {
+      const last = arr.sort((a,b)=> new Date(a.date)-new Date(b.date)).slice(-1)[0];
+      const kpis = last?.points || {s1:0,s2:0,s3:0,s4:0,s5:0};
+      const avg = Math.round((kpis.s1+kpis.s2+kpis.s3+kpis.s4+kpis.s5)/5);
+
+      const card = document.createElement('div');
+      card.className = 'card-line';
+      const detailId = 'd-' + Math.random().toString(36).slice(2);
+      card.innerHTML = `
         <div class="top">
           <div>
             <div style="font-weight:800">CH ${ch}</div>
-            <div class="muted small">${last?.area||''} • Ultimo: ${last?.date||'-'}</div>
+            <div class="muted" style="font-size:.9rem">${last?.area||''} • Ultimo: ${last?.date||'-'}</div>
           </div>
           <div class="pills">
-            <span class="pill s1">S1 ${p.s1}%</span>
-            <span class="pill s2">S2 ${p.s2}%</span>
-            <span class="pill s3">S3 ${p.s3}%</span>
-            <span class="pill s4">S4 ${p.s4}%</span>
-            <span class="pill s5">S5 ${p.s5}%</span>
+            <span class="pill s1">S1 ${kpis.s1}%</span>
+            <span class="pill s2">S2 ${kpis.s2}%</span>
+            <span class="pill s3">S3 ${kpis.s3}%</span>
+            <span class="pill s4">S4 ${kpis.s4}%</span>
+            <span class="pill s5">S5 ${kpis.s5}%</span>
           </div>
           <div class="kpi"><span class="badge">Voto medio ${avg}%</span></div>
           <div><button class="btn" onclick="window.print()">Stampa PDF</button></div>
-        </div>`;
+        </div>
+        <details id="${detailId}" class="mt">
+          <summary class="muted">Mostra note</summary>
+          <div id="${detailId}-notes"></div>
+        </details>
+      `;
       wrap.appendChild(card);
-    }
 
-    const toggle=$('#toggle-all');
-    if(toggle){
-      let collapsed=false;
-      toggle.onclick=()=>{
-        collapsed=!collapsed;
-        $$('.card-line .pills').forEach(el=> el.style.display=collapsed?'none':'flex');
-      };
+      // notes list
+      const notesBox = $('#' + detailId + '-notes');
+      const notes = (last && Array.isArray(last.notes)) ? last.notes : [];
+      if (!notes.length){
+        notesBox.innerHTML = '<div class="muted">Nessuna nota per questo CH.</div>';
+      } else {
+        for (const n of notes){
+          const row = document.createElement('div');
+          row.className = 'note';
+          row.innerHTML = `<div style="display:flex;justify-content:space-between;gap:.5rem;flex-wrap:wrap">
+             <div><strong>${ch}</strong> • <span class="pill ${n.s?('s'+String(n.s).replace(/\\D/g,'')):''}">${n.s||''}</span></div>
+             <div class="muted">${n.date||last.date||''}</div>
+           </div>
+           <div style="margin-top:.4rem">${(n.text||n.note||'').replaceAll('\\n','<br>')}</div>`;
+          notesBox.appendChild(row);
+        }
+      }
     }
   }
 
-  function renderNotes(){
-    const box=$('#notes-list'); if(!box) return;
-    const data=store.load();
-    const rows=[];
-    for(const r of data){
-      const arr=Array.isArray(r.notes)?r.notes:[];
-      for(const n of arr){
-        rows.push({ch:r.channel, area:r.area, s:n.s||n.S||n.type||'', text:n.text||n.note||'', date:n.date||r.date||''});
+  // Build notes page
+  function renderNotes() {
+    const box = $('#notes-list');
+    if (!box) return;
+    const data = store.load();
+    box.innerHTML = '';
+
+    // Flatten notes
+    const rows = [];
+    for (const r of data) {
+      const arr = Array.isArray(r.notes) ? r.notes : [];
+      for (const n of arr) {
+        rows.push({
+          ch: r.channel,
+          area: r.area,
+          s: n.s || n.S || n.type || '',
+          text: n.text || n.note || '',
+          date: n.date || r.date || ''
+        });
       }
     }
-    const counter=$('#count-notes'); if(counter) counter.textContent=`${rows.length} note`;
-    box.innerHTML='';
-    if(!rows.length){ box.innerHTML='<div class="muted">Nessuna nota importata.</div>'; return; }
-    rows.sort((a,b)=>new Date(b.date)-new Date(a.date));
-    for(const n of rows){
-      const el=document.createElement('div'); el.className='note';
-      el.innerHTML=`<div style="display:flex;justify-content:space-between;gap:.5rem;flex-wrap:wrap">
-        <div><strong>${n.ch}</strong> • <span class="pill ${n.s?('s'+n.s[0]):''}">${n.s||''}</span></div>
-        <div class="muted small">${n.date}</div></div>
-        <div style="margin-top:.4rem;white-space:pre-wrap">${n.text||''}</div>`;
+    const counter = $('#notes-counter');
+    if (!rows.length) {
+      if (counter) counter.textContent = '0 note';
+      box.innerHTML = '<div class="muted">Nessuna nota importata.</div>';
+      return;
+    }
+    rows.sort((a,b)=> new Date(b.date)-new Date(a.date));
+    if (counter) counter.textContent = rows.length + ' note';
+    for (const n of rows) {
+      const el = document.createElement('div');
+      el.className = 'note';
+      el.innerHTML = `<div style="display:flex;justify-content:space-between;gap:.5rem;flex-wrap:wrap">
+        <div><strong>${n.ch}</strong> • <span class="pill ${n.s?('s'+String(n.s).replace(/\\D/g,'')):''}">${n.s||''}</span></div>
+        <div class="muted">${n.date}</div></div>
+        <div style="margin-top:.4rem">${(n.text||'').replaceAll('\\n','<br>')}</div>`;
       box.appendChild(el);
     }
   }
 
+  // Export protected (PIN check)
   function exportWithPin(){
-    const pin=prompt('Inserisci PIN (demo 1234):');
-    if(pin!=='1234'){ alert('PIN errato'); return; }
-    const blob=new Blob([JSON.stringify(store.load(),null,2)],{type:'application/json'});
-    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='SKF-5S-supervisor-archive.json'; a.click();
+    const pin = prompt('Inserisci PIN (demo 1234):');
+    if (pin !== '1234'){ alert('PIN errato'); return; }
+    const blob = new Blob([JSON.stringify(store.load(), null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'SKF-5S-supervisor-archive.json';
+    a.click();
   }
 
-  function initLock(){
-    const btn=$('#btn-lock'); if(!btn) return;
-    let locked=sessionStorage.getItem('lock')==='1';
-    const paint=()=> btn.textContent = locked?'🔓':'🔒';
-    paint();
-    btn.onclick=()=>{ locked=!locked; sessionStorage.setItem('lock',locked?'1':'0'); paint(); };
-  }
-
+  // Attach common listeners
   function initCommon(){
-    const input=$('#import-input'); if(input) input.onchange=()=>handleImport(input.files);
-    const exp=$('#btn-export'); if(exp) exp.onclick=exportWithPin;
-    const exp2=$('#btn-export-supervisor'); if(exp2) exp2.onclick=exportWithPin;
+    const input = $('#import-input');
+    if (input) input.onchange = () => handleImport(input.files);
+    const exp = $('#btn-export');
+    if (exp) exp.onclick = exportWithPin;
+    const exp2 = $('#btn-export-supervisor');
+    if (exp2) exp2.onclick = exportWithPin;
+
+    const toggle = $('#toggle-all');
+    if (toggle){
+      toggle.onclick = () => {
+        $$('details').forEach(d => d.open = !d.open);
+      };
+    }
   }
 
   function render(){
-    renderHome(); renderChecklist(); renderNotes();
+    renderHome();
+    renderChecklist();
+    renderNotes();
   }
 
-  window.addEventListener('DOMContentLoaded',()=>{
-    initCommon(); initLock(); render();
-    if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js'); }
+  // Run
+  window.addEventListener('DOMContentLoaded', () => {
+    initCommon();
+    render();
+    if ('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js'); }
   });
 })();

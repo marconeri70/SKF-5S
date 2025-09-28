@@ -3,26 +3,30 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SKF 5S — Note</title>
+  <title>SKF 5S — Note (Supervisor)</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="assets/skf-192.png">
+  <meta name="theme-color" content="#1565d8">
   <link rel="stylesheet" href="style.css">
 </head>
 <body class="page-notes">
   <header class="topbar">
     <div class="brand">
-      <a href="index.html" class="back">← Supervisore</a>
-      <span class="appname">SKF 5S</span>
-      <span class="supervisor">— Note</span>
+      <a class="btn link" href="index.html">← Supervisore</a>
+      <span class="title">SKF 5S</span>
+      <span class="badge badge-light">— Note</span>
     </div>
-    <div class="actions">
-      <div class="badge" id="count-notes">0 note</div>
-    </div>
+    <div class="actions muted"><span id="notes-counter">0 note</span></div>
   </header>
+
   <main class="container">
     <section class="card">
       <h3>Note per data e S</h3>
       <div id="notes-list" class="notes"></div>
     </section>
+    <footer class="muted center mt-lg">v2.2.2</footer>
   </main>
+
   <script src="app.js"></script>
 </body>
 </html>
