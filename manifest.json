@@ -3,8 +3,8 @@
   "short_name": "SKF 5S",
   "start_url": "index.html",
   "display": "standalone",
-  "background_color": "#0B5ED7",
-  "theme_color": "#0B5ED7",
+  "background_color": "#0a4fcb",
+  "theme_color": "#0a4fcb",
   "icons": [
     {
       "src": "assets/skf-192.png",

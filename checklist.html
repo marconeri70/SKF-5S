@@ -1,38 +1,35 @@
 <!doctype html>
 <html lang="it">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>SKF 5S — Schede (Supervisor)</title>
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" type="image/png" href="assets/skf-192.png">
-  <meta name="theme-color" content="#0B5ED7">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SKF 5S — Schede</title>
   <link rel="stylesheet" href="style.css">
-  <script defer src="app.js"></script>
 </head>
-<body class="app">
-<header class="appbar">
-  <div class="brand">
-    <a class="back" href="index.html">←</a>
-    <img class="logo" src="assets/skf-logo.png" alt="SKF">
-    <span class="title">SKF 5S</span>
-    <span class="badge">Supervisor</span>
-  </div>
+<body class="page-checklist">
+  <header class="topbar">
+    <div class="brand">
+      <a href="index.html" class="back">← Indietro</a>
+      <img src="assets/skf-192.png" alt="SKF" class="logo">
+      <span class="appname">SKF 5S</span>
+      <span class="supervisor">Supervisor</span>
+    </div>
+    <div class="actions">
+      <button class="btn ghost" id="btn-lock" title="Blocca/Sblocca">🔒</button>
+      <input id="import-input" type="file" accept=".json,application/json" multiple hidden>
+      <button class="btn primary" id="btn-import" onclick="document.getElementById('import-input').click()">Importa</button>
+      <a class="btn ghost" href="notes.html">Note</a>
+    </div>
+  </header>
 
-  <nav class="actions">
-    <button id="btn-lock" class="btn ghost" title="Blocca/sblocca modifica">🔒</button>
-    <label class="btn primary file-btn">
-      <input id="import-input" type="file" accept="application/json" multiple hidden>
-      <span>Importa</span>
-    </label>
-    <a class="btn ghost" href="index.html">Indietro</a>
-  </nav>
-</header>
+  <main class="container">
+    <div class="inline-actions">
+      <button class="btn ghost" id="toggle-all">Comprimi / Espandi tutti i CH</button>
+    </div>
+    <div id="cards" class="cards"></div>
+    <footer class="muted small center">v2.2.1</footer>
+  </main>
 
-<main class="container">
-  <h1>Schede di valutazione</h1>
-  <div id="cards" class="stack"></div>
-  <footer class="muted center">v2.2.0</footer>
-</main>
+  <script src="app.js"></script>
 </body>
 </html>

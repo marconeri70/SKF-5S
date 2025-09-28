@@ -1,70 +1,55 @@
 <!doctype html>
 <html lang="it">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>SKF 5S — Supervisor</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="manifest" href="manifest.json">
-  <link rel="icon" type="image/png" href="assets/skf-192.png">
-  <link rel="apple-touch-icon" href="assets/skf-512.png">
-  <meta name="theme-color" content="#0B5ED7">
+  <title>SKF 5S — Supervisor</title>
   <link rel="stylesheet" href="style.css">
-  <script defer src="app.js"></script>
 </head>
-<body class="app">
-  <header class="appbar">
+<body class="page-home">
+  <header class="topbar">
     <div class="brand">
-      <img class="logo" src="assets/skf-logo.png" alt="SKF">
-      <span class="title">SKF 5S</span>
-      <span class="badge">Supervisor</span>
+      <img src="assets/skf-192.png" alt="SKF" class="logo">
+      <span class="appname">SKF 5S</span>
+      <span class="supervisor">Supervisor</span>
     </div>
-
-    <nav class="actions">
-      <a class="btn ghost" href="notes.html" id="btn-notes">Note</a>
-
-      <label class="btn primary file-btn">
-        <input id="import-input" type="file" accept="application/json" multiple hidden>
-        <span>Importa</span>
-      </label>
-
-      <button class="btn outline" id="btn-export">Esporta dati (PIN)</button>
-
+    <div class="actions">
+      <a class="btn ghost" href="notes.html">Note</a>
+      <input id="import-input" type="file" accept=".json,application/json" multiple hidden>
+      <button class="btn primary" id="btn-import" onclick="document.getElementById('import-input').click()">Importa</button>
+      <button class="btn ghost" id="btn-export">Esporta dati (PIN)</button>
       <a class="btn ghost" href="checklist.html">Vai alla checklist →</a>
-    </nav>
+    </div>
   </header>
 
   <main class="container">
-    <section class="card grid two">
-      <div class="legend">
+    <section class="hero card">
+      <div class="hero-text">
         <h2>Cosa è 5S</h2>
-        <ul class="legend-list">
-          <li><span class="pill s1">1S Selezionare</span><span class="dash">—</span> Eliminare il superfluo.</li>
-          <li><span class="pill s2">2S Sistemare</span><span class="dash">—</span> Un posto per tutto e tutto al suo posto.</li>
-          <li><span class="pill s3">3S Splendere</span><span class="dash">—</span> Pulire e prevenire lo sporco.</li>
-          <li><span class="pill s4">4S Standardizzare</span><span class="dash">—</span> Regole e segnali chiari.</li>
-          <li><span class="pill s5">5S Sostenere</span><span class="dash">—</span> Abitudine e miglioramento continuo.</li>
-        </ul>
+        <ol class="what5s">
+          <li><span class="pill s1">1S Selezionare</span> — Eliminare il superfluo.</li>
+          <li><span class="pill s2">2S Sistemare</span> — Un posto per tutto e tutto al suo posto.</li>
+          <li><span class="pill s3">3S Splendere</span> — Pulire e prevenire lo sporco.</li>
+          <li><span class="pill s4">4S Standardizzare</span> — Regole e segnali chiari.</li>
+          <li><span class="pill s5">5S Sostenere</span> — Abitudine e miglioramento continuo.</li>
+        </ol>
       </div>
-      <div class="hero">
+      <div class="hero-img">
         <img src="assets/5S.png" alt="Schema 5S">
       </div>
     </section>
 
     <section class="card">
-      <div class="card-head">
-        <h2>Andamento — <span id="board-title">Tutti i CH</span></h2>
-      </div>
-
+      <div class="section-title">Andamento — <strong>Tutti i CH</strong></div>
       <div id="boards" class="boards"></div>
-
-      <div class="chips" id="chip-strip"></div>
-
-      <div class="toolbar">
-        <button class="btn primary" id="btn-export-supervisor">Esporta dati per Supervisore (PIN)</button>
-      </div>
+      <div id="chip-strip" class="chips"></div>
+      <button class="btn ghost" id="btn-export-supervisor">Esporta dati per Supervisore (PIN)</button>
     </section>
 
-    <footer class="muted center">v2.2.0 • PWA ready</footer>
+    <footer class="muted small center">v2.2.1 • PWA ready</footer>
   </main>
+
+  <script src="app.js"></script>
 </body>
 </html>
