@@ -1,64 +1,56 @@
-
 <!doctype html>
 <html lang="it">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SKF 5S — Supervisor</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="assets/skf-192.png">
-  <link rel="apple-touch-icon" href="assets/skf-192.png">
+  <style>/* inlined minimal to avoid FOUC */</style>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <nav class="top">
-    <div class="bar container">
-      <div class="left">
-        <div class="logo">
-          <img src="assets/skf-logo.png" alt="SKF">
-          <span>SKF 5S</span>
-          <span class="badge">Supervisor</span>
-        </div>
-      </div>
-      <div class="right">
-        <button class="btn secondary" onclick="location.href='notes.html'">Note</button>
-        <label class="btn">
-          <input id="import-input" type="file" multiple accept=".json" style="display:none">
-          Importa
-        </label>
-        <button id="btn-export" class="btn">Esporta dati (PIN)</button>
-        <button class="btn secondary" onclick="location.href='../SKF-5S/checklist.html'">Vai alla checklist →</button>
-        <button id="btn-lock" class="btn secondary" title="Blocca/Sblocca"></button>
-      </div>
+  <header class="topbar">
+    <div class="brand">
+      <img src="assets/skf-logo.png" alt="SKF" class="logo">
+      <span class="appname">SKF 5S</span>
+      <span class="badge badge-invert">Supervisor</span>
     </div>
-  </nav>
+    <nav class="actions">
+      <a href="notes.html" class="btn ghost" id="btn-notes-link">Note</a>
+      <label class="btn primary"><input id="import-input" type="file" accept="application/json" multiple hidden>Importa</label>
+      <button class="btn ghost" id="btn-export">Esporta dati (PIN)</button>
+      <a href="checklist.html" class="btn link">Vai alla checklist →</a>
+      <button class="btn icon" id="btn-lock" title="Blocca/Sblocca">🔒</button>
+    </nav>
+  </header>
 
   <main class="container">
     <section class="card hero">
-      <div>
-        <h2>Cosa è 5S</h2>
-        <div class="sline"><span class="pill s1">1S Selezionare</span> — Eliminare il superfluo.</div>
-        <div class="sline"><span class="pill s2">2S Sistemare</span> — Un posto per tutto e tutto al suo posto.</div>
-        <div class="sline"><span class="pill s3">3S Splendere</span> — Pulire e prevenire lo sporco.</div>
-        <div class="sline"><span class="pill s4">4S Standardizzare</span> — Regole e segnali chiari.</div>
-        <div class="sline"><span class="pill s5">5S Sostenere</span> — Abitudine e miglioramento continuo.</div>
+      <div class="hero-text">
+        <h1>Cosa è 5S</h1>
+        <ol class="what5s">
+          <li><span class="chip s1">1S Selezionare</span> — Eliminare il superfluo.</li>
+          <li><span class="chip s2">2S Sistemare</span> — Un posto per tutto e tutto al suo posto.</li>
+          <li><span class="chip s3">3S Splendere</span> — Pulire e prevenire lo sporco.</li>
+          <li><span class="chip s4">4S Standardizzare</span> — Regole e segnali chiari.</li>
+          <li><span class="chip s5">5S Sostenere</span> — Abitudine e miglioramento continuo.</li>
+        </ol>
       </div>
-      <div class="center"><img src="assets/5S.png" alt="5S Pie" style="max-width:320px;width:100%;height:auto;filter:drop-shadow(0 10px 40px rgba(0,0,0,.25))"></div>
+      <img src="assets/5S.png" alt="Schema 5S" class="hero-img">
     </section>
 
-    <section class="grid" style="margin-top:1rem">
+    <section class="card">
       <h2>Andamento — Tutti i CH</h2>
-      <div id="boards" class="grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))"></div>
-      <div class="chips" id="chip-strip" style="margin-top:.5rem"></div>
-    </section>
-
-    <section style="margin:1rem 0">
-      <button id="btn-export-supervisor" class="btn">Esporta dati per Supervisore (PIN)</button>
+      <div id="boards" class="boards"></div>
+      <div id="chip-strip" class="chip-strip"></div>
+      <div class="footer-actions">
+        <button class="btn ghost" id="btn-export-supervisor">Esporta dati per Supervisore (PIN)</button>
+      </div>
     </section>
   </main>
 
-  <footer>v2.2.3 • PWA ready</footer>
-
+  <footer class="foot">v2.2.3 • PWA ready</footer>
   <script src="app.js"></script>
 </body>
 </html>
