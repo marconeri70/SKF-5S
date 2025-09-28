@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="it">
 <head>
@@ -6,13 +7,11 @@
   <title>SKF 5S — Supervisor</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="assets/skf-192.png">
-  <link rel="apple-touch-icon" href="assets/skf-192.png">
   <meta name="theme-color" content="#0a57d5">
   <link rel="stylesheet" href="style.css">
-  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script defer src="app.js"></script>
 </head>
-<body>
+<body data-page="index">
 <header class="appbar">
   <div class="brand">
     <img class="logo" src="assets/skf-logo.png" alt="SKF">
@@ -21,7 +20,8 @@
   <nav class="row" style="margin-left:auto;gap:8px">
     <a class="icon-btn" href="notes.html">Note</a>
     <button id="btnImport" class="pill">Importa</button>
-    <a class="cta" href="checklist.html">Vai alla checklist <span class="arrow">→</span></a>
+    <button id="btnExport" class="pill ghost">Esporta dati (PIN)</button>
+    <a class="cta" href="checklist.html">Vai alla checklist →</a>
   </nav>
 </header>
 
@@ -29,7 +29,7 @@
   <section class="card hero-grid">
     <div>
       <h2>Cosa è 5S</h2>
-      <ul style="list-style:none;padding-left:0;margin:10px 0 0 0">
+      <ul class="list5s">
         <li class="row"><span class="chip s1">1S Selezionare</span><span>— Eliminare il superfluo.</span></li>
         <li class="row"><span class="chip s2">2S Sistemare</span><span>— Un posto per tutto e tutto al suo posto.</span></li>
         <li class="row"><span class="chip s3">3S Splendere</span><span>— Pulire e prevenire lo sporco.</span></li>
@@ -37,7 +37,7 @@
         <li class="row"><span class="chip s5">5S Sostenere</span><span>— Abitudine e miglioramento continuo.</span></li>
       </ul>
     </div>
-    <img class="hero-img" src="assets/5s-hero.png" alt="Schema 5S">
+    <img class="hero-img" src="assets/5s-hero.png" onerror="this.src='assets/5S.png'" alt="Schema 5S">
   </section>
 
   <section class="card">
@@ -48,21 +48,13 @@
         <select id="chFilter" class="filter"></select>
       </div>
     </div>
-
     <div id="charts" class="charts-wrap mt"></div>
     <div id="channelsNav" class="channels-nav mt"></div>
-    <div class="mt">
-      <button id="btnExport" class="pill ghost">Esporta dati per Supervisore (PIN)</button>
-    </div>
   </section>
 
-  <p class="muted mt" id="ver">v2.1.3 • PWA ready</p>
+  <p class="muted mt" id="ver">v2.1.4c</p>
 </main>
 
 <input id="fileInput" type="file" accept=".json,application/json" multiple hidden>
-
-<script>
-window.addEventListener('load',()=>{ if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js'); }});
-</script>
 </body>
 </html>

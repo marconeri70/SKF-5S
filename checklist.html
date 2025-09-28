@@ -1,16 +1,17 @@
+
 <!doctype html>
 <html lang="it">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>SKF 5S — Schede (Supervisor)</title>
+  <title>SKF 5S — Schede</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="assets/skf-192.png">
   <meta name="theme-color" content="#0a57d5">
   <link rel="stylesheet" href="style.css">
   <script defer src="app.js"></script>
 </head>
-<body>
+<body data-page="checklist">
 <header class="appbar">
   <a class="back" href="index.html">← Indietro</a>
   <div class="brand">
@@ -24,11 +25,8 @@
 </header>
 
 <main class="container">
-  <h2 style="margin-top:6px">Schede di valutazione</h2>
-  <p class="muted">Importa uno o più file JSON esportati dai CH. I dati vengono uniti, non sovrascritti.</p>
-
+  <h2>Schede di valutazione</h2>
   <div id="channelsWrap" class="channels-wrap"></div>
-  <p id="ver" class="muted mt">v2.1.3</p>
 </main>
 
 <input id="fileInput2" type="file" accept=".json,application/json" multiple hidden>
