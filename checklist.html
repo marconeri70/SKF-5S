@@ -1,46 +1,36 @@
 <!doctype html>
 <html lang="it">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>SKF 5S — Checklist Supervisore</title>
-  <link rel="manifest" href="manifest.json"/>
-  <link rel="icon" href="assets/skf-logo.png"/>
-  <link rel="apple-touch-icon" href="assets/pwa-192.png"/>
-  <link rel="stylesheet" href="style.css"/>
-  <!-- jsPDF per PDF CH -->
-  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SKF 5S — Schede (Supervisor)</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="assets/skf-192.png">
+  <meta name="theme-color" content="#0a57d5">
+  <link rel="stylesheet" href="style.css">
   <script defer src="app.js"></script>
 </head>
-<body data-page="checklist">
-  <header class="appbar">
-    <a class="back" href="index.html">← Indietro</a>
-    <div class="brand">
-      <img src="assets/skf-logo.png" alt="SKF" class="logo"/>
-      <span class="brand-text"><span class="skf">SKF</span>&nbsp;<span class="five">5S</span></span>
-    </div>
-    <div class="top-actions">
-      <button id="importBtn" class="pill">Importa</button>
-      <a href="notes.html" class="pill ghost">Note</a>
-      <button id="lockBtn" class="icon-btn" aria-label="Impostazioni/PIN">🔒</button>
-    </div>
-  </header>
+<body>
+<header class="appbar">
+  <a class="back" href="index.html">← Indietro</a>
+  <div class="brand">
+    <img class="logo" src="assets/skf-logo.png" alt="SKF">
+    <div class="brand-text"><span class="skf">SKF</span> <span class="five">5S</span> <span class="tag">Supervisor</span></div>
+  </div>
+  <nav class="row" style="margin-left:auto;gap:8px">
+    <button id="btnLock" class="icon-btn">Blocca</button>
+    <button id="btnImport2" class="pill">Importa</button>
+  </nav>
+</header>
 
-  <main class="container">
-    <section class="row">
-      <button id="toggleAllCH" class="pill">Comprimi / Espandi tutti i CH</button>
-    </section>
+<main class="container">
+  <h2 style="margin-top:6px">Schede di valutazione</h2>
+  <p class="muted">Importa uno o più file JSON esportati dai CH. I dati vengono uniti, non sovrascritti.</p>
 
-    <div id="channelsWrap" class="channels-wrap"></div>
-  </main>
+  <div id="channelsWrap" class="channels-wrap"></div>
+  <p id="ver" class="muted mt">v2.1.3</p>
+</main>
 
-  <!-- Dialog INFO -->
-  <dialog id="infoDialog" class="modal">
-    <form method="dialog" class="modal-box">
-      <button id="infoCloseBtn" type="button" class="floating-close pill">Chiudi</button>
-      <h3 id="infoTitle">S — Info</h3>
-      <div id="infoContent" class="info-content"></div>
-    </form>
-  </dialog>
+<input id="fileInput2" type="file" accept=".json,application/json" multiple hidden>
 </body>
 </html>

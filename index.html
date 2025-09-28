@@ -1,90 +1,68 @@
 <!doctype html>
 <html lang="it">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>SKF 5S — Supervisore</title>
-  <link rel="manifest" href="manifest.json"/>
-  <link rel="icon" href="assets/skf-logo.png"/>
-  <link rel="apple-touch-icon" href="assets/pwa-192.png"/>
-  <link rel="stylesheet" href="style.css"/>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SKF 5S — Supervisor</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="assets/skf-192.png">
+  <link rel="apple-touch-icon" href="assets/skf-192.png">
+  <meta name="theme-color" content="#0a57d5">
+  <link rel="stylesheet" href="style.css">
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-  <!-- jsPDF per PDF -->
-  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script defer src="app.js"></script>
 </head>
-<body data-page="home">
-  <header class="appbar">
-    <div class="brand">
-      <img src="assets/skf-logo.png" alt="SKF" class="logo"/>
-      <span class="brand-text"><span class="skf">SKF</span>&nbsp;<span class="five">5S</span></span>
+<body>
+<header class="appbar">
+  <div class="brand">
+    <img class="logo" src="assets/skf-logo.png" alt="SKF">
+    <div class="brand-text"><span class="skf">SKF</span> <span class="five">5S</span> <span class="tag">Supervisor</span></div>
+  </div>
+  <nav class="row" style="margin-left:auto;gap:8px">
+    <a class="icon-btn" href="notes.html">Note</a>
+    <button id="btnImport" class="pill">Importa</button>
+    <a class="cta" href="checklist.html">Vai alla checklist <span class="arrow">→</span></a>
+  </nav>
+</header>
+
+<main class="container">
+  <section class="card hero-grid">
+    <div>
+      <h2>Cosa è 5S</h2>
+      <ul style="list-style:none;padding-left:0;margin:10px 0 0 0">
+        <li class="row"><span class="chip s1">1S Selezionare</span><span>— Eliminare il superfluo.</span></li>
+        <li class="row"><span class="chip s2">2S Sistemare</span><span>— Un posto per tutto e tutto al suo posto.</span></li>
+        <li class="row"><span class="chip s3">3S Splendere</span><span>— Pulire e prevenire lo sporco.</span></li>
+        <li class="row"><span class="chip s4">4S Standardizzare</span><span>— Regole e segnali chiari.</span></li>
+        <li class="row"><span class="chip s5">5S Sostenere</span><span>— Abitudine e miglioramento continuo.</span></li>
+      </ul>
+    </div>
+    <img class="hero-img" src="assets/5s-hero.png" alt="Schema 5S">
+  </section>
+
+  <section class="card">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <h2 style="margin:0">Andamento — <span id="titleScope">Tutti i CH</span></h2>
+      <div class="filter-wrap">
+        <label for="chFilter">Filtro CH</label>
+        <select id="chFilter" class="filter"></select>
+      </div>
     </div>
 
-    <div class="top-actions">
-      <button id="importBtn" class="pill">Importa</button>
-      <a href="notes.html" class="pill ghost">Note</a>
-      <label class="filter-wrap">
-        <span>Filtro CH</span>
-        <select id="filterSelect" class="filter"></select>
-      </label>
-      <button id="lockBtn" class="icon-btn" aria-label="Impostazioni/PIN">🔒</button>
-      <a class="cta" href="checklist.html">Vai alla checklist <span class="arrow">→</span></a>
+    <div id="charts" class="charts-wrap mt"></div>
+    <div id="channelsNav" class="channels-nav mt"></div>
+    <div class="mt">
+      <button id="btnExport" class="pill ghost">Esporta dati per Supervisore (PIN)</button>
     </div>
-  </header>
+  </section>
 
-  <main class="container">
-    <section class="card hero">
-      <div class="hero-grid">
-        <img src="assets/5s-hero.png" class="hero-img" alt="Cosa è 5S"/>
-        <div>
-          <h2>Cosa è 5S</h2>
-          <ul class="what5s">
-            <li><span class="chip s1">1S Selezionare</span> — Eliminare il superfluo.</li>
-            <li><span class="chip s2">2S Sistemare</span> — Un posto per tutto e tutto al suo posto.</li>
-            <li><span class="chip s3">3S Splendere</span> — Pulire e prevenire lo sporco.</li>
-            <li><span class="chip s4">4S Standardizzare</span> — Regole e segnali chiari.</li>
-            <li><span class="chip s5">5S Sostenere</span> — Abitudine e miglioramento continuo.</li>
-          </ul>
-        </div>
-      </div>
-    </section>
+  <p class="muted mt" id="ver">v2.1.3 • PWA ready</p>
+</main>
 
-    <section class="card">
-      <h2>Andamento — Tutti i CH</h2>
-      <div id="chartsWrap" class="charts-wrap"></div>
+<input id="fileInput" type="file" accept=".json,application/json" multiple hidden>
 
-      <div id="channelsNav" class="channels-nav mt"></div>
-
-      <div class="row mt">
-        <button id="exportBtn" class="pill">Esporta dati per Supervisore (PIN)</button>
-      </div>
-    </section>
-  </main>
-
-  <!-- PIN dialog -->
-  <dialog id="pinDialog" class="modal">
-    <form method="dialog" class="modal-box">
-      <h3>Impostazioni Supervisore</h3>
-      <label class="field">
-        <span>PIN attuale</span>
-        <input id="pinInput" type="password" inputmode="numeric" autocomplete="off" />
-      </label>
-      <details class="mt">
-        <summary>Cambia PIN</summary>
-        <label class="field">
-          <span>Nuovo PIN</span>
-          <input id="newPin1" type="password" inputmode="numeric"/>
-        </label>
-        <label class="field">
-          <span>Ripeti PIN</span>
-          <input id="newPin2" type="password" inputmode="numeric"/>
-        </label>
-      </details>
-      <div class="actions">
-        <button id="pinCancel" type="reset" class="pill ghost">Annulla</button>
-        <button id="pinConfirmBtn" class="pill">Conferma</button>
-      </div>
-    </form>
-  </dialog>
+<script>
+window.addEventListener('load',()=>{ if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js'); }});
+</script>
 </body>
 </html>
