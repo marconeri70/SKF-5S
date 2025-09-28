@@ -181,6 +181,22 @@ function renderNotes(){
 
 // ROUTER
 document.addEventListener("DOMContentLoaded",()=>{
-  renderIndex(); renderChecklist(); renderNotes();
-  const b1=document.getElementById("btnImport"); if(b1) b1.onclick=()=> pickAndImport("fileInput",()=>renderIndex());
+  renderIndex();
+  renderChecklist();
+  renderNotes();
+
+  const importBtn = document.getElementById("btnImport");
+  if(importBtn){
+    importBtn.addEventListener("click", ()=>{
+      pickAndImport("fileInput", ()=>renderIndex());
+    });
+  }
+
+  const importBtn2 = document.getElementById("btnImport2");
+  if(importBtn2){
+    importBtn2.addEventListener("click", ()=>{
+      pickAndImport("fileInput2", ()=>renderChecklist());
+    });
+  }
 });
+
