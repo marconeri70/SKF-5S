@@ -1,34 +1,46 @@
-
 <!doctype html>
 <html lang="it">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>SKF 5S — Schede (Supervisor)</title>
-  <link rel="manifest" href="manifest.json">
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>SKF 5S — Checklist Supervisore</title>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="icon" href="assets/skf-logo.png"/>
+  <link rel="apple-touch-icon" href="assets/pwa-192.png"/>
   <link rel="stylesheet" href="style.css"/>
+  <!-- jsPDF per PDF CH -->
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script defer src="app.js"></script>
 </head>
-<body>
-<header class="topbar">
-  <div class="container row">
-    <a href="index.html" class="brand"><img src="assets/skf-logo.png" alt="SKF">SKF 5S <span class="badge s5">Supervisor</span></a>
-    <div class="toolbar">
-      <button id="btnLock" class="lock small" title="Blocca/sblocca">Blocca</button>
-      <label class="label-file small" for="file-import">Importa</label>
-      <input id="file-import" type="file" multiple accept=".json,application/json"/>
-      <a class="ghost small" href="index.html">Indietro</a>
+<body data-page="checklist">
+  <header class="appbar">
+    <a class="back" href="index.html">← Indietro</a>
+    <div class="brand">
+      <img src="assets/skf-logo.png" alt="SKF" class="logo"/>
+      <span class="brand-text"><span class="skf">SKF</span>&nbsp;<span class="five">5S</span></span>
     </div>
-  </div>
-</header>
+    <div class="top-actions">
+      <button id="importBtn" class="pill">Importa</button>
+      <a href="notes.html" class="pill ghost">Note</a>
+      <button id="lockBtn" class="icon-btn" aria-label="Impostazioni/PIN">🔒</button>
+    </div>
+  </header>
 
-<main class="container grid" style="margin-top:14px">
-  <section class="card">
-    <h2 class="section-title">Schede di valutazione</h2>
-    <div id="cards"></div>
-  </section>
-</main>
+  <main class="container">
+    <section class="row">
+      <button id="toggleAllCH" class="pill">Comprimi / Espandi tutti i CH</button>
+    </section>
 
-<div class="container footer">v2.1.5</div>
-<script src="app.js"></script>
+    <div id="channelsWrap" class="channels-wrap"></div>
+  </main>
+
+  <!-- Dialog INFO -->
+  <dialog id="infoDialog" class="modal">
+    <form method="dialog" class="modal-box">
+      <button id="infoCloseBtn" type="button" class="floating-close pill">Chiudi</button>
+      <h3 id="infoTitle">S — Info</h3>
+      <div id="infoContent" class="info-content"></div>
+    </form>
+  </dialog>
 </body>
 </html>
