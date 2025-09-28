@@ -1,64 +1,63 @@
+
 <!doctype html>
 <html lang="it">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>SKF 5S — Supervisor</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="assets/skf-192.png">
-  <link rel="apple-touch-icon" href="assets/skf-512.png">
-  <meta name="theme-color" content="#1565d8">
+  <link rel="apple-touch-icon" href="assets/skf-192.png">
   <link rel="stylesheet" href="style.css">
 </head>
-<body class="page-home">
-  <header class="topbar">
-    <div class="brand">
-      <img src="assets/skf-logo.png" alt="SKF" class="logo">
-      <span class="title">SKF 5S</span>
-      <span class="badge badge-light">Supervisor</span>
+<body>
+  <nav class="top">
+    <div class="bar container">
+      <div class="left">
+        <div class="logo">
+          <img src="assets/skf-logo.png" alt="SKF">
+          <span>SKF 5S</span>
+          <span class="badge">Supervisor</span>
+        </div>
+      </div>
+      <div class="right">
+        <button class="btn secondary" onclick="location.href='notes.html'">Note</button>
+        <label class="btn">
+          <input id="import-input" type="file" multiple accept=".json" style="display:none">
+          Importa
+        </label>
+        <button id="btn-export" class="btn">Esporta dati (PIN)</button>
+        <button class="btn secondary" onclick="location.href='../SKF-5S/checklist.html'">Vai alla checklist →</button>
+        <button id="btn-lock" class="btn secondary" title="Blocca/Sblocca"></button>
+      </div>
     </div>
-
-    <nav class="actions">
-      <a class="btn link" href="notes.html">Note</a>
-      <label class="btn primary">
-        <input id="import-input" type="file" accept="application/json" multiple hidden>
-        Importa
-      </label>
-      <button id="btn-export" class="btn">Esporta dati (PIN)</button>
-      <a class="btn link" href="checklist.html">Vai alla checklist →</a>
-    </nav>
-  </header>
+  </nav>
 
   <main class="container">
-    <section class="hero card">
-      <div class="hero-text">
+    <section class="card hero">
+      <div>
         <h2>Cosa è 5S</h2>
-        <ol class="what5s">
-          <li><span class="pill s1">1S Selezionare</span> — Eliminare il superfluo.</li>
-          <li><span class="pill s2">2S Sistemare</span> — Un posto per tutto e tutto al suo posto.</li>
-          <li><span class="pill s3">3S Splendere</span> — Pulire e prevenire lo sporco.</li>
-          <li><span class="pill s4">4S Standardizzare</span> — Regole e segnali chiari.</li>
-          <li><span class="pill s5">5S Sostenere</span> — Abitudine e miglioramento continuo.</li>
-        </ol>
+        <div class="sline"><span class="pill s1">1S Selezionare</span> — Eliminare il superfluo.</div>
+        <div class="sline"><span class="pill s2">2S Sistemare</span> — Un posto per tutto e tutto al suo posto.</div>
+        <div class="sline"><span class="pill s3">3S Splendere</span> — Pulire e prevenire lo sporco.</div>
+        <div class="sline"><span class="pill s4">4S Standardizzare</span> — Regole e segnali chiari.</div>
+        <div class="sline"><span class="pill s5">5S Sostenere</span> — Abitudine e miglioramento continuo.</div>
       </div>
-      <div class="hero-art">
-        <img src="assets/5S.png" alt="Schema 5S">
-      </div>
+      <div class="center"><img src="assets/5S.png" alt="5S Pie" style="max-width:320px;width:100%;height:auto;filter:drop-shadow(0 10px 40px rgba(0,0,0,.25))"></div>
     </section>
 
-    <section class="card">
-      <div class="card-title">
-        <h3>Andamento — <span id="subtitle-ch">Tutti i CH</span></h3>
-      </div>
-      <div id="boards" class="boards"></div>
-      <div id="chip-strip" class="chips"></div>
-      <div class="mt">
-        <button id="btn-export-supervisor" class="btn primary">Esporta dati per Supervisore (PIN)</button>
-      </div>
+    <section class="grid" style="margin-top:1rem">
+      <h2>Andamento — Tutti i CH</h2>
+      <div id="boards" class="grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))"></div>
+      <div class="chips" id="chip-strip" style="margin-top:.5rem"></div>
     </section>
 
-    <footer class="muted center mt-lg">v2.2.2 • PWA ready</footer>
+    <section style="margin:1rem 0">
+      <button id="btn-export-supervisor" class="btn">Esporta dati per Supervisore (PIN)</button>
+    </section>
   </main>
+
+  <footer>v2.2.3 • PWA ready</footer>
 
   <script src="app.js"></script>
 </body>

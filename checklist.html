@@ -1,40 +1,35 @@
+
 <!doctype html>
 <html lang="it">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>SKF 5S — Schede (Supervisor)</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="assets/skf-192.png">
-  <meta name="theme-color" content="#1565d8">
   <link rel="stylesheet" href="style.css">
 </head>
-<body class="page-checklist">
-  <header class="topbar">
-    <div class="brand">
-      <a class="btn link" href="index.html">← Indietro</a>
-      <img src="assets/skf-logo.png" alt="SKF" class="logo small">
-      <span class="title">SKF 5S</span>
-      <span class="badge badge-light">Supervisor</span>
+<body>
+  <nav class="top">
+    <div class="bar container">
+      <div class="left">
+        <button class="btn secondary" onclick="history.back()">← Indietro</button>
+        <div class="logo"><img src="assets/skf-logo.png"><span>SKF 5S</span><span class="badge">Supervisor</span></div>
+      </div>
+      <div class="right">
+        <label class="btn"><input id="import-input" type="file" multiple accept=".json" style="display:none">Importa</label>
+        <button class="btn secondary" onclick="location.href='notes.html'">Note</button>
+        <button id="btn-lock" class="btn secondary"></button>
+      </div>
     </div>
-    <nav class="actions">
-      <button id="btn-lock" class="btn circle" title="Blocca/sblocca">🔒</button>
-      <label class="btn primary">
-        <input id="import-input" type="file" accept="application/json" multiple hidden>
-        Importa
-      </label>
-      <a class="btn link" href="notes.html">Note</a>
-    </nav>
-  </header>
+  </nav>
 
   <main class="container">
-    <div class="toolbar">
-      <button id="toggle-all" class="btn">Comprimi / Espandi tutti i CH</button>
-    </div>
-    <div id="cards" class="cards"></div>
-    <footer class="muted center mt-lg">v2.2.2</footer>
+    <div class="toolbar"><button class="btn secondary" onclick="document.querySelectorAll('details').forEach(d=>d.open=!d.open)">Comprimi / Espandi tutti i CH</button></div>
+    <div id="cards"></div>
   </main>
 
+  <footer>v2.2.3</footer>
   <script src="app.js"></script>
 </body>
 </html>

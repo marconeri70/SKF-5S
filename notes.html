@@ -1,32 +1,35 @@
+
 <!doctype html>
 <html lang="it">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SKF 5S — Note (Supervisor)</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>SKF 5S — Note</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="assets/skf-192.png">
-  <meta name="theme-color" content="#1565d8">
   <link rel="stylesheet" href="style.css">
 </head>
-<body class="page-notes">
-  <header class="topbar">
-    <div class="brand">
-      <a class="btn link" href="index.html">← Supervisore</a>
-      <span class="title">SKF 5S</span>
-      <span class="badge badge-light">— Note</span>
+<body>
+  <nav class="top">
+    <div class="bar container">
+      <div class="left">
+        <button class="btn secondary" onclick="history.back()">← Supervisore</button>
+        <div class="logo"><img src="assets/skf-logo.png"><span>SKF 5S</span><span class="badge">— Note</span></div>
+      </div>
+      <div class="right">
+        <span id="note-count" class="badge" style="background:#fff;color:#0b1324"></span>
+      </div>
     </div>
-    <div class="actions muted"><span id="notes-counter">0 note</span></div>
-  </header>
+  </nav>
 
   <main class="container">
     <section class="card">
       <h3>Note per data e S</h3>
-      <div id="notes-list" class="notes"></div>
+      <div id="notes-list"></div>
     </section>
-    <footer class="muted center mt-lg">v2.2.2</footer>
   </main>
 
+  <footer>v2.2.3</footer>
   <script src="app.js"></script>
 </body>
 </html>
