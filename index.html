@@ -1,1 +1,64 @@
-<!doctype html><html><head><meta charset='utf-8'><title>SKF 5S Supervisor</title></head><body><h1>Index</h1></body></html>
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SKF 5S — Supervisor</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="assets/skf-192.png">
+  <meta name="theme-color" content="#0d63d6">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="home">
+  <header class="appbar">
+    <div class="brand">
+      <img src="assets/skf-logo.png" alt="SKF" class="brand-logo">
+      <span class="brand-title">SKF 5S</span>
+      <span class="brand-badge">Supervisor</span>
+    </div>
+    <nav class="actions">
+      <button id="btn-notes" class="btn ghost">Note</button>
+      <button id="btn-import" class="btn primary">Importa</button>
+      <input id="import-input" type="file" accept=".json,application/json" multiple hidden>
+      <button id="btn-export" class="btn outline">Esporta dati (PIN)</button>
+      <button id="btn-lock" class="btn icon" title="Blocca/Sblocca">🔒</button>
+      <a class="btn link" href="checklist.html">Vai alla checklist →</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="card split">
+      <div class="col">
+        <h2>Cosa è 5S</h2>
+        <ol class="what5s">
+          <li><span class="pill s1">1S Selezionare</span> — Eliminare il superfluo.</li>
+          <li><span class="pill s2">2S Sistemare</span> — Un posto per tutto e tutto al suo posto.</li>
+          <li><span class="pill s3">3S Splendere</span> — Pulire e prevenire lo sporco.</li>
+          <li><span class="pill s4">4S Standardizzare</span> — Regole e segnali chiari.</li>
+          <li><span class="pill s5">5S Sostenere</span> — Abitudine e miglioramento continuo.</li>
+        </ol>
+      </div>
+      <div class="col img-col">
+        <img src="assets/5S.png" alt="Schema 5S" class="hero5s">
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>Andamento — <span id="chart-title">Tutti i CH</span></h2>
+      </div>
+      <div class="scroll-x">
+        <canvas id="unifiedChart" height="200"></canvas>
+      </div>
+      <div id="boards-legend" class="legend"></div>
+      <div id="chip-strip" class="chips"></div>
+      <div class="footer-cta">
+        <button id="btn-export-supervisor" class="btn outline">Esporta dati per Supervisore (PIN)</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="version">v2.3.1 • PWA ready</footer>
+  <script src="app.js"></script>
+</body>
+</html>

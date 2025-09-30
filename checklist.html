@@ -1,1 +1,37 @@
-<!doctype html><html><head><meta charset='utf-8'><title>Checklist</title></head><body><h1>Checklist</h1></body></html>
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SKF 5S — Schede (Supervisor)</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="assets/skf-192.png">
+  <meta name="theme-color" content="#0d63d6">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="checklist">
+  <header class="appbar">
+    <div class="brand">
+      <a href="index.html" class="btn back">← Indietro</a>
+      <img src="assets/skf-logo.png" alt="SKF" class="brand-logo">
+      <span class="brand-title">SKF 5S</span>
+      <span class="brand-badge">Supervisor</span>
+    </div>
+    <nav class="actions">
+      <button id="btn-print-all" class="btn outline">Stampa tutti i CH</button>
+      <button id="btn-toggle-all" class="btn">Comprimi / Espandi tutti i CH</button>
+      <button id="btn-lock" class="btn icon" title="Blocca/Sblocca">🔒</button>
+      <button id="btn-import" class="btn primary">Importa</button>
+      <input id="import-input" type="file" accept=".json,application/json" multiple hidden>
+      <button id="btn-notes" class="btn ghost">Note</button>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section id="cards" class="stack"></section>
+  </main>
+
+  <footer class="version">v2.3.1</footer>
+  <script src="app.js"></script>
+</body>
+</html>
