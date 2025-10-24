@@ -1,4 +1,4 @@
-// SKF 5S Supervisor — single JS (v2.3.2)
+// SKF 5S Supervisor — single JS (v2.3.3)
 (() => {
   const STORAGE_KEY = 'skf5s:supervisor:data';
   const LOCK_KEY = 'skf5s:lock';
@@ -6,13 +6,11 @@
   const $ = (sel, root=document) => root.querySelector(sel);
   const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
 
-  // ---- Storage
   const store = {
     load(){ try { return JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]'); } catch(e){ return []; } },
     save(arr){ localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); }
   };
 
-  // ---- Lock helpers
   const isLocked = () => sessionStorage.getItem(LOCK_KEY) === '1';
   const setLocked = (v) => { sessionStorage.setItem(LOCK_KEY, v?'1':'0'); paintLock(); applyLock(); };
   const paintLock = () => { const b=$('#btn-lock'); if (b) { b.textContent = isLocked() ? '🔓' : '🔒'; b.title=isLocked()?'Sblocca':'Blocca'; } };
@@ -23,20 +21,40 @@
     input.disabled = L; btn.disabled = L; btn.classList.toggle('disabled', L);
   };
 
-  // ---- Import
+  // --- Notes flattener accepts arrays OR objects keyed by S1/1S/2S...
+  function flattenNotes(anyNotes, fallbackDate){
+    const out = [];
+    if (!anyNotes) return out;
+    if (Array.isArray(anyNotes)){
+      for (const n of anyNotes){
+        out.push({ s: String(n.s||n.S||n.type||''), text: n.text||n.note||'', date: n.date||fallbackDate||'' });
+      }
+    } else if (typeof anyNotes === 'object'){
+      const keys = Object.keys(anyNotes);
+      for (const k of keys){
+        const arr = Array.isArray(anyNotes[k]) ? anyNotes[k] : [anyNotes[k]];
+        const s = (k||'').toString().toUpperCase().replace('S','').replace(' ','');
+        const sLabel = (s && s[0]) ? (s[0]+'S') : '';
+        for (const item of arr){
+          out.push({ s: sLabel, text: (item?.text||item?.note||item||'').toString(), date: (item?.date||fallbackDate||'') });
+        }
+      }
+    }
+    return out;
+  }
+
   function normalizeOne(x){
-    const points = x.points || {s1:x.s1||0,s2:x.s2||0,s3:x.s3||0,s4:x.s4||0,s5:x.s5||0};
+    const points = x.points || {s1:x.s1||x.S1||0,s2:x.s2||x.S2||0,s3:x.s3||x.S3||0,s4:x.s4||x.S4||0,s5:x.s5||x.S5||0};
     const norm = {
       area: x.area || x.Area || x.zona || '',
       channel: x.channel || x.CH || x.linea || x.name || '',
       date: x.date || x.data || x.updatedAt || new Date().toISOString().slice(0,16),
-      points: {
-        s1: Number(points.s1||0), s2: Number(points.s2||0),
-        s3: Number(points.s3||0), s4: Number(points.s4||0),
-        s5: Number(points.s5||0)
-      },
-      notes: Array.isArray(x.notes)? x.notes : (Array.isArray(x.note)? x.note : [])
+      points: { s1:+(points.s1||0), s2:+(points.s2||0), s3:+(points.s3||0), s4:+(points.s4||0), s5:+(points.s5||0) },
+      notes: []
     };
+    // Accept notes in many shapes
+    const rawNotes = x.notes ?? x.note ?? x.Note ?? x.Notes ?? null;
+    norm.notes = flattenNotes(rawNotes, norm.date);
     return norm.channel ? norm : null;
   }
 
@@ -44,12 +62,11 @@
     if (isLocked()) { alert('Bloccato: sblocca per importare.'); return; }
     const current = store.load();
     const byKey = new Map(current.map(r => [r.area+'|'+r.channel+'|'+r.date, r]));
-
     for (const f of Array.from(fileList||[])) {
       try{
         const text = await f.text();
         const obj = JSON.parse(text);
-        const arr = Array.isArray(obj) ? obj : (obj.records || obj.data || [obj]);
+        const arr = Array.isArray(obj) ? obj : (obj.records || obj.data || obj.export || [obj]);
         for (const raw of arr){
           const rec = normalizeOne(raw);
           if (rec){
@@ -61,16 +78,14 @@
     }
     const merged = Array.from(byKey.values()).sort((a,b)=>(a.channel||'').localeCompare(b.channel||''));
     store.save(merged);
-    const input = $('#import-input'); if (input) input.value = ''; // permette import successivi
+    const input = $('#import-input'); if (input) input.value = '';
     renderAll();
   }
 
-  // ---- Unified chart on home (canvas)
   function renderUnifiedChart(){
     const cvs = $('#unifiedChart'); if (!cvs) return;
     const ctx = cvs.getContext('2d');
     const data = store.load();
-    // group by channel
     const byCh = new Map();
     for (const r of data){ const arr = byCh.get(r.channel)||[]; arr.push(r); byCh.set(r.channel, arr); }
     const channels = Array.from(byCh.keys());
@@ -81,7 +96,6 @@
     cvs.width = Math.max(width, 900);
     cvs.height = H;
     ctx.clearRect(0,0,cvs.width,cvs.height);
-    // baseline
     const base = H-28;
     ctx.strokeStyle = '#dbe4ff'; ctx.beginPath(); ctx.moveTo(0,base+.5); ctx.lineTo(cvs.width, base+.5); ctx.stroke();
 
@@ -99,7 +113,6 @@
       ctx.fillText(ch, start + 2*BAR + 2*GAP, H-8);
     });
 
-    // legend
     const legend = $('#boards-legend'); if (legend){
       legend.innerHTML='';
       ['1S','2S','3S','4S','5S'].forEach((lab,i)=>{
@@ -125,22 +138,32 @@
     renderUnifiedChart();
   }
 
-  // ---- Checklist page
+  // Build a details row for each S
+  function sRow(label, value, sClass){
+    const v = Math.max(0, Math.min(100, Number(value||0)));
+    return `<div class="s-item ${sClass}">
+      <span class="pill ${sClass}">${label} ${v}%</span>
+      <div class="s-bar"><i style="width:${v}%;"></i></div>
+    </div>`;
+  }
+
   function renderChecklist(){
     if (document.body.dataset.page !== 'checklist') return;
     const wrap = $('#cards'); wrap.innerHTML='';
     const data = store.load();
     const byCh = new Map();
     for (const r of data){ const a = byCh.get(r.channel)||[]; a.push(r); byCh.set(r.channel,a); }
+
     for (const [ch, arr] of byCh){
       const last = arr.sort((a,b)=> new Date(a.date)-new Date(b.date)).slice(-1)[0];
       const p = last?.points || {s1:0,s2:0,s3:0,s4:0,s5:0};
       const avg = Math.round((p.s1+p.s2+p.s3+p.s4+p.s5)/5);
-      const card = document.createElement('section');
-      card.className='card-line';
-      card.id='line-'+ch.replace(/\s/g,'-');
-      card.innerHTML = `
-        <div class="top">
+      const detailsId = 'line-'+(ch||'').replace(/\s/g,'-');
+
+      const d = document.createElement('details');
+      d.className='card-line'; d.id = detailsId;
+      d.innerHTML = `
+        <summary class="top">
           <div>
             <div style="font-weight:800">CH ${ch}</div>
             <div class="muted" style="font-size:.9rem">${last?.area||''} • Ultimo: ${last?.date||'-'}</div>
@@ -153,44 +176,60 @@
             <span class="pill s5">S5 ${p.s5}%</span>
           </div>
           <div><span class="badge">Voto medio ${avg}%</span></div>
-        </div>
-        <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.6rem">
-          <a class="btn link" href="#${encodeURIComponent(ch)}">Apri checklist</a>
-          <button class="btn" data-print>Stampa PDF</button>
+        </summary>
+        <div class="card-body">
+          ${sRow('1S', p.s1, 's1')}
+          ${sRow('2S', p.s2, 's2')}
+          ${sRow('3S', p.s3, 's3')}
+          ${sRow('4S', p.s4, 's4')}
+          ${sRow('5S', p.s5, 's5')}
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.8rem">
+            <button class="btn" data-print>Stampa PDF</button>
+          </div>
         </div>
       `;
-      card.querySelector('[data-print]').onclick = () => printCard(card, ch);
-      wrap.appendChild(card);
+      d.querySelector('[data-print]').onclick = () => printCard(d, ch);
+      wrap.appendChild(d);
     }
-    const t = $('#btn-toggle-all'); if (t) t.onclick = () => alert('Comprimi/Espandi: demo (aggiungeremo dettagli se servono).');
+
+    // Open CH if hash present
+    if (location.hash){
+      const id = decodeURIComponent(location.hash.slice(1));
+      const target = document.getElementById('line-'+id.replace(/\s/g,'-'));
+      if (target){ target.open = true; target.scrollIntoView({behavior:'smooth', block:'start'}); }
+    }
+
+    // Toggle all
+    const t = $('#btn-toggle-all');
+    if (t){
+      t.onclick = () => {
+        const all = $$('details.card-line');
+        const shouldOpen = all.some(d => !d.open);
+        all.forEach(d => d.open = shouldOpen);
+      };
+    }
   }
 
-  function printCard(card, ch){
+  function printCard(el, ch){
     const w = window.open('','_blank');
-    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${ch}</title><link rel="stylesheet" href="style.css"></head><body><div class="container">${card.outerHTML}</div></body></html>`);
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${ch}</title><link rel="stylesheet" href="style.css"></head><body><div class="container">${el.outerHTML}</div></body></html>`);
     w.document.close(); w.focus(); w.print(); setTimeout(()=>w.close(), 300);
   }
 
-  // ---- Notes page
   function renderNotes(){
     if (document.body.dataset.page !== 'notes') return;
     const box = $('#notes-list');
     const data = store.load();
     const rows = [];
-    for (const r of data){
-      const arr = Array.isArray(r.notes) ? r.notes : [];
-      for (const n of arr){
-        rows.push({ ch:r.channel, area:r.area, s: String(n.s||n.S||n.type||''), text: n.text||n.note||'', date: n.date||r.date||'' });
-      }
-    }
+    for (const r of data){ rows.push(...flattenNotes(r.notes, r.date).map(n => ({...n, ch:r.channel, area:r.area, date:n.date||r.date}))); }
     function apply(){
       const df = $('#f-from').value, dt = $('#f-to').value, sch = $('#f-ch').value.trim().toLowerCase();
       const filt = rows.filter(x => (!df || x.date >= df) && (!dt || x.date <= dt+'T23:59') && (!sch || (x.ch||'').toLowerCase().includes(sch))).sort((a,b)=> (b.date||'').localeCompare(a.date||''));
-      $('#note-count').textContent = filt.length ? `(${filt.length})` : '(0)';
+      const cnt = $('#note-count'); if (cnt) cnt.textContent = `(${filt.length})`;
       box.innerHTML='';
       if (!filt.length){ box.innerHTML = '<div class="note"><div class="muted">Nessuna nota importata.</div></div>'; return; }
       for (const n of filt){
-        const pill = n.s ? 's'+(n.s.match(/\d/)?.[0]||'') : '';
+        const pill = n.s ? 's'+(String(n.s).match(/\d/)?.[0]||'') : '';
         const el = document.createElement('div');
         el.className='note';
         el.innerHTML = `<div style="display:flex;justify-content:space-between;gap:.5rem;flex-wrap:wrap">
@@ -203,7 +242,6 @@
     $('#f-apply').onclick = apply; apply();
   }
 
-  // ---- Export with PIN
   function exportWithPin(){
     const pin = prompt('Inserisci PIN (demo 1234):');
     if (pin !== '1234'){ alert('PIN errato'); return; }
@@ -211,7 +249,6 @@
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'SKF-5S-supervisor-archive.json'; a.click();
   }
 
-  // ---- Common init
   function initCommon(){
     const btnImp = $('#btn-import'), input = $('#import-input');
     if (btnImp && input){
