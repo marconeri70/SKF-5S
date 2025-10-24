@@ -1,310 +1,73 @@
 /* === SKF 5S Supervisor — style.css v2.3.4 === */
-/* Tema principale: blu SKF + interfaccia chiara, arrotondata, moderna */
+:root{
+  --blue:#0d63d6;--blue2:#1a73e8;--purple:#7e57c2;--red:#ef5350;--orange:#ffa726;
+  --green:#43a047;--text:#101828;--muted:#667085;--bg:#f5f7fb;--radius:14px;
+}
+*{box-sizing:border-box;font-family:'Segoe UI',Roboto,system-ui,-apple-system,sans-serif}
+body{margin:0;background:var(--bg);color:var(--text)}
 
-:root {
-  --blue: #0d63d6;
-  --blue-light: #1a73e8;
-  --red: #e53935;
-  --green: #43a047;
-  --orange: #fb8c00;
-  --purple: #8e24aa;
-  --gray: #f4f7fc;
-  --text: #111;
-  --muted: #6b7280;
-  --radius: 14px;
+/* Header */
+.appbar{background:var(--blue);color:#fff;padding:.6rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:.7rem;flex-wrap:wrap;position:sticky;top:0;z-index:50}
+.brand{display:flex;align-items:center;gap:.5rem}
+.brand-logo{height:28px;border-radius:6px}
+.brand-title{font-weight:800}
+.brand-badge{margin-left:.35rem;background:#2563eb;color:#fff;border-radius:999px;padding:.15rem .5rem;font-size:.8rem}
+.actions{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+.btn{border:none;border-radius:999px;padding:.5rem .9rem;font-weight:700;cursor:pointer}
+.btn.primary{background:#fff;color:var(--blue)}
+.btn.outline{background:transparent;color:#fff;border:2px solid #fff}
+.btn.ghost{background:transparent;color:#fff}
+.btn.icon{background:#fff;color:var(--blue)}
+
+/* layout */
+.container{max-width:1100px;margin:0 auto;padding:1rem}
+.card{background:#fff;border-radius:var(--radius);padding:1rem;margin:1rem 0;box-shadow:0 1px 6px rgba(0,0,0,.08)}
+.card.split{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.col{flex:1;min-width:280px}
+.img-col{text-align:center}
+.hero5s{max-width:260px;width:100%;border-radius:10px}
+h2{margin:.2rem 0 1rem}
+.what5s li{margin:.4rem 0}
+
+.pill{color:#fff;border-radius:10px;padding:.15rem .55rem;font-weight:800;font-size:.9rem}
+.s1{background:var(--purple)} .s2{background:var(--red)} .s3{background:var(--orange)} .s4{background:var(--green)} .s5{background:var(--blue)}
+.muted{color:var(--muted)}
+
+.chips{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.6rem}
+.chip{background:var(--blue);color:#fff;border:none;border-radius:999px;padding:.35rem .75rem;font-weight:700;cursor:pointer}
+
+/* Contenitore grafici principali */
+.combined{border:1px dashed #e5e7eb;border-radius:12px;padding:1rem;min-height:220px;display:grid;gap:1rem}
+
+/* Card compatta per ogni CH nella home */
+.card .mini{background:linear-gradient(#f8fafc,#fff);border-radius:12px;padding:1rem}
+.meter{display:grid;gap:.35rem}
+.mrow{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:.5rem}
+.mlabel{font-weight:800;min-width:2.2rem}
+.barwrap{height:16px;background:#eef3ff;border-radius:10px;overflow:hidden}
+.barfill{height:100%;border-radius:10px}
+.barfill.s1{background:var(--purple)} .barfill.s2{background:var(--red)} .barfill.s3{background:var(--orange)}
+.barfill.s4{background:var(--green)} .barfill.s5{background:var(--blue)}
+.mval{font-weight:800;color:#111;min-width:3rem;text-align:right}
+
+/* Lista schede CH (checklist) */
+.card-line{background:#fff;border-radius:var(--radius);padding:1rem;margin:.8rem 0;box-shadow:0 1px 5px rgba(0,0,0,.06)}
+.card-line .top{display:flex;gap:1rem;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.pills{display:flex;gap:.35rem;flex-wrap:wrap}
+.kpi .badge{background:#eaf2ff;color:var(--blue);font-weight:800;border-radius:10px;padding:.3rem .6rem}
+
+/* Note */
+.note{background:#fff;border-radius:var(--radius);padding:1rem;margin:.8rem 0;box-shadow:0 1px 5px rgba(0,0,0,.06)}
+
+/* CTA in basso */
+.footer-cta{display:flex;justify-content:center;margin-top:1rem}
+.footer-cta .btn{border:2px solid var(--blue);color:var(--blue);background:#fff}
+
+/* responsive */
+@media (max-width:768px){
+  .hero5s{max-width:180px}
+  .appbar{flex-direction:column;align-items:flex-start}
+  .actions{margin-top:.4rem}
 }
 
-* {
-  box-sizing: border-box;
-  font-family: 'Segoe UI', Roboto, sans-serif;
-  transition: all 0.2s ease;
-}
-
-body {
-  margin: 0;
-  background: var(--gray);
-  color: var(--text);
-}
-
-/* === HEADER === */
-.appbar {
-  background: var(--blue);
-  color: #fff;
-  padding: 0.6rem 1rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.brand-logo {
-  height: 28px;
-  border-radius: 4px;
-}
-
-.brand-title {
-  font-weight: 700;
-  font-size: 1.1rem;
-}
-
-.brand-badge {
-  background: #2563eb;
-  color: #fff;
-  border-radius: 10px;
-  font-size: 0.85rem;
-  padding: 0.2rem 0.6rem;
-}
-
-.actions {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.btn {
-  border: none;
-  border-radius: 10px;
-  padding: 0.5rem 1rem;
-  cursor: pointer;
-  font-weight: 600;
-  background: #fff;
-  color: var(--blue);
-}
-
-.btn.primary {
-  background: var(--blue);
-  color: #fff;
-}
-
-.btn.outline {
-  border: 2px solid var(--blue);
-  color: var(--blue);
-  background: transparent;
-}
-
-.btn.ghost {
-  background: transparent;
-  color: #fff;
-}
-
-.btn.icon {
-  font-size: 1.2rem;
-  padding: 0.3rem 0.6rem;
-  background: transparent;
-  color: #fff;
-}
-
-/* === LAYOUT === */
-.container {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 1rem;
-}
-
-.card {
-  background: #fff;
-  border-radius: var(--radius);
-  padding: 1.2rem;
-  margin-bottom: 1rem;
-  box-shadow: 0 1px 5px rgba(0,0,0,0.08);
-}
-
-.card.split {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.col {
-  flex: 1;
-  min-width: 250px;
-}
-
-.img-col {
-  text-align: center;
-}
-
-.hero5s {
-  max-width: 220px;
-  width: 100%;
-  border-radius: 10px;
-}
-
-h2 {
-  margin-top: 0;
-  color: var(--text);
-}
-
-.muted {
-  color: var(--muted);
-  font-size: 0.9rem;
-}
-
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin-top: 1rem;
-}
-
-.chip {
-  background: var(--blue);
-  color: #fff;
-  border: none;
-  border-radius: 12px;
-  padding: 0.4rem 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-/* === COLOR PILL === */
-.pill {
-  color: #fff;
-  padding: 0.2rem 0.6rem;
-  border-radius: 10px;
-  font-weight: 600;
-  font-size: 0.85rem;
-}
-
-.s1 { background: var(--purple); }
-.s2 { background: var(--red); }
-.s3 { background: var(--orange); }
-.s4 { background: var(--green); }
-.s5 { background: var(--blue); }
-
-/* === BAR CHART === */
-.chart {
-  display: flex;
-  align-items: flex-end;
-  gap: 0.3rem;
-  height: 100px;
-  margin-top: 0.8rem;
-}
-
-.bar {
-  flex: 1;
-  border-radius: 6px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  color: #fff;
-  font-size: 0.8rem;
-  font-weight: 700;
-  transition: height 0.3s ease;
-}
-
-.bar span {
-  padding-bottom: 0.2rem;
-}
-
-/* === FOOTER VERSION === */
-.version {
-  text-align: center;
-  padding: 0.8rem;
-  font-size: 0.9rem;
-  color: var(--muted);
-}
-
-/* === NOTE PAGE === */
-.note {
-  background: #fff;
-  border-radius: var(--radius);
-  padding: 1rem;
-  margin-bottom: 0.8rem;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-}
-
-/* === CHECKLIST === */
-.card-line {
-  background: #fff;
-  border-radius: var(--radius);
-  padding: 1rem;
-  margin-bottom: 0.8rem;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-}
-
-.card-line .top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.pills {
-  display: flex;
-  gap: 0.3rem;
-  flex-wrap: wrap;
-}
-
-.kpi .badge {
-  background: #e0ecff;
-  color: var(--blue);
-  font-weight: 700;
-  border-radius: 10px;
-  padding: 0.3rem 0.6rem;
-}
-
-/* === RESPONSIVE === */
-@media (max-width: 768px) {
-  .card.split {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .hero5s {
-    max-width: 160px;
-  }
-
-  .appbar {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .actions {
-    justify-content: flex-start;
-    margin-top: 0.5rem;
-  }
-}
-
-/* === FOOTER BUTTON (Esporta dati per Supervisore) === */
-.footer-cta {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-top: 1rem;
-  padding: 1rem;
-  position: sticky;
-  bottom: 0;
-  background: linear-gradient(to top, #f8fafc 70%, transparent);
-  backdrop-filter: blur(6px);
-  z-index: 10;
-  border-radius: 0 0 12px 12px;
-}
-
-.footer-cta .btn {
-  font-size: 1rem;
-  font-weight: 600;
-  padding: 0.8rem 1.5rem;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-}
-
-/* Migliore visibilità su mobile */
-@media (max-width: 600px) {
-  .footer-cta {
-    padding: 1.2rem;
-    background: #fff;
-  }
-  .footer-cta .btn {
-    width: 90%;
-    font-size: 1.1rem;
-  }
-}
+.version{text-align:center;color:#94a3b8;font-size:.9rem;padding:1rem}
