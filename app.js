@@ -1,4 +1,4 @@
-// SKF 5S Supervisor — single JS (v2.3.1)
+// SKF 5S Supervisor — single JS (v2.3.2)
 (() => {
   const STORAGE_KEY = 'skf5s:supervisor:data';
   const LOCK_KEY = 'skf5s:lock';
@@ -112,7 +112,6 @@
 
   function renderHome(){
     if (document.body.dataset.page !== 'home') return;
-    // chips to open checklist anchors
     const chips = $('#chip-strip'); if (!chips) return;
     chips.innerHTML='';
     const data = store.load();
@@ -163,8 +162,7 @@
       card.querySelector('[data-print]').onclick = () => printCard(card, ch);
       wrap.appendChild(card);
     }
-    // toggle all (placeholder – se aggiungeremo details)
-    const t = $('#btn-toggle-all'); if (t) t.onclick = () => alert('Comprimi/Espandi: demo (nessun details presente).');
+    const t = $('#btn-toggle-all'); if (t) t.onclick = () => alert('Comprimi/Espandi: demo (aggiungeremo dettagli se servono).');
   }
 
   function printCard(card, ch){
