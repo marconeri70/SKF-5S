@@ -1,4 +1,4 @@
- <!doctype html>
+<!doctype html>
 <html lang="it">
 <head>
   <meta charset="utf-8">
@@ -12,11 +12,9 @@
 <body data-page="home">
 <header class="appbar">
   <div class="brand">
-    <a href="#" class="brand-link" aria-label="Home">
-      <img src="assets/skf-logo.png" alt="SKF" class="brand-logo">
-      <span class="brand-title">SKF 5S</span>
-      <span class="brand-badge">Supervisor</span>
-    </a>
+    <img src="assets/skf-logo.png" alt="SKF" class="brand-logo">
+    <span class="brand-title">SKF 5S</span>
+    <span class="brand-badge">Supervisor</span>
   </div>
   <nav class="actions">
     <button id="btn-notes" class="btn ghost">Note</button>
@@ -24,12 +22,11 @@
     <input id="import-input" type="file" accept=".json,application/json" multiple hidden>
     <button id="btn-export" class="btn outline">Esporta dati (PIN)</button>
     <button id="btn-lock" class="btn icon" title="Blocca/Sblocca">🔒</button>
-    <a id="btn-checklist" class="btn ghost" href="checklist.html">Vai alla checklist →</a>
+    <a class="btn link" href="checklist.html">Vai alla checklist →</a>
   </nav>
 </header>
 
 <main class="container">
-
   <section class="card split">
     <div class="col">
       <h2>Cosa è 5S</h2>
@@ -49,31 +46,35 @@
   <section class="card">
     <div class="card-head">
       <h3>Andamento — Tutti i CH</h3>
+      <div class="toolbar">
+        <label class="lbl">Area</label>
+        <select id="area-filter" class="select">
+          <option value="">Tutti</option>
+          <option value="MONTAGGIO">MONTAGGIO</option>
+          <option value="Rettifica">Rettifica</option>
+        </select>
+      </div>
     </div>
 
-    <!-- wrapper con scroll orizzontale -->
-    <div class="scrollx">
-      <canvas id="uniChart" height="240"></canvas>
+    <div id="hwrap" class="hwrap">
+      <div id="htrack" class="htrack"></div>
     </div>
 
     <div class="legend5s">
-      <span class="dot s1"></span>1S
-      <span class="dot s2"></span>2S
-      <span class="dot s3"></span>3S
-      <span class="dot s4"></span>4S
-      <span class="dot s5"></span>5S
+      <span class="dot s1">1S</span><span class="dot s2">2S</span>
+      <span class="dot s3">3S</span><span class="dot s4">4S</span>
+      <span class="dot s5">5S</span>
     </div>
 
     <div id="chip-strip" class="chips"></div>
 
-    <div class="footer-action">
+    <div class="sticky-export">
       <button id="btn-export-supervisor" class="btn xl outline">Esporta dati per Supervisore (PIN)</button>
     </div>
   </section>
-
 </main>
 
-<footer class="version">v2.3.7 • PWA ready</footer>
+<footer class="version">v2.3.x • PWA ready</footer>
 <script src="app.js"></script>
 </body>
 </html>
