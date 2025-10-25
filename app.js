@@ -2,7 +2,7 @@
 (() => {
   const STORAGE_KEY = 'skf5s:supervisor:data';
   const LOCK_KEY = 'skf5s:lock';
-  const PIN = '1234';
+  const PIN = '6170';
 
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
