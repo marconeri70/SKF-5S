@@ -1,16 +1,13 @@
 <!doctype html>
 <html lang="it">
 <head>
-  <meta charset="utf-8">
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>SKF 5S — Note</title>
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="assets/skf-192.png">
-  <meta name="theme-color" content="#0d63d6">
-  <link rel="stylesheet" href="style.css?v=2.3.6">
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="assets/skf-192.png" />
+  <meta name="theme-color" content="#0d63d6" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body data-page="notes">
   <header class="appbar">
@@ -20,8 +17,21 @@
       <span class="brand-badge">— Note</span>
     </div>
     <nav class="actions">
-      <span id="note-count" class="muted">0 note</span>
-      <button id="btn-search-date" class="btn">Cerca per data</button>
+      <div id="note-count" class="counter"></div>
+      <div class="filters">
+        <label>CH
+          <select id="f-ch">
+            <option value="">Tutti</option>
+          </select>
+        </label>
+        <label>Da
+          <input id="f-date-from" type="date" />
+        </label>
+        <label>A
+          <input id="f-date-to" type="date" />
+        </label>
+        <button id="btn-clear-filters" class="btn ghost">Pulisci</button>
+      </div>
     </nav>
   </header>
 
@@ -30,9 +40,9 @@
       <h3>Note per data e S</h3>
       <div id="notes-list" class="notes"></div>
     </section>
-    <footer class="version">v2.3.6</footer>
   </main>
 
-  <script src="app.js?v=2.3.6"></script>
+  <footer class="version">v2.3.7</footer>
+  <script src="app.js"></script>
 </body>
 </html>
