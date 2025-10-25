@@ -1,5 +1,4 @@
-<script>
-// SKF 5S Supervisor — unified JS v2.3.4
+// SKF 5S Supervisor — unified JS v2.3.4 (NO <script> tags here!)
 (() => {
   const STORAGE_KEY = 'skf5s:supervisor:data';
 
@@ -249,4 +248,3 @@
     if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js'); }
   });
 })();
-</script>
