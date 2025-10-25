@@ -1,5 +1,5 @@
 // v2.3.7 | SW neutro: precache base + cache-first solo per asset locali
-const CACHE = 'skf5s-v237';
+const CACHE = 'skf5s-v2.3.7';
 const ASSETS = [
   './index.html','./checklist.html','./notes.html',
   './style.css','./app.js','./manifest.json',
