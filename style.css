@@ -19,8 +19,7 @@ a{text-decoration:none;color:inherit}
 
 /* Buttons */
 .btn{border:0;border-radius:999px;padding:.5rem .9rem;background:#fff;color:var(--blue);font-weight:600;box-shadow:0 4px 14px rgba(13,99,214,.18);cursor:pointer}
-.btn:hover{filter:brightness(.98)}
-.btn.primary{background:#fff;color:var(--blue)}
+.btn.primary{background:#fff}
 .btn.outline{background:transparent;border:2px solid rgba(255,255,255,.85);color:#fff}
 .btn.ghost{background:rgba(255,255,255,.18);color:#fff}
 .btn.icon{width:40px;height:40px;display:flex;align-items:center;justify-content:center}
@@ -52,15 +51,24 @@ a{text-decoration:none;color:inherit}
 .notes{display:flex;flex-direction:column;gap:.8rem}
 .note{border:1px solid #eef2ff;border-radius:12px;padding:.7rem 1rem}
 
-/* Unified small bars on home */
-.smallbars{height:210px}
+/* Small charts */
+.smallbars{height:130px}
 
 /* Footer */
 .version{color:var(--muted);text-align:center;margin:1rem 0}
+
+/* Lock state */
+body.locked .lockable{pointer-events:none;opacity:.5}
 
 /* Responsive */
 @media (max-width:860px){
   .split{grid-template-columns:1fr}
   .hero5s{max-width:260px;margin:auto}
   .card-line .top{grid-template-columns:1fr;gap:.5rem}
+}
+
+/* Print */
+@media print{
+  header,.version{display:none}
+  .card-line.print-target{page-break-inside:avoid}
 }
