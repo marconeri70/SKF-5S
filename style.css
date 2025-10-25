@@ -66,3 +66,18 @@
 .val{width:2.5rem;text-align:right;color:#6d7b8b}
 
 .note{background:#fff;border:1px solid #e7eef9;border-radius:14px;padding:.9rem;margin:.7rem 0}
+
+/* barre orizzontali compatte */
+.hbar { display:flex; align-items:center; gap:.6rem; margin:.35rem 0; }
+.hbar-lab { width:2.2rem; font-weight:600; opacity:.8; }
+.hbar-val { width:3rem; text-align:right; opacity:.7; }
+.hbar-fill { flex:1 1 auto; height:.6rem; border-radius:8px; background:#e9eef8; position:relative; }
+.hbar-fill::after { content:""; position:absolute; inset:0; border-radius:8px; transform-origin:left; }
+
+/* colori S1..S5 coerenti */
+.hbar-fill.s1::after { background:#7b4bd8; transform:scaleX(var(--p1,0)); }
+.hbar-fill.s2::after { background:#e55353; transform:scaleX(var(--p2,0)); }
+.hbar-fill.s3::after { background:#f1a428; transform:scaleX(var(--p3,0)); }
+.hbar-fill.s4::after { background:#22a360; transform:scaleX(var(--p4,0)); }
+.hbar-fill.s5::after { background:#2d66d7; transform:scaleX(var(--p5,0)); }
+
