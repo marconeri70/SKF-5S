@@ -1,338 +1,385 @@
-// SKF 5S Supervisor — unico JS per tutte le pagine
+// SKF 5S Supervisor — single JS for all pages
 (() => {
   const STORAGE_KEY = 'skf5s:supervisor:data';
-  const PIN_KEY = 'skf5s:pin';
 
-  const $ = (s, r = document) => r.querySelector(s);
-  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+  const $  = (sel, root=document) => root.querySelector(sel);
+  const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
 
-  // ---------- storage ----------
+  // -----------------------------
+  // Storage helper (localStorage)
+  // -----------------------------
   const store = {
     load() {
       try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
-      catch(e){ console.warn(e); return []; }
+      catch(e){ console.warn('load error', e); return []; }
     },
-    save(arr) { localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); }
+    save(arr) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+    }
   };
 
-  // ---------- import ----------
-  async function handleImport(files) {
-    if (!files || !files.length) return;
-    const current = store.load();
-    const map = new Map(current.map(x => [keyOf(x), x]));
+  // -----------------------------------
+  // Utilities to normalise an import
+  // -----------------------------------
+  const toISODateOnly = (d) => {
+    try { return (d || '').slice(0,10); } catch(e){ return ''; }
+  };
 
-    for (const f of files) {
-      try {
-        const txt = await f.text();
-        let obj = JSON.parse(txt);
-        const arr = Array.isArray(obj) ? obj : [obj];
-        for (const rec of arr) {
-          const normalized = normalizeRecord(rec);
-          if (normalized) map.set(keyOf(normalized), normalized);
-        }
-      } catch (e) {
-        alert('File non valido: ' + f.name);
-      }
-    }
-    const merged = Array.from(map.values()).sort((a,b)=> new Date(a.date)-new Date(b.date));
-    store.save(merged);
-    // consente un nuovo import immediatamente
-    const input = $('#import-input'); if (input) input.value = '';
-    render();
-    alert('Import completato: ' + merged.length + ' record totali');
-  }
-
-  function keyOf(r){ return [r.area||'', r.channel||'', r.date||''].join('|'); }
-
-  // Supporta formati diversi dei file JSON
-  function normalizeRecord(r){
-    if (!r) return null;
-    // accetta nomi campo diffusi
-    const area = r.area || r.Area || r.Reparto || '';
-    const channel = r.channel || r.CH || r.canale || r.line || r.Linea || '';
-    const date = r.date || r.data || r.timestamp || new Date().toISOString();
-    const points = r.points || r.Punteggi || {
-      s1: Number(r.s1||r.S1||0), s2: Number(r.s2||r.S2||0),
-      s3: Number(r.s3||r.S3||0), s4: Number(r.s4||r.S4||0),
-      s5: Number(r.s5||r.S5||0)
-    };
-
-    // NOTE: raccogli sia r.notes[] sia sezioni con testi S1..S5
-    let notes = [];
-    if (Array.isArray(r.notes)) {
-      for (const n of r.notes) {
-        notes.push({
-          s: n.s || n.S || n.type || '',
-          text: n.text || n.note || '',
-          date: n.date || date
+  // Convert "notes" (object s1..s5 or array) -> array of note rows
+  function normaliseNotes(rec){
+    const rows = [];
+    const pushBlock = (sKey, block, dateHint) => {
+      if (!block) return;
+      // split on newline preserving text
+      const lines = String(block).split(/\r?\n/).filter(t => t.trim().length);
+      for (const line of lines){
+        rows.push({
+          ch: rec.channel || '',
+          area: rec.area || '',
+          s: sKey.toUpperCase(),    // "S1" ... "S5"
+          text: line.trim(),
+          date: dateHint || rec.date || ''
         });
       }
-    } else {
-      // esempio: { S1:[ "testo1", "testo2" ], S2:[ ... ] } oppure stringhe
-      ['S1','S2','S3','S4','S5','s1','s2','s3','s4','s5'].forEach(k=>{
-        if (r[k]) {
-          const list = Array.isArray(r[k]) ? r[k] : String(r[k]).split(/\n|;|·|- /);
-          list.filter(Boolean).forEach(t=> notes.push({ s: k.toUpperCase(), text: String(t).trim(), date }));
-        }
-      });
-      // eventuali “sections”
-      if (Array.isArray(r.sections)) {
-        for (const sec of r.sections) {
-          const tag = (sec.s || sec.name || '').toString().toUpperCase();
-          const list = Array.isArray(sec.items) ? sec.items : (sec.text ? [sec.text] : []);
-          list.forEach(t => notes.push({ s: tag, text: t, date: sec.date || date }));
-        }
+    };
+
+    // FORMAT A: object with s1..s5
+    if (rec && rec.notes && !Array.isArray(rec.notes)) {
+      const map = rec.notes;
+      if (map.s1) pushBlock('S1', map.s1, toISODateOnly(rec?.dates?.s1));
+      if (map.s2) pushBlock('S2', map.s2, toISODateOnly(rec?.dates?.s2));
+      if (map.s3) pushBlock('S3', map.s3, toISODateOnly(rec?.dates?.s3));
+      if (map.s4) pushBlock('S4', map.s4, toISODateOnly(rec?.dates?.s4));
+      if (map.s5) pushBlock('S5', map.s5, toISODateOnly(rec?.dates?.s5));
+    }
+
+    // FORMAT B: array of {s,text,date}
+    if (Array.isArray(rec?.notes)) {
+      for (const n of rec.notes){
+        if (!n) continue;
+        rows.push({
+          ch: rec.channel || '',
+          area: rec.area || '',
+          s: String(n.s || n.S || n.type || '').toUpperCase(),
+          text: String(n.text || n.note || '').trim(),
+          date: n.date || rec.date || ''
+        });
       }
     }
 
-    return { area, channel, date, points, notes, delays: Number(r.delays||0) };
+    return rows;
   }
 
-  // ---------- export (PIN) ----------
-  function getPIN(){ return localStorage.getItem(PIN_KEY) || '1234'; }
-  function exportWithPin(){
-    const curr = getPIN();
-    const pin = prompt('Inserisci PIN (demo 1234):', '');
-    if (pin !== curr) { alert('PIN errato'); return; }
-    const blob = new Blob([JSON.stringify(store.load(), null, 2)], {type:'application/json'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'SKF-5S-supervisor-archive.json';
-    a.click();
-  }
+  // -----------------------------------
+  // Import handler (multi-file + merge)
+  // -----------------------------------
+  async function handleImport(files) {
+    if (!files || !files.length) return;
 
-  // ---------- lock (consente cambio PIN) ----------
-  function initLock(){
-    const btn = $('#btn-lock'); if (!btn) return;
-    let locked = sessionStorage.getItem('lock') === '1';
-    const paint = () => btn.textContent = locked ? '🔓' : '🔒';
-    paint();
-    btn.onclick = () => {
-      const curr = getPIN();
-      const pin = prompt('Inserisci PIN attuale (demo 1234):','');
-      if (pin !== curr) { alert('PIN errato'); return; }
-      const nuovo = prompt('Inserisci nuovo PIN:', curr);
-      if (nuovo && nuovo !== curr){ localStorage.setItem(PIN_KEY, nuovo); alert('PIN aggiornato'); }
-      locked = !locked; sessionStorage.setItem('lock', locked?'1':'0'); paint();
-    };
-  }
+    const current = store.load();
+    const byKey = new Map(current.map(r => [r.area + '|' + r.channel + '|' + r.date, r]));
 
-  // ---------- UI comuni ----------
-  function initCommon(){
-    const input = $('#import-input');
-    $('#btn-import')?.addEventListener('click', () => input?.click());
-    input?.addEventListener('change', () => handleImport(input.files));
+    let ok = 0, bad = 0;
+    for (const f of files) {
+      try {
+        const text = await f.text();
+        const rec = JSON.parse(text);
 
-    $('#btn-export')?.addEventListener('click', exportWithPin);
-    $('#btn-export-supervisor')?.addEventListener('click', exportWithPin);
+        // expected minimal shape:
+        // { area, channel, date, points:{s1..s5}, notes: {s1..s5} | [] , dates? }
+        if (!rec || !rec.area || !rec.channel || !rec.points) throw new Error('struttura non valida');
 
-    $('#btn-notes')?.addEventListener('click', () => location.href = 'notes.html');
-  }
-
-  // ---------- home ----------
-  function renderHome(){
-    if (document.body.dataset.page !== 'home') return;
-    const data = store.load();
-    const filterArea = $('#area-filter').value;
-    const filtered = filterArea ? data.filter(d => (d.area||'') === filterArea) : data;
-
-    // group last per CH
-    const byCh = new Map();
-    for (const r of filtered){
-      const k = r.channel || 'CH ?';
-      const arr = byCh.get(k) || [];
-      arr.push(r); byCh.set(k, arr);
+        // normalizza note per la pagina "Note"
+        rec._notes = normaliseNotes(rec);       // array di righe pronte
+        const k = rec.area + '|' + rec.channel + '|' + rec.date;
+        byKey.set(k, rec);
+        ok++;
+      } catch (e) {
+        console.warn('Import error for', f.name, e);
+        bad++;
+      }
     }
 
-    const htrack = $('#htrack'); htrack.innerHTML = '';
-    const chips = $('#chip-strip'); chips.innerHTML = '';
+    const merged = Array.from(byKey.values()).sort((a,b)=> {
+      const kc = String(a.channel||'').localeCompare(String(b.channel||''));
+      if (kc) return kc;
+      return new Date(a.date) - new Date(b.date);
+    });
 
-    for (const [ch, arr] of byCh){
-      const last = arr.sort((a,b)=>new Date(a.date)-new Date(b.date)).slice(-1)[0];
-      const p = last?.points || {s1:0,s2:0,s3:0,s4:0,s5:0};
-      const cell = document.createElement('div'); cell.className = 'hcell';
-      cell.innerHTML = `
-        <h4>${ch} <span class="muted">${last?.area||''}</span></h4>
-        <div class="hbars">
-          ${['1S','2S','3S','4S','5S'].map((lab,i)=>{
-            const val = [p.s1,p.s2,p.s3,p.s4,p.s5][i]||0;
-            return `<div class="hrow s${i+1}">
-              <div class="hlabel">${lab}</div>
-              <div class="hbar"><i style="width:${val}%"></i></div>
-              <div class="hval">${val}%</div>
-            </div>`;
-          }).join('')}
-        </div>`;
-      htrack.appendChild(cell);
+    store.save(merged);
+    alert(`Import completato.\nAggiunti/Aggiornati: ${ok}\nScartati: ${bad}\nTotale archiviati: ${merged.length}`);
 
+    // reset input per consentire un secondo import senza ricaricare la pagina
+    const input = $('#import-input');
+    if (input) input.value = '';
+
+    // ridisegna le pagine attive
+    render();
+    paintNotesBadge();
+  }
+
+  // -----------------------------------
+  // SMALL CHARTS
+  // -----------------------------------
+  function renderMiniBars(el, values, labels=['1S','2S','3S','4S','5S']){
+    el.innerHTML = '';
+    const max = Math.max(100, ...values);
+    for (let i=0;i<labels.length;i++){
+      const wrap = document.createElement('div');
+      wrap.className = 'hbar';
+      const bar = document.createElement('div');
+      bar.style.width = Math.round((values[i]||0)/max*100) + '%';
+      bar.className = `hbar-fill s${i+1}`;
+      const lab = document.createElement('span');
+      lab.className = 'hbar-lab';
+      lab.textContent = labels[i];
+      const val = document.createElement('span');
+      val.className = 'hbar-val';
+      val.textContent = `${values[i]||0}%`;
+      wrap.appendChild(lab);
+      wrap.appendChild(bar);
+      wrap.appendChild(val);
+      el.appendChild(wrap);
+    }
+  }
+
+  // -----------------------------------
+  // HOME (index)
+  // -----------------------------------
+  function renderHome() {
+    const cont = $('#unifiedChart');
+    const chips = $('#chip-strip');
+    if (!cont || !chips) return;
+
+    const data = store.load();
+    cont.innerHTML = '';
+    chips.innerHTML = '';
+
+    // raggruppa per CH e prendi l'ultimo record per ciascuno
+    const byCh = new Map();
+    for (const r of data) {
+      const key = r.channel || 'CH?';
+      (byCh.get(key) || byCh.set(key, []).get(key)).push(r);
+    }
+
+    const ordered = Array.from(byCh.entries()).sort((a,b)=> String(a[0]).localeCompare(String(b[0])));
+    for (const [ch, arr] of ordered){
+      const last = arr.sort((a,b)=> new Date(a.date)-new Date(b.date)).slice(-1)[0];
+      const card = document.createElement('div');
+      card.className = 'unified';
+      card.innerHTML = `
+        <div class="unified-title">${ch} <span class="muted">${last?.area||''}</span></div>
+        <div class="unified-bars"></div>`;
+      cont.appendChild(card);
+
+      const vals = [
+        last?.points?.s1 ?? 0,
+        last?.points?.s2 ?? 0,
+        last?.points?.s3 ?? 0,
+        last?.points?.s4 ?? 0,
+        last?.points?.s5 ?? 0
+      ];
+      renderMiniBars(card.querySelector('.unified-bars'), vals);
+
+      // chip per aprire checklist direttamente su quel CH
       const chip = document.createElement('button');
       chip.className = 'chip';
       chip.textContent = ch;
-      chip.onclick = () => location.href = 'checklist.html#'+encodeURIComponent(ch);
+      chip.onclick = () => location.href = 'checklist.html#' + encodeURIComponent(ch);
       chips.appendChild(chip);
     }
-
-    $('#area-filter')?.addEventListener('change', renderHome);
   }
 
-  // ---------- checklist ----------
-  function renderChecklist(){
-    if (document.body.dataset.page !== 'checklist') return;
-    const data = store.load();
+  // -----------------------------------
+  // CHECKLIST (lista CH con KPI)
+  // -----------------------------------
+  function renderChecklist() {
+    const wrap = $('#cards');
+    if (!wrap) return;
 
-    // group per CH
+    const data = store.load();
+    wrap.innerHTML = '';
+
+    // group by channel
     const byCh = new Map();
-    for (const r of data){
-      const k = r.channel || 'CH ?';
-      const arr = byCh.get(k) || [];
-      arr.push(r); byCh.set(k, arr);
+    for (const r of data) {
+      const key = r.channel || 'CH?';
+      (byCh.get(key) || byCh.set(key, []).get(key)).push(r);
     }
 
-    const wrap = $('#cards'); wrap.innerHTML = '';
-
-    for (const [ch, arr] of byCh){
-      const last = arr.sort((a,b)=>new Date(a.date)-new Date(b.date)).slice(-1)[0];
-      const p = last?.points || {s1:0,s2:0,s3:0,s4:0,s5:0};
-      const avg = Math.round((p.s1+p.s2+p.s3+p.s4+p.s5)/5);
-
-      const card = document.createElement('div'); card.className='card-line';
+    const ordered = Array.from(byCh.entries()).sort((a,b)=> String(a[0]).localeCompare(String(b[0])));
+    for (const [ch, arr] of ordered){
+      const last = arr.sort((a,b)=> new Date(a.date)-new Date(b.date)).slice(-1)[0];
+      const k = last?.points || {s1:0,s2:0,s3:0,s4:0,s5:0};
+      const avg = Math.round((k.s1+k.s2+k.s3+k.s4+k.s5)/5);
+      const card = document.createElement('section');
+      card.className = 'card ch-card';
       card.innerHTML = `
-        <div class="top">
-          <div>
-            <div style="font-weight:800">${ch}</div>
-            <div class="muted">${last?.area||''} • Ultimo: ${last?.date||'-'}</div>
+        <div class="ch-head">
+          <div class="ch-name">${ch}</div>
+          <div class="muted">${last?.area||''} • Ultimo: ${last?.date||'-'}</div>
+          <div class="kpis">
+            <span class="pill s1">S1 ${k.s1}%</span>
+            <span class="pill s2">S2 ${k.s2}%</span>
+            <span class="pill s3">S3 ${k.s3}%</span>
+            <span class="pill s4">S4 ${k.s4}%</span>
+            <span class="pill s5">S5 ${k.s5}%</span>
+            <span class="badge">Voto medio ${avg}%</span>
+            <button class="btn outline" onclick="window.print()">Stampa PDF</button>
           </div>
-          <div>
-            <span class="pill s1">S1 ${p.s1}%</span>
-            <span class="pill s2">S2 ${p.s2}%</span>
-            <span class="pill s3">S3 ${p.s3}%</span>
-            <span class="pill s4">S4 ${p.s4}%</span>
-            <span class="pill s5">S5 ${p.s5}%</span>
-          </div>
-          <div class="kpi"><span class="badge">Voto medio ${avg}%</span></div>
-          <div><button class="btn outline" data-print="${ch}">Stampa PDF</button></div>
         </div>
-
-        <div class="hl">
-          ${[['1S','s1'],['2S','s2'],['3S','s3'],['4S','s4'],['5S','s5']].map(([lab,k],i)=>{
-            const v = p[k]||0;
-            return `<div class="barrow">
-              <div class="lbl">${lab}</div>
-              <div class="bar s${i+1}c"><i style="width:${v}%"></i></div>
-              <div class="val">${v}%</div>
-            </div>`;
-          }).join('')}
-        </div>
-
-        <details>
-          <summary>Note</summary>
-          <div>${renderNotesHtml(arr)}</div>
-        </details>
+        <div class="bars"></div>
       `;
       wrap.appendChild(card);
+
+      renderMiniBars(card.querySelector('.bars'), [k.s1,k.s2,k.s3,k.s4,k.s5]);
     }
-
-    // stampa singolo
-    $$('button[data-print]').forEach(b=>{
-      b.addEventListener('click', e=>{
-        e.stopPropagation();
-        window.print();
-      });
-    });
-
-    // toggle tutti
-    $('#btn-toggle-all')?.addEventListener('click', ()=>{
-      const all = $$('details', wrap);
-      const anyOpen = all.some(d=>!d.open);
-      all.forEach(d=> d.open = anyOpen);
-    });
-
-    // stampa tutti
-    $('#btn-print-all')?.addEventListener('click', ()=> window.print());
   }
 
-  function renderNotesHtml(records){
-    const list = [];
-    for (const r of records){
-      const arr = Array.isArray(r.notes) ? r.notes : [];
-      arr.forEach(n=>{
-        list.push(`<div class="note">
-          <div style="display:flex;justify-content:space-between;gap:.5rem;flex-wrap:wrap">
-            <div><span class="pill s${(n.s||'S1')[1]||1}">${n.s||''}</span></div>
-            <div class="muted">${n.date||r.date||''}</div>
-          </div>
-          <div style="margin-top:.4rem">${(n.text||'').replaceAll('\n','<br>')}</div>
-        </div>`);
-      });
-    }
-    return list.join('') || '<div class="muted">Nessuna nota per questo CH.</div>';
-  }
-
-  // ---------- pagina note ----------
-  function renderNotesPage(){
-    if (document.body.dataset.page !== 'notes') return;
+  // -----------------------------------
+  // NOTE page (con filtri)
+  // -----------------------------------
+  function collectAllNotes(){
     const data = store.load();
-
-    // compila select CH
-    const sel = $('#filter-ch');
-    const channels = [...new Set(data.map(d=>d.channel).filter(Boolean))].sort();
-    channels.forEach(ch=>{
-      const o = document.createElement('option'); o.value = ch; o.textContent = ch; sel.appendChild(o);
-    });
-
-    function apply(){
-      const chSel = sel.value;
-      const from = $('#from-date').value ? new Date($('#from-date').value) : null;
-      const to   = $('#to-date').value   ? new Date($('#to-date').value)   : null;
-
-      const rows = [];
-      for (const r of data){
-        if (chSel && r.channel !== chSel) continue;
-        const arr = Array.isArray(r.notes) ? r.notes : [];
-        for (const n of arr){
-          const d = new Date(n.date || r.date || 0);
-          if (from && d < from) continue;
-          if (to && d > to) continue;
-          rows.push({ ch:r.channel, date:d.toISOString(), s:n.s||'', text:n.text||'' });
-        }
-      }
-      rows.sort((a,b)=> new Date(b.date)-new Date(a.date));
-      $('#notes-count').textContent = `${rows.length} note`;
-
-      const box = $('#notes-list');
-      box.innerHTML = rows.map(n=>`
-        <div class="note">
-          <div style="display:flex;justify-content:space-between;gap:.5rem;flex-wrap:wrap">
-            <div><strong>${n.ch}</strong> • <span class="pill s${(n.s||'S1')[1]||1}">${n.s||''}</span></div>
-            <div class="muted">${n.date}</div>
-          </div>
-          <div style="margin-top:.35rem">${n.text.replaceAll('\n','<br>')}</div>
-        </div>`).join('') || '<div class="muted">Nessuna nota con i filtri selezionati.</div>';
+    const out = [];
+    for (const r of data) {
+      const rows = Array.isArray(r._notes) ? r._notes : normaliseNotes(r);
+      for (const n of rows) out.push(n);
     }
-
-    ['change','input'].forEach(ev=>{
-      $('#filter-ch').addEventListener(ev, apply);
-      $('#from-date').addEventListener(ev, apply);
-      $('#to-date').addEventListener(ev, apply);
-    });
-    $('#btn-clear').addEventListener('click', ()=>{
-      $('#filter-ch').value=''; $('#from-date').value=''; $('#to-date').value=''; apply();
-    });
-    apply();
+    return out;
   }
 
-  // ---------- render dispatcher ----------
+  function renderNotes(){
+    const list = $('#notes-list');
+    if (!list) return;
+
+    // filtri UI
+    const selCh = $('#filter-ch');
+    const dFrom = $('#filter-from');
+    const dTo   = $('#filter-to');
+    const btnCl = $('#filter-clear');
+
+    // popola select CH
+    const chs = new Set(store.load().map(r => r.channel).filter(Boolean));
+    if (selCh && !selCh._filled){
+      selCh.innerHTML = '<option value="">Tutti</option>' +
+        Array.from(chs).sort((a,b)=>String(a).localeCompare(String(b))).map(ch => `<option>${ch}</option>`).join('');
+      selCh._filled = true;
+    }
+
+    const all = collectAllNotes()
+      .sort((a,b)=> new Date(b.date)-new Date(a.date));
+
+    function passFilters(n){
+      const chOk = !selCh?.value || n.ch === selCh.value;
+      const f = dFrom?.value ? new Date(dFrom.value) : null;
+      const t = dTo?.value   ? new Date(dTo.value)   : null;
+      const nd = n.date ? new Date(n.date) : null;
+      const fromOk = !f || (nd && nd >= f);
+      const toOk   = !t || (nd && nd <= t);
+      return chOk && fromOk && toOk;
+    }
+
+    const rows = all.filter(passFilters);
+
+    // badge count in header
+    const badge = $('#notes-count');
+    if (badge) badge.textContent = `${rows.length} note`;
+
+    // render
+    list.innerHTML = '';
+    if (!rows.length){
+      list.innerHTML = '<div class="muted">Nessuna nota con i filtri selezionati.</div>';
+    } else {
+      for (const n of rows){
+        const el = document.createElement('div');
+        el.className = 'note';
+        el.innerHTML = `
+          <div class="note-top">
+            <strong>${n.ch}</strong> • <span class="pill ${n.s ? ('s'+n.s[1]) : ''}">${n.s}</span>
+            <span class="muted" style="margin-left:auto">${n.date || ''}</span>
+          </div>
+          <div class="note-text">${(n.text||'').replaceAll('<','&lt;').replaceAll('>','&gt;')}</div>
+        `;
+        list.appendChild(el);
+      }
+    }
+
+    // listeners filtri (una sola volta)
+    const re = () => renderNotes();
+    if (selCh && !selCh._on){ selCh.addEventListener('change', re); selCh._on=true; }
+    if (dFrom && !dFrom._on){ dFrom.addEventListener('change', re); dFrom._on=true; }
+    if (dTo   && !dTo._on){   dTo.addEventListener('change', re);   dTo._on=true; }
+    if (btnCl && !btnCl._on){
+      btnCl.addEventListener('click', () => {
+        if (selCh) selCh.value = '';
+        if (dFrom) dFrom.value = '';
+        if (dTo)   dTo.value   = '';
+        renderNotes();
+      });
+      btnCl._on = true;
+    }
+  }
+
+  function paintNotesBadge(){
+    const badge = $('#notes-badge');
+    if (!badge) return;
+    const count = collectAllNotes().length;
+    badge.textContent = 'Note';
+    badge.title = `${count} note`;
+  }
+
+  // -----------------------------------
+  // Lock / Export / Import bindings
+  // -----------------------------------
+  function initCommon(){
+    const input = $('#import-input');
+    if (input) input.onchange = () => handleImport(input.files);
+
+    const btnExport = $('#btn-export');
+    if (btnExport) btnExport.onclick = () => {
+      const pin = prompt('Inserisci PIN (demo 1234):');
+      if (pin !== '1234') { alert('PIN errato'); return; }
+      const blob = new Blob([JSON.stringify(store.load(), null, 2)], {type:'application/json'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'SKF-5S-supervisor-archive.json';
+      a.click();
+    };
+
+    const btnLock = $('#btn-lock');
+    if (btnLock && !btnLock._on){
+      const key = 'skf5s:pin';
+      const paint = () => {
+        btnLock.textContent = '🔒';
+        btnLock.title = 'Blocca/Sblocca';
+      };
+      paint();
+      btnLock.addEventListener('click', () => {
+        const current = localStorage.getItem(key) || '1234';
+        const input = prompt('PIN attuale (default 1234). Lascia vuoto per solo controllo:');
+        if (input === null) return;
+        if (input && input !== current){ alert('PIN errato'); return; }
+        const np = prompt('Nuovo PIN (lascia vuoto per non modificare):');
+        if (np) { localStorage.setItem(key, np); alert('PIN aggiornato'); }
+      });
+      btnLock._on = true;
+    }
+  }
+
   function render(){
     renderHome();
     renderChecklist();
-    renderNotesPage();
+    renderNotes();
   }
 
-  // ---------- avvio ----------
+  // boot
   window.addEventListener('DOMContentLoaded', () => {
     initCommon();
-    initLock();
     render();
-    if ('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js'); }
+    // SW semplice, non aggressivo
+    if ('serviceWorker' in navigator){
+      navigator.serviceWorker.register('sw.js').catch(()=>{});
+    }
   });
 })();
