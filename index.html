@@ -18,17 +18,16 @@
   </div>
 
   <nav class="actions">
-    <button id="btn-notes" class="btn ghost">Note</button>
-    <button id="btn-import" class="btn primary">Importa</button>
+    <button id="btn-notes" class="btn ghost lockable">Note</button>
+    <button id="btn-import" class="btn primary lockable">Importa</button>
     <input id="import-input" type="file" accept="application/json" multiple hidden>
-    <button id="btn-export" class="btn outline">Esporta dati (PIN)</button>
+    <button id="btn-export" class="btn outline lockable">Esporta dati (PIN)</button>
     <button id="btn-lock" class="btn icon" title="Blocca/Sblocca">🔒</button>
     <a class="btn link" href="checklist.html">Vai alla checklist →</a>
   </nav>
 </header>
 
 <main class="container">
-
   <section class="card split">
     <div class="col">
       <h2>Cosa è 5S</h2>
@@ -50,8 +49,8 @@
       <h3>Andamento — Tutti i CH</h3>
     </div>
 
-    <div class="chart-wrap">
-      <canvas id="allChart" height="220"></canvas>
+    <div class="chart-wrap scroll-x">
+      <canvas id="allChart" height="280"></canvas>
     </div>
 
     <div class="legend">
@@ -65,7 +64,7 @@
     <div id="chip-strip" class="chips"></div>
 
     <div class="footer-actions">
-      <button id="btn-export-supervisor" class="btn outline">Esporta dati per Supervisore (PIN)</button>
+      <button id="btn-export-supervisor" class="btn outline lockable">Esporta dati per Supervisore (PIN)</button>
     </div>
   </section>
 </main>
