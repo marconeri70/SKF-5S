@@ -11,22 +11,23 @@
 </head>
 <body data-page="notes">
 <header class="appbar">
-  <a href="index.html" class="btn back">← Supervisor</a>
-  <div class="brand"><span class="brand-title">SKF 5S</span><span class="brand-badge">— Note</span></div>
-  <nav class="actions smallgap">
-    <span id="notes-count" class="muted">0 note</span>
-    <select id="filter-ch" class="select"><option value="">Tutti</option></select>
-    <input id="from-date" type="date" class="select" aria-label="Da">
-    <input id="to-date" type="date" class="select" aria-label="A">
-    <button id="btn-clear" class="btn outline">Pulisci</button>
+  <div class="brand">
+    <a href="index.html" class="btn back">← Supervisor</a>
+    <span class="brand-title">SKF 5S</span>
+    <span class="brand-badge">— Note</span>
+  </div>
+
+  <nav class="actions">
+    <span id="notes-count" class="badge">0 note</span>
+    <select id="filter-ch" class="btn"></select>
+    <label class="btn">Da <input id="filter-from" type="date"></label>
+    <label class="btn">A <input id="filter-to" type="date"></label>
+    <button id="filter-clear" class="btn outline">Pulisci</button>
   </nav>
 </header>
 
 <main class="container">
-  <section class="card">
-    <h3>Note per data e S</h3>
-    <div id="notes-list"></div>
-  </section>
+  <section id="notes-list" class="stack"></section>
 </main>
 
 <footer class="version">v2.3.x</footer>
