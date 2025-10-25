@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SKF 5S — Note</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="assets/skf-192.png">
@@ -10,31 +10,29 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body data-page="notes">
+
   <header class="appbar">
+    <a href="index.html" class="btn back">← Supervisore</a>
     <div class="brand">
-      <a href="index.html" class="btn back">← Supervisore</a>
       <img src="assets/skf-logo.png" alt="SKF" class="brand-logo">
       <span class="brand-title">SKF 5S</span>
-      <span class="brand-badge">— Note</span>
+      <span class="brand-badge">Note</span>
     </div>
+
     <nav class="actions">
-      <div class="filters">
-        <label>Da <input type="date" id="f-from" class="ctrl"></label>
-        <label>A <input type="date" id="f-to" class="ctrl"></label>
-        <label>CH <input type="text" id="f-ch" class="ctrl" placeholder="Es. CH 24"></label>
-        <button id="f-apply" class="btn">Filtra</button>
-      </div>
+      <a href="notes-search.html" class="btn outline">Ricerca per data</a>
+      <button id="btn-lock" class="btn icon" title="Blocca/Sblocca">🔒</button>
     </nav>
   </header>
 
   <main class="container">
     <section class="card">
-      <h2>Note per data e S <small id="note-count"></small></h2>
-      <div id="notes-list" class="stack"></div>
+      <h2>Note per data e S</h2>
+      <div id="notes-list"></div>
     </section>
   </main>
 
-  <footer class="version">v2.3.3</footer>
+  <footer class="version">v2.3.4</footer>
   <script src="app.js"></script>
 </body>
 </html>
