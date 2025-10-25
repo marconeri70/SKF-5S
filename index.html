@@ -10,7 +10,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="assets/skf-192.png">
   <meta name="theme-color" content="#0d63d6">
-  <link rel="stylesheet" href="style.css?v=2.3.5">
+  <link rel="stylesheet" href="style.css?v=2.3.6">
 </head>
 <body data-page="home">
   <header class="appbar">
@@ -20,10 +20,10 @@
       <span class="brand-badge">Supervisor</span>
     </div>
     <nav class="actions">
-      <button id="btn-notes" class="btn ghost">Note</button>
-      <button id="btn-import" class="btn primary">Importa</button>
+      <button id="btn-notes" class="btn ghost lockable">Note</button>
+      <button id="btn-import" class="btn primary lockable">Importa</button>
       <input id="import-input" type="file" accept=".json,application/json" multiple hidden>
-      <button id="btn-export" class="btn outline">Esporta dati (PIN)</button>
+      <button id="btn-export" class="btn outline lockable">Esporta dati (PIN)</button>
       <button id="btn-lock" class="btn icon" title="Blocca/Sblocca">🔒</button>
       <a class="btn" href="checklist.html">Vai alla checklist →</a>
     </nav>
@@ -51,19 +51,19 @@
         <h3>Andamento — Tutti i CH</h3>
       </div>
       <div class="scroll-x">
-        <canvas id="unifiedChart" height="220"></canvas>
+        <canvas id="unifiedChart" height="260"></canvas>
       </div>
       <div id="chart-legend" class="legend"></div>
       <div id="chip-strip" class="chips"></div>
 
       <div class="toolbar">
-        <button id="btn-export-supervisor" class="btn outline">Esporta dati per Supervisore (PIN)</button>
+        <button id="btn-export-supervisor" class="btn outline lockable">Esporta dati per Supervisore (PIN)</button>
       </div>
     </section>
 
-    <footer class="version">v2.3.5 • PWA ready</footer>
+    <footer class="version">v2.3.6 • PWA ready</footer>
   </main>
 
-  <script src="app.js?v=2.3.5"></script>
+  <script src="app.js?v=2.3.6"></script>
 </body>
 </html>
