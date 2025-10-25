@@ -11,17 +11,14 @@
 </head>
 <body data-page="notes">
 <header class="appbar">
-  <div class="brand">
-    <a href="index.html" class="btn back">← Supervisor</a>
-    <span class="brand-title">SKF 5S</span>
-    <span class="brand-badge">— Note</span>
-  </div>
-  <nav class="actions">
-    <span id="notes-counter" class="counter">0 note</span>
-    <select id="flt-ch" class="btn ghost"></select>
-    <label>Da <input id="flt-from" type="date" class="btn ghost"></label>
-    <label>A <input id="flt-to" type="date" class="btn ghost"></label>
-    <button id="flt-clear" class="btn outline">Pulisci</button>
+  <a href="index.html" class="btn back">← Supervisor</a>
+  <div class="brand"><span class="brand-title">SKF 5S</span><span class="brand-badge">— Note</span></div>
+  <nav class="actions smallgap">
+    <span id="notes-count" class="muted">0 note</span>
+    <select id="filter-ch" class="select"><option value="">Tutti</option></select>
+    <input id="from-date" type="date" class="select" aria-label="Da">
+    <input id="to-date" type="date" class="select" aria-label="A">
+    <button id="btn-clear" class="btn outline">Pulisci</button>
   </nav>
 </header>
 
@@ -32,7 +29,7 @@
   </section>
 </main>
 
-<footer class="version">v2.3.7</footer>
+<footer class="version">v2.3.x</footer>
 <script src="app.js"></script>
 </body>
 </html>
