@@ -332,40 +332,68 @@
   // -----------------------------------
   // Lock / Export / Import bindings
   // -----------------------------------
-  function initCommon(){
-    const input = $('#import-input');
-    if (input) input.onchange = () => handleImport(input.files);
+function initCommon(){
+  // NOTE
+  const btnNotes = document.querySelector('#btn-notes');
+  if (btnNotes && !btnNotes._on){
+    btnNotes.addEventListener('click', () => { location.href = 'notes.html'; });
+    btnNotes._on = true;
+  }
 
-    const btnExport = $('#btn-export');
-    if (btnExport) btnExport.onclick = () => {
+  // IMPORT
+  const btnImport = document.querySelector('#btn-import');
+  const input     = document.querySelector('#import-input');
+  if (btnImport && input && !btnImport._on){
+    btnImport.addEventListener('click', () => input.click());
+    input.addEventListener('change', () => handleImport(input.files));
+    btnImport._on = true;
+  }
+
+  // EXPORT (PIN)
+  const btnExport = document.querySelector('#btn-export');
+  if (btnExport && !btnExport._on){
+    btnExport.addEventListener('click', () => {
       const pin = prompt('Inserisci PIN (demo 1234):');
-      if (pin !== '1234') { alert('PIN errato'); return; }
+      if (pin !== '1234'){ alert('PIN errato'); return; }
       const blob = new Blob([JSON.stringify(store.load(), null, 2)], {type:'application/json'});
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = 'SKF-5S-supervisor-archive.json';
       a.click();
-    };
-
-    const btnLock = $('#btn-lock');
-    if (btnLock && !btnLock._on){
-      const key = 'skf5s:pin';
-      const paint = () => {
-        btnLock.textContent = '🔒';
-        btnLock.title = 'Blocca/Sblocca';
-      };
-      paint();
-      btnLock.addEventListener('click', () => {
-        const current = localStorage.getItem(key) || '1234';
-        const input = prompt('PIN attuale (default 1234). Lascia vuoto per solo controllo:');
-        if (input === null) return;
-        if (input && input !== current){ alert('PIN errato'); return; }
-        const np = prompt('Nuovo PIN (lascia vuoto per non modificare):');
-        if (np) { localStorage.setItem(key, np); alert('PIN aggiornato'); }
-      });
-      btnLock._on = true;
-    }
+    });
+    btnExport._on = true;
   }
+
+  // LOCK (cambio PIN)
+  const btnLock = document.querySelector('#btn-lock');
+  if (btnLock && !btnLock._on){
+    const key = 'skf5s:pin';
+    btnLock.addEventListener('click', () => {
+      const current = localStorage.getItem(key) || '1234';
+      const inPin = prompt('PIN attuale (default 1234). Lascia vuoto per solo controllo:');
+      if (inPin === null) return;
+      if (inPin && inPin !== current){ alert('PIN errato'); return; }
+      const np = prompt('Nuovo PIN (lascia vuoto per non modificare):');
+      if (np){ localStorage.setItem(key, np); alert('PIN aggiornato'); }
+    });
+    btnLock._on = true;
+  }
+
+  // COMPRIMI / ESPANDI (solo pagina checklist)
+  const btnToggle = document.querySelector('#btn-toggle-all');
+  if (btnToggle && !btnToggle._on){
+    let expanded = true;
+    const apply = () => {
+      document.querySelectorAll('.ch-card .bars').forEach(el => {
+        el.style.display = expanded ? '' : 'none';
+      });
+      btnToggle.textContent = expanded ? 'Comprimi tutti i CH' : 'Espandi tutti i CH';
+    };
+    btnToggle.addEventListener('click', () => { expanded = !expanded; apply(); });
+    apply();
+    btnToggle._on = true;
+  }
+}
 
   function render(){
     renderHome();
