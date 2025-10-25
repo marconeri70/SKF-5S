@@ -10,7 +10,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="assets/skf-192.png">
   <meta name="theme-color" content="#0d63d6">
-  <link rel="stylesheet" href="style.css?v=2.3.5">
+  <link rel="stylesheet" href="style.css?v=2.3.6">
 </head>
 <body data-page="checklist">
   <header class="appbar">
@@ -21,20 +21,20 @@
       <span class="brand-badge">Supervisor</span>
     </div>
     <nav class="actions">
-      <button id="btn-print-all" class="btn outline">Stampa tutti i CH</button>
+      <button id="btn-print-all" class="btn outline lockable">Stampa tutti i CH</button>
       <button id="btn-toggle-all" class="btn">Comprimi / Espandi tutti i CH</button>
       <button id="btn-lock" class="btn icon" title="Blocca/Sblocca">🔒</button>
-      <button id="btn-import" class="btn primary">Importa</button>
+      <button id="btn-import" class="btn primary lockable">Importa</button>
       <input id="import-input" type="file" accept=".json,application/json" multiple hidden>
-      <button id="btn-notes" class="btn ghost">Note</button>
+      <button id="btn-notes" class="btn ghost lockable">Note</button>
     </nav>
   </header>
 
   <main class="container">
     <section id="cards" class="stack"></section>
-    <footer class="version">v2.3.5</footer>
+    <footer class="version">v2.3.6</footer>
   </main>
 
-  <script src="app.js?v=2.3.5"></script>
+  <script src="app.js?v=2.3.6"></script>
 </body>
 </html>
