@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SKF 5S — Schede (Supervisor)</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="assets/skf-192.png">
@@ -10,20 +10,22 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body data-page="checklist">
+
   <header class="appbar">
+    <a href="index.html" class="btn back">← Indietro</a>
     <div class="brand">
-      <a href="index.html" class="btn back">← Indietro</a>
       <img src="assets/skf-logo.png" alt="SKF" class="brand-logo">
       <span class="brand-title">SKF 5S</span>
       <span class="brand-badge">Supervisor</span>
     </div>
+
     <nav class="actions">
       <button id="btn-print-all" class="btn outline">Stampa tutti i CH</button>
-      <button id="btn-toggle-all" class="btn">Comprimi / Espandi tutti i CH</button>
+      <button id="btn-toggle-all" class="btn outline">Comprimi / Espandi</button>
+      <label class="btn" for="import-input">Importa</label>
+      <input id="import-input" type="file" accept="application/json" multiple hidden>
+      <a href="notes.html" class="btn outline">Note</a>
       <button id="btn-lock" class="btn icon" title="Blocca/Sblocca">🔒</button>
-      <button id="btn-import" class="btn primary">Importa</button>
-      <input id="import-input" type="file" accept=".json,application/json" multiple hidden>
-      <button id="btn-notes" class="btn ghost">Note</button>
     </nav>
   </header>
 
@@ -31,7 +33,7 @@
     <section id="cards" class="stack"></section>
   </main>
 
-  <footer class="version">v2.3.3</footer>
+  <footer class="version">v2.3.4</footer>
   <script src="app.js"></script>
 </body>
 </html>
