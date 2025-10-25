@@ -1,7 +1,6 @@
-// minimal SW cache
+// v2.3.7 | SW neutro: precache base + cache-first solo per asset locali
 const CACHE = 'skf5s-v237';
 const ASSETS = [
-  './',
   './index.html','./checklist.html','./notes.html',
   './style.css','./app.js','./manifest.json',
   './assets/skf-192.png','./assets/skf-512.png','./assets/skf-logo.png','./assets/5S.png'
@@ -16,5 +15,8 @@ self.addEventListener('activate', e=>{
   self.clients.claim();
 });
 self.addEventListener('fetch', e=>{
-  e.respondWith(caches.match(e.request).then(r=> r || fetch(e.request)));
+  const url = new URL(e.request.url);
+  if (url.origin === location.origin){
+    e.respondWith(caches.match(e.request).then(r=> r || fetch(e.request)));
+  }
 });
