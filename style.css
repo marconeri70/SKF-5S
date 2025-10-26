@@ -105,3 +105,15 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif
   .card.split{grid-template-columns:1fr}
   .board{min-width:280px}
 }
+
+/* NOTE — card raggruppata */
+.note.grouped { padding: 1rem 1.25rem; }
+.note.grouped .note-head{
+  display:flex; justify-content:space-between; align-items:center; gap:.75rem; margin-bottom:.5rem;
+}
+.note.grouped .note-head .left{ display:flex; align-items:center; gap:.5rem; }
+.note.grouped .swrap{ display:grid; gap:.75rem; }
+.note.grouped .sblock{ background:#fff; border:1px solid #edf1f7; border-radius:10px; padding:.6rem .8rem; }
+.note.grouped .sblock-head{ display:flex; align-items:center; gap:.5rem; margin-bottom:.35rem; }
+.note.grouped .sitems{ margin:0; padding-left:1.1rem; }
+.note.grouped .sitems li{ line-height:1.35; margin:.15rem 0; }
