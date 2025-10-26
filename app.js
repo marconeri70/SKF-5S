@@ -276,6 +276,33 @@ function renderChecklist(){
     (byCh.get(key) || byCh.set(key, []).get(key)).push(r);
   }
 
+  // --- fallback: inietta il bottone "Comprimi/Espandi" accanto a "Stampa PDF"
+//     anche se la card è stata creata con il vecchio markup
+function injectPerCardToggle(){
+  $$('.card-line').forEach(card => {
+    const printBtn = card.querySelector('.btn-print');
+    if (!printBtn) return;
+
+    // se il toggle non c'è ancora, lo aggiungo subito dopo il bottone stampa
+    if (!card.querySelector('.btn-toggle')) {
+      const toggle = document.createElement('button');
+      toggle.className = 'btn ghost btn-toggle';
+      toggle.textContent = card.classList.contains('compact') ? 'Espandi' : 'Comprimi';
+      printBtn.insertAdjacentElement('afterend', toggle);
+
+      toggle.addEventListener('click', () => {
+        const isCompact = card.classList.toggle('compact');
+        toggle.textContent = isCompact ? 'Espandi' : 'Comprimi';
+      });
+    }
+  });
+}
+
+// richiama il fallback ogni volta che renderizzi le card
+function afterChecklistRender(){
+  injectPerCardToggle();
+}
+
   // ordina per nome CH
   for (const [ch, arr] of Array.from(byCh.entries()).sort()){
     if (hash && ch !== hash) continue;
