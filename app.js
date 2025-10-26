@@ -557,8 +557,6 @@ function renderNotes(){
     if (target){
       target.classList.add('note-hl');
       target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      // lampeggio leggero per far notare l'evidenziazione
-      setTimeout(()=> target.classList.remove('note-hl'), 4000);
     }
   }
 }
