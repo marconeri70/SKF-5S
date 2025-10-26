@@ -126,6 +126,8 @@
     const max = Math.max(100, ...values);
     for (let i=0;i<labels.length;i++){
       const wrap = document.createElement('div');
+      const percent = (values[i] || 0) / Math.max(100, ...values);
+      bar.style.setProperty(`--p${i+1}`, String(percent));
       wrap.className = 'hbar';
       const bar = document.createElement('div');
       bar.style.width = Math.round((values[i]||0)/max*100) + '%';
