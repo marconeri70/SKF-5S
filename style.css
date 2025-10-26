@@ -62,6 +62,39 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif
 .card-line .btns { display:flex; gap:.5rem; align-items:center; }
 .card-line .btn-toggle { margin-left: .5rem; }
 
+/* === FIX VISIBILITÀ PULSANTE COMPRIMI/ESPANDI === */
+
+/* Posizionamento accanto al bottone Stampa PDF */
+.card-line .btns {
+  display: flex;
+  gap: .5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Pulsante "Comprimi/Espandi" chiaro ma ben visibile */
+.card-line .btn-toggle {
+  background: #f4f6ff;
+  border: 1px solid #c6d3ff;
+  color: #0b3b8f;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: .9rem;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.card-line .btn-toggle:hover {
+  background: #e1e8ff;
+  border-color: #a9bfff;
+  color: #052e70;
+}
+
+/* Quando la card è compressa, nasconde solo le barre */
+.card-line.compact .bars {
+  display: none;
+}
+
 .top{display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
 .kpi .badge{background:#eef5ff;padding:.3rem .5rem;border-radius:999px}
 .pills{display:flex;gap:.45rem;flex-wrap:wrap}
