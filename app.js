@@ -54,7 +54,21 @@
     }
     return out;
   }
-
+  function normalizeOne(x){
+    const points = x.points || {s1:x.s1||x.S1||0,s2:x.s2||x.S2||0,s3:x.s3||x.S3||0,s4:x.s4||x.S4||0,s5:x.s5||x.S5||0};
+    const norm = {
+      area: x.area || x.Area || x.zona || '',
+      channel: x.channel || x.CH || x.linea || x.name || '',
+      date: x.date || x.data || x.updatedAt || new Date().toISOString().slice(0,16),
+      points: { s1:+(points.s1||0), s2:+(points.s2||0), s3:+(points.s3||0), s4:+(points.s4||0), s5:+(points.s5||0) },
+      notes: []
+    };
+    // Accept notes in many shapes
+    const rawNotes = x.notes ?? x.note ?? x.Note ?? x.Notes ?? null;
+    norm.notes = flattenNotes(rawNotes, norm.date);
+    return norm.channel ? norm : null;
+  }
+    
   // Import multi-file
   async function handleImport(files){
     if (!files || !files.length) return;
