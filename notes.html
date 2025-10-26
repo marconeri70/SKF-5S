@@ -9,29 +9,32 @@
   <meta name="theme-color" content="#0d63d6">
   <link rel="stylesheet" href="style.css">
 </head>
-
 <body data-page="notes">
-<header class="appbar">
-  <a href="index.html" class="btn back">← Supervisor</a>
-  <div class="brand">
-    <span class="brand-title">SKF 5S</span>
-    <span class="brand-badge">Note</span>
-  </div>
+  <header class="appbar">
+    <div class="brand">
+      <a href="index.html" class="btn back">← Supervisore</a>
+      <img src="assets/skf-logo.png" alt="SKF" class="brand-logo">
+      <span class="brand-title">SKF 5S</span>
+      <span class="brand-badge">— Note</span>
+    </div>
+    <nav class="actions">
+      <div class="filters">
+        <label>Da <input type="date" id="f-from" class="ctrl"></label>
+        <label>A <input type="date" id="f-to" class="ctrl"></label>
+        <label>CH <input type="text" id="f-ch" class="ctrl" placeholder="Es. CH 24"></label>
+        <button id="f-apply" class="btn">Filtra</button>
+      </div>
+    </nav>
+  </header>
 
-  <nav class="actions">
-    <span id="notes-count" class="badge">0 note</span>
-    <select id="filter-ch" class="select"></select>
-    <input id="filter-from" type="date" class="select" title="Da">
-    <input id="filter-to" type="date" class="select" title="A">
-    <button id="filter-clear" class="btn outline">Pulisci</button>
-  </nav>
-</header>
+  <main class="container">
+    <section class="card">
+      <h2>Note per data e S <small id="note-count"></small></h2>
+      <div id="notes-list" class="stack"></div>
+    </section>
+  </main>
 
-<main class="container">
-  <section id="notes-list" class="stack"></section>
-</main>
-
-<footer class="version">v 2.4</footer>
-<script src="app.js"></script>
+  <footer class="version">v2.3.3</footer>
+  <script src="app.js"></script>
 </body>
 </html>
