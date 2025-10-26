@@ -27,7 +27,6 @@
   // ===================================
   const fmtPercent = v => `${Math.round(Number(v)||0)}%`;
   const mean = p => Math.round(((+p.s1||0)+(+p.s2||0)+(+p.s3||0)+(+p.s4||0)+(+p.s5||0))/5);
-  const daysSince = iso => Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
 
   // ===================================
   // NOTE: parser robusto
@@ -322,89 +321,22 @@ function renderDelays() {
   }
 
 function renderChecklist(){
-  const wrap = $('#cards'); if (!wrap) return;
+  const wrap = $('#cards'); 
+  if (!wrap) return;
+
   const data = store.load();
   wrap.innerHTML = '';
 
+  // hash facoltativo per aprire direttamente un CH (es. checklist.html#CH%2011)
   const hash = decodeURIComponent(location.hash.slice(1) || '');
+  afterChecklistRender();
+
+  // group per CH
   const byCh = new Map();
   for (const r of data){
-    const key = r.channel || 'CH?';
+    const key = r.channel || 'CH ?';
     (byCh.get(key) || byCh.set(key, []).get(key)).push(r);
   }
-
-  for (const [ch, arr] of Array.from(byCh.entries()).sort()){
-    if (hash && ch !== hash) continue;
-    const last = arr.sort((a,b)=> new Date(a.date)-new Date(b.date)).slice(-1)[0];
-    const p = last?.points || {s1:0,s2:0,s3:0,s4:0,s5:0};
-
-    const isDelayed = daysSince(last?.date||0) > 7; // soglia 7 gg
-
-    const card = document.createElement('article');
-    card.className = 'card-line' + (isDelayed ? ' card-delay' : '');
-    card.id = `CH-${CSS.escape(ch)}`;
-    card.innerHTML = `
-      <div class="top">
-        <div>
-          <div style="font-weight:800">CH ${String(ch).replace(/^CH\\s*/,'')}</div>
-          <div class="muted" style="font-size:.9rem">${last?.area||''} • Ultimo: ${last?.date||'-'}</div>
-        </div>
-        <div class="pills">
-          <span class="pill s1">S1 ${fmtPercent(p.s1)}</span>
-          <span class="pill s2">S2 ${fmtPercent(p.s2)}</span>
-          <span class="pill s3">S3 ${fmtPercent(p.s3)}</span>
-          <span class="pill s4">S4 ${fmtPercent(p.s4)}</span>
-          <span class="pill s5">S5 ${fmtPercent(p.s5)}</span>
-          <span class="pill" style="background:#eef5ff;color:#0b3b8f">Voto medio ${fmtPercent(mean(p))}</span>
-        </div>
-        <div class="actions-row">
-          <button class="btn outline btn-print">Stampa PDF</button>
-          <button class="btn ghost btn-compress">Comprimi</button>
-          ${isDelayed ? `<button class="btn outline warn btn-ritardo">Note (ritardo)</button>` : ``}
-        </div>
-      </div>
-      <div class="bars">
-        <div class="bar"><i class="l1" style="width:${p.s1}%"></i></div>
-        <div class="bar"><i class="l2" style="width:${p.s2}%"></i></div>
-        <div class="bar"><i class="l3" style="width:${p.s3}%"></i></div>
-        <div class="bar"><i class="l4" style="width:${p.s4}%"></i></div>
-        <div class="bar"><i class="l5" style="width:${p.s5}%"></i></div>
-      </div>`;
-
-    wrap.appendChild(card);
-
-    // stampa singola
-    card.querySelector('.btn-print').onclick = () => printCard(card);
-
-    // comprimi/espandi card singola
-    const btnComp = card.querySelector('.btn-compress');
-    btnComp.onclick = () => {
-      card.classList.toggle('compact');
-      btnComp.textContent = card.classList.contains('compact') ? 'Espandi' : 'Comprimi';
-    };
-
-    // link alle note evidenziate (solo se in ritardo)
-    const linkBtn = card.querySelector('.btn-ritardo');
-    if (linkBtn) {
-      linkBtn.onclick = () => {
-        const url = `notes.html?hlCh=${encodeURIComponent(ch)}&hlDate=${encodeURIComponent(last.date)}`;
-        location.href = url;
-      };
-    }
-  }
-
-  // toggle TUTTO
-  const toggleAll = $('#btn-toggle-all');
-  if (toggleAll){
-    let compact = false;
-    toggleAll.onclick = () => {
-      compact = !compact;
-      $$('.card-line').forEach(c => c.classList.toggle('compact', compact));
-    };
-  }
-
-  $('#btn-print-all')?.addEventListener('click', () => window.print());
-}
 
   // --- fallback: inietta il bottone "Comprimi/Espandi" accanto a "Stampa PDF"
 //     anche se la card è stata creata con il vecchio markup
