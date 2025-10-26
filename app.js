@@ -25,13 +25,16 @@
       points: obj.points || obj.kpi || {},
       notes: Array.isArray(obj.notes) ? obj.notes.slice() : []
     };
-    r.points = {
-      s1: Number(r.points.s1 || r.points.S1 || r.points['1S'] || 0),
-      s2: Number(r.points.s2 || r.points.S2 || r.points['2S'] || 0),
-      s3: Number(r.points.s3 || r.points.S3 || r.points['3S'] || 0),
-      s4: Number(r.points.s4 || r.points.S4 || r.points['4S'] || 0),
-      s5: Number(r.points.s5 || r.points.S5 || r.points['5S'] || 0)
-    };
+    
+    const isLocked = () => sessionStorage.getItem(LOCK_KEY) === '1';
+    const setLocked = (v) => { sessionStorage.setItem(LOCK_KEY, v?'1':'0'); paintLock(); applyLock(); };
+    const paintLock = () => { const b=$('#btn-lock'); if (b) { b.textContent = isLocked() ? '🔓' : '🔒'; b.title=isLocked()?'Sblocca':'Blocca'; } };
+    const applyLock = () => {
+    const input = $('#import-input'), btn = $('#btn-import');
+    if (!input || !btn) return;
+    const L = isLocked();
+    input.disabled = L; btn.disabled = L; btn.classList.toggle('disabled', L);
+  };
 
   // --- Notes flattener accepts arrays OR objects keyed by S1/1S/2S...
   function flattenNotes(anyNotes, fallbackDate){
