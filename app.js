@@ -268,6 +268,7 @@ function renderChecklist(){
 
   // hash facoltativo per aprire direttamente un CH (es. checklist.html#CH%2011)
   const hash = decodeURIComponent(location.hash.slice(1) || '');
+  afterChecklistRender();
 
   // group per CH
   const byCh = new Map();
