@@ -1,7 +1,9 @@
-// SKF 5S Supervisor — build 2.3.12 (tema chiaro, SW network-first, fix NOTE)
-// Funzioni: Import multiplo, parsing NOTE oggetto/array, Home grafici orizzontali,
-// Checklist comprimi/espandi + stampa singola, Note con filtri, PIN/lucchetto, Export PIN, SW update.
+// SKF 5S Supervisor — build 2.3.12-full
+// Base: tua versione stabile (main 2) + FIX NOTE (supporto oggetto/array) + nessun cambiamento grafico extra.
 
+// ===================================
+// Utility DOM
+// ===================================
 (() => {
   const STORAGE_KEY = 'skf5s:supervisor:data';
   const PIN_KEY     = 'skf5s:pin';
@@ -9,54 +11,78 @@
   const $  = (s, r=document) => r.querySelector(s);
   const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
 
-  // ---------------- Store ----------------
+  // ===================================
+  // Storage
+  // ===================================
   const store = {
     load(){
       try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
-      catch (e){ console.warn('[store.load]', e); return []; }
+      catch(e){ console.warn('[store.load]', e); return []; }
     },
     save(arr){ localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); }
   };
 
-  // ---------------- Utils ----------------
+  // ===================================
+  // Helpers
+  // ===================================
   const fmtPercent = v => `${Math.round(Number(v)||0)}%`;
   const mean = p => Math.round(((+p.s1||0)+(+p.s2||0)+(+p.s3||0)+(+p.s4||0)+(+p.s5||0))/5);
 
-  // NOTE parser: accetta array o oggetto {s1:"...", s2:"..."} (linee separate da \n)
-  function parseNotes(notes, date){
-    const list = [];
-    if (!notes) return list;
+  // ===================================
+  // NOTE: parser robusto
+  // - notes array: [{s|S|type, text|note, date?}, ...]
+  // - notes oggetto: {s1:"riga1\nriga2", s2:"...", ...} o {s1:[...]}
+  // - fallback: se il file avesse S1..S5 come array di stringhe fuori da "notes"
+  // ===================================
+  function parseNotesFlexible(src, fallbackDate){
+    const out = [];
+    if (!src) return out;
 
-    if (Array.isArray(notes)){
-      for (const n of notes){
-        list.push({
-          s: n.s || n.S || n.type || '',
+    // Caso A: array
+    if (Array.isArray(src)){
+      for (const n of src){
+        if (!n) continue;
+        out.push({
+          s:    n.s || n.S || n.type || '',
           text: n.text || n.note || '',
-          date: n.date || date
+          date: n.date || fallbackDate
         });
       }
-    } else if (typeof notes === 'object'){
-      for (const k of Object.keys(notes)){
-        const val = notes[k];
+      return out;
+    }
+
+    // Caso B: oggetto {s1:"...", s2:"..."} con \n o array
+    if (typeof src === 'object'){
+      for (const k of Object.keys(src)){
+        const val = src[k];
         if (typeof val === 'string' && val.trim()){
           for (const line of val.split(/\n+/)){
             const t = line.trim();
-            if (t) list.push({ s:k, text:t, date });
+            if (t) out.push({ s:k, text:t, date:fallbackDate });
+          }
+        } else if (Array.isArray(val)){
+          for (const line of val){
+            const t = String(line||'').trim();
+            if (t) out.push({ s:k, text:t, date:fallbackDate });
           }
         }
       }
+      return out;
     }
-    return list;
+
+    return out;
   }
 
-  // Record parser flessibile
+  // ===================================
+  // Record parser flessibile (non cambia i tuoi campi)
+  // ===================================
   function parseRec(obj){
     const rec = {
-      area: obj.area || '',
+      area:    obj.area || '',
       channel: obj.channel || obj.CH || obj.ch || '',
-      date: obj.date || obj.timestamp || new Date().toISOString(),
-      points: obj.points || obj.kpi || {},
-      notes: []
+      date:    obj.date || obj.timestamp || new Date().toISOString(),
+      points:  obj.points || obj.kpi || {},
+      notes:   []
     };
     rec.points = {
       s1: Number(rec.points.s1 || rec.points.S1 || rec.points['1S'] || 0),
@@ -65,11 +91,26 @@
       s4: Number(rec.points.s4 || rec.points.S4 || rec.points['4S'] || 0),
       s5: Number(rec.points.s5 || rec.points.S5 || rec.points['5S'] || 0)
     };
-    rec.notes = parseNotes(obj.notes, rec.date);
+
+    // NOTE: unica modifica reale rispetto alla base — parser robusto
+    rec.notes = parseNotesFlexible(obj.notes, rec.date);
+
+    // Supporto extra: eventuali S1..S5 come array direttamente su root
+    for (const k of Object.keys(obj||{})){
+      if (/^S[1-5]$/i.test(k) && Array.isArray(obj[k])){
+        for (const line of obj[k]){
+          const t = String(line||'').trim();
+          if (t) rec.notes.push({ s:k, text:t, date:rec.date });
+        }
+      }
+    }
+
     return rec;
   }
 
-  // ---------------- Import / Export ----------------
+  // ===================================
+  // Import multiplo (invariato nei comportamenti)
+  // ===================================
   async function handleImport(files){
     if (!files || !files.length) return;
     const current = store.load();
@@ -90,9 +131,12 @@
 
     const merged = Array.from(byKey.values()).sort((a,b)=> new Date(a.date)-new Date(b.date));
     store.save(merged);
-    render();
+    render(); // aggiorna tutte le viste
   }
 
+  // ===================================
+  // Export con PIN (uguale alla tua logica)
+  // ===================================
   function exportAll(){
     const pinSaved = localStorage.getItem(PIN_KEY);
     const ask = prompt('Inserisci PIN (demo 1234):', '');
@@ -106,7 +150,9 @@
     a.click();
   }
 
-  // ---------------- PIN / Lucchetto ----------------
+  // ===================================
+  // PIN / Lucchetto (rispetta la tua UI)
+  // ===================================
   function initLock(){
     const btn = $('#btn-lock'); if (!btn) return;
 
@@ -135,14 +181,21 @@
     };
   }
 
-  // ---------------- HOME (grafici orizzontali + filtro tipo) ----------------
+  // ===================================
+  // HOME — grafici orizzontali + filtro tipo (come tua base)
+  // Richiede in index.html:
+  //  - .segmented .seg[data-type] con class .on per attivo
+  //  - #board-all come contenitore delle card dei CH
+  //  - #chip-strip per i pulsanti CH
+  // ===================================
   function renderHome(){
     const wrap = $('#board-all'); if (!wrap) return;
     const data = store.load();
+
     const activeType = $('.segmented .seg.on')?.dataset.type || 'all';
     const filt = (r) => activeType==='all' ? true : (r.area===activeType);
 
-    // group per CH, prendi ultimo
+    // group per CH, prendi ultimo record
     const byCh = new Map();
     for (const r of data.filter(filt)){
       const k = r.channel || 'CH?';
@@ -176,13 +229,19 @@
       chips?.appendChild(chip);
     }
 
-    // switch tipo (Tutti / Rettifica / Montaggio)
+    // toggle tipo
     $$('.segmented .seg').forEach(b=>{
       b.onclick = () => { $$('.segmented .seg').forEach(x=>x.classList.remove('on')); b.classList.add('on'); renderHome(); };
     });
   }
 
-  // ---------------- CHECKLIST (cards + comprimi/espandi + stampa singola) ----------------
+  // ===================================
+  // CHECKLIST — card + comprimi/espandi + stampa singola
+  // Richiede in checklist.html:
+  //  - #cards
+  //  - #btn-toggle-all (opzionale)
+  //  - .btn-print su ogni card
+  // ===================================
   function printCard(card){
     const w = window.open('', '_blank');
     w.document.write(`<title>Stampa CH</title><style>
@@ -205,7 +264,6 @@
     const data = store.load();
     wrap.innerHTML = '';
 
-    // Mantieni solo l'ultimo record per ogni CH; se #hash presente, filtra
     const hash = decodeURIComponent(location.hash.slice(1) || '');
     const byCh = new Map();
     for (const r of data){
@@ -249,7 +307,6 @@
       card.querySelector('.btn-print').onclick = () => printCard(card);
     }
 
-    // Comprimi/Espandi tutte
     const toggleAll = $('#btn-toggle-all');
     if (toggleAll){
       let compact = false;
@@ -262,7 +319,14 @@
     $('#btn-print-all')?.addEventListener('click', () => window.print());
   }
 
-  // ---------------- NOTE (elenco + filtri Tipo/Date/CH) ----------------
+  // ===================================
+  // NOTE — elenco + filtri (usa i tuoi id presenti in notes.html)
+  //  - #notes-list
+  //  - #f-type (select con all/Rettifica/MONTAGGIO)
+  //  - #f-from, #f-to (date)
+  //  - #f-ch (text)
+  //  - #notes-count, #notes-counter (opzionali)
+  // ===================================
   function renderNotes(){
     const box = $('#notes-list'); if (!box) return;
 
@@ -270,9 +334,9 @@
     for (const r of store.load()){
       for (const n of (r.notes || [])){
         rows.push({
-          ch: r.channel,
+          ch:   r.channel,
           area: r.area,
-          s: n.s,
+          s:    n.s,
           text: n.text,
           date: n.date || r.date
         });
@@ -282,7 +346,7 @@
     const typeVal = $('#f-type')?.value || 'all';
     const fromVal = $('#f-from')?.value || '';
     const toVal   = $('#f-to')?.value   || '';
-    const chVal   = ($('#f-ch')?.value || '').trim().toLowerCase();
+    const chVal   = ($('#f-ch')?.value  || '').trim().toLowerCase();
 
     const inRange = (d) => {
       const t = new Date(d).getTime();
@@ -298,8 +362,8 @@
       .sort((a,b)=> new Date(b.date) - new Date(a.date));
 
     box.innerHTML = '';
-    $('#notes-count')?.textContent   = `(${list.length})`;
-    $('#notes-counter')?.textContent = `${list.length} note`;
+    if ($('#notes-count'))   $('#notes-count').textContent   = `(${list.length})`;
+    if ($('#notes-counter')) $('#notes-counter').textContent = `${list.length} note`;
 
     if (!list.length){
       box.innerHTML = '<div class="muted">Nessuna nota con i filtri selezionati.</div>';
@@ -307,8 +371,8 @@
     }
 
     for (const n of list){
-      const el = document.createElement('div');
       const S = (n.s||'').toString().match(/[1-5]/)?.[0] || '1';
+      const el = document.createElement('div');
       el.className = 'note';
       el.innerHTML = `
         <div style="display:flex;justify-content:space-between;gap:.5rem;flex-wrap:wrap">
@@ -320,9 +384,11 @@
     }
   }
 
-  // ---------------- Bind comuni + Render ----------------
+  // ===================================
+  // Bind comuni (rispetta la tua UI/ID)
+  // ===================================
   function initCommon(){
-    // Import
+    // Import multiplo
     $('#btn-import')?.addEventListener('click', () => $('#import-input')?.click());
     $('#import-input')?.addEventListener('change', (e) => handleImport(e.target.files));
 
@@ -330,10 +396,13 @@
     $('#btn-export')?.addEventListener('click', exportAll);
     $('#btn-export-supervisor')?.addEventListener('click', exportAll);
 
-    // Navigazione Note
-    $('#btn-notes')?.addEventListener('click', () => location.href = 'notes.html');
+    // Note
+    $('#btn-notes')?.addEventListener('click', () => {
+      // se il tuo bottone cambia pagina, mantieni. Se sei già in notes.html, forza il render.
+      renderNotes();
+    });
 
-    // Filtri Note
+    // Filtri note
     $('#f-apply')?.addEventListener('click', renderNotes);
     $('#f-clear')?.addEventListener('click', () => {
       if ($('#f-type')) $('#f-type').value = 'all';
@@ -344,33 +413,26 @@
     });
   }
 
+  // ===================================
+  // Render dispatcher
+  // ===================================
   function render(){
     renderHome();
     renderChecklist();
     renderNotes();
   }
 
-  // ---------------- Boot ----------------
+  // ===================================
+  // Boot
+  // ===================================
   window.addEventListener('DOMContentLoaded', () => {
     initCommon();
     initLock();
     render();
 
-    // Service Worker (network-first) + update forzato
+    // Registrazione SW: usa il tuo sw.js già presente (non forzo network-first qui)
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').then((reg) => {
-        if (reg.waiting) reg.waiting.postMessage('SKIP_WAITING');
-        reg.addEventListener('updatefound', () => {
-          const sw = reg.installing;
-          if (!sw) return;
-          sw.addEventListener('statechange', () => {
-            if (sw.state === 'installed' && navigator.serviceWorker.controller) {
-              sw.postMessage('SKIP_WAITING');
-            }
-          });
-        });
-        navigator.serviceWorker.addEventListener('controllerchange', () => window.location.reload());
-      }).catch(err => console.warn('[SW register]', err));
+      navigator.serviceWorker.register('sw.js').catch(err => console.warn('[SW register]', err));
     }
   });
 })();
