@@ -60,6 +60,7 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif
 .card-line.compact .pills{display:none}
 .card-line.compact .bars { display: none; }
 .card-line .btns { display:flex; gap:.5rem; align-items:center; }
+.card-line .btn-toggle { margin-left: .5rem; }
 
 .top{display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
 .kpi .badge{background:#eef5ff;padding:.3rem .5rem;border-radius:999px}
