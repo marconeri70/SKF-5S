@@ -1,5 +1,5 @@
-// sw.js  v2.3.9-hotfix
-const CACHE = 'skf5s-v239-hotfix';
+// sw.js  • v2.3.9-hotfix-2  (network-first su file “vivi”)
+const CACHE = 'skf5s-v239-hotfix-2';
 const ASSETS = [
   './',
   './index.html',
@@ -12,13 +12,11 @@ const ASSETS = [
   './assets/5S.png',
 ];
 
-// install
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
   self.skipWaiting();
 });
 
-// activate
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
@@ -28,20 +26,21 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 
-// fetch
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
-  // per i file "vivi", vai SEMPRE in rete (così prendi l'ultima app.js / style.css / html)
-  if (url.pathname.endsWith('/app.js') ||
-      url.pathname.endsWith('/style.css') ||
-      url.pathname.endsWith('/index.html') ||
-      url.pathname.endsWith('/checklist.html') ||
-      url.pathname.endsWith('/notes.html')) {
+  // Rete prima per i file critici (così prendi sempre l’ultima app.js / html / css)
+  if (
+    url.pathname.endsWith('/app.js') ||
+    url.pathname.endsWith('/index.html') ||
+    url.pathname.endsWith('/checklist.html') ||
+    url.pathname.endsWith('/notes.html') ||
+    url.pathname.endsWith('/style.css')
+  ) {
     e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
     return;
   }
 
-  // cache-first per tutto il resto
+  // Cache-first per tutto il resto
   e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
 });
