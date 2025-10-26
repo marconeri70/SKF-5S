@@ -78,18 +78,9 @@
 
 <footer class="safe-bottom">
   <button id="btn-export-supervisor" class="btn huge outline">Esporta dati per Supervisore (PIN)</button>
-  <div class="version">v2.3.9 • PWA ready</div>
+  <div class="version">v2.3.8 • PWA ready</div>
 </footer>
 
- <script>
-/* Kill switch: aggiungi ?nosw=1 all'URL per disattivare il service worker */
-if (location.search.includes('nosw=1') && 'serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations()
-    .then(rs => Promise.all(rs.map(r => r.unregister())))
-    .then(() => console.log('[SW] unregistered via ?nosw=1'));
-}
-</script>
- 
-<script src="app.js?v=2.3.9b" defer></script>
+<script src="app.js"></script>
 </body>
 </html>

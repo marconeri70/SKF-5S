@@ -31,16 +31,7 @@
   <section id="cards" class="stack"></section>
 </main>
 
-<script>
-/* Kill switch: aggiungi ?nosw=1 all'URL per disattivare il service worker */
-if (location.search.includes('nosw=1') && 'serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations()
-    .then(rs => Promise.all(rs.map(r => r.unregister())))
-    .then(() => console.log('[SW] unregistered via ?nosw=1'));
-}
-</script>
-
-<footer class="version">v2.3.9b</footer>
-<script src="app.js?v=2.3.9b" defer></script>
+<footer class="version">v2.3.8</footer>
+<script src="app.js"></script>
 </body>
 </html>
