@@ -305,3 +305,29 @@
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
   });
 })();
+
+// Registrazione SW + forzo update immediato
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').then((reg) => {
+      // Se c'è un SW in attesa, chiedi di attivarsi subito
+      if (reg.waiting) {
+        reg.waiting.postMessage('SKIP_WAITING');
+      }
+      // Se arriva un nuovo SW, appena diventa "waiting", attivalo
+      reg.addEventListener('updatefound', () => {
+        const sw = reg.installing;
+        if (!sw) return;
+        sw.addEventListener('statechange', () => {
+          if (sw.state === 'installed' && navigator.serviceWorker.controller) {
+            sw.postMessage('SKIP_WAITING');
+          }
+        });
+      });
+      // Ricarica pagina quando cambia controller (nuovo SW attivo)
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        window.location.reload();
+      });
+    });
+  });
+}
