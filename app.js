@@ -589,6 +589,7 @@ $('#btn-notes')?.addEventListener('click', (e) => {
     initCommon();
     initLock();
     render();
+    renderDelays();
 
     // Registrazione SW: usa il tuo sw.js già presente (non forzo network-first qui)
     if ('serviceWorker' in navigator) {
