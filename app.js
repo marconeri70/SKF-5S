@@ -27,6 +27,7 @@
   // ===================================
   const fmtPercent = v => `${Math.round(Number(v)||0)}%`;
   const mean = p => Math.round(((+p.s1||0)+(+p.s2||0)+(+p.s3||0)+(+p.s4||0)+(+p.s5||0))/5);
+  const daysSince = iso => Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
 
   // ===================================
   // NOTE: parser robusto
