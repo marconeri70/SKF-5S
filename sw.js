@@ -1,5 +1,5 @@
 // v2.3.10 — SW leggero: preferisci rete, fallback cache
-const CACHE='skf5s-v2.3.10';
+const CACHE='skf5s-v2.10';
 const ASSETS=['./','./index.html','./checklist.html','./notes.html','./style.css','./app.js','./manifest.json','./assets/skf-192.png','./assets/skf-512.png','./assets/skf-logo.png','./assets/5S.png'];
 
 self.addEventListener('install',e=>{
