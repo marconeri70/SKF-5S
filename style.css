@@ -118,3 +118,33 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif
 .note.grouped .sitems{ margin:0; padding-left:1.1rem; }
 .note.grouped .sitems li{ line-height:1.35; margin:.15rem 0; }
 }
+
+/* === CH in ritardo === */
+#delay-section {
+  border: 2px solid #ff5a5a;
+  background: #fff4f4;
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  margin-top: 1rem;
+}
+
+#delay-section h3 {
+  color: #d62828;
+  margin-bottom: .5rem;
+}
+
+.delay-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.delay-list li {
+  padding: .4rem 0;
+  font-size: .95rem;
+  border-bottom: 1px solid #ffd6d6;
+}
+
+.delay-list li strong {
+  color: #a40000;
+}
