@@ -23,9 +23,9 @@
       <option value="Rettifica">Rettifica</option>
       <option value="MONTAGGIO">Montaggio</option>
     </select>
-    <input id="f-from" type="date" class="chip" aria-label="Da">
-    <input id="f-to" type="date" class="chip" aria-label="A">
-    <input id="f-ch" type="text" placeholder="Es. CH 24" class="chip">
+    <input id="f-from" type="date" class="chip">
+    <input id="f-to" type="date" class="chip">
+    <input id="f-ch" type="text" placeholder="Es. CH 24">
     <button id="f-apply" class="btn primary">Filtra</button>
     <button id="f-clear" class="btn">Pulisci</button>
   </nav>
@@ -35,6 +35,7 @@
   <section class="card">
     <h3>Note per data e S <small id="notes-count"></small></h3>
     <div id="notes-list" class="notes"></div>
+    <div class="muted" id="notes-counter" style="margin-top:.5rem"></div>
   </section>
 </main>
 
