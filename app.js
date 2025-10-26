@@ -33,30 +33,26 @@
       s5: Number(r.points.s5 || r.points.S5 || r.points['5S'] || 0)
     };
 
-    // Se non ci sono notes standard, prova a costruirle da chiavi S1..S5 (array di stringhe/oggetti)
-    if (!r.notes.length){
-      for (const k of Object.keys(obj)){
-        const m = /^S([1-5])$/i.exec(k);
-        if (m && Array.isArray(obj[k])){
-          const label = 'S'+m[1];
-          for (const it of obj[k]){
-            if (typeof it === 'string'){ r.notes.push({ s: label, text: it, date: r.date }); }
-            else if (it && (it.text || it.note || it.desc)){
-              r.notes.push({ s: label, text: it.text || it.note || it.desc, date: it.date || r.date });
-            }
-          }
+  // --- Notes flattener accepts arrays OR objects keyed by S1/1S/2S...
+  function flattenNotes(anyNotes, fallbackDate){
+    const out = [];
+    if (!anyNotes) return out;
+    if (Array.isArray(anyNotes)){
+      for (const n of anyNotes){
+        out.push({ s: String(n.s||n.S||n.type||''), text: n.text||n.note||'', date: n.date||fallbackDate||'' });
+      }
+    } else if (typeof anyNotes === 'object'){
+      const keys = Object.keys(anyNotes);
+      for (const k of keys){
+        const arr = Array.isArray(anyNotes[k]) ? anyNotes[k] : [anyNotes[k]];
+        const s = (k||'').toString().toUpperCase().replace('S','').replace(' ','');
+        const sLabel = (s && s[0]) ? (s[0]+'S') : '';
+        for (const item of arr){
+          out.push({ s: sLabel, text: (item?.text||item?.note||item||'').toString(), date: (item?.date||fallbackDate||'') });
         }
       }
-    } else {
-      // normalizza notes standard
-      r.notes = r.notes.map(n => ({
-        s: (n.s || n.S || n.type || '').toString(),
-        text: n.text || n.note || '',
-        date: n.date || r.date
-      }));
     }
-
-    return r;
+    return out;
   }
 
   // Import multi-file
