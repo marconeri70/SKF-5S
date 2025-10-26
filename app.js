@@ -54,6 +54,7 @@
     }
     return out;
   }
+    
   function normalizeOne(x){
     const points = x.points || {s1:x.s1||x.S1||0,s2:x.s2||x.S2||0,s3:x.s3||x.S3||0,s4:x.s4||x.S4||0,s5:x.s5||x.S5||0};
     const norm = {
@@ -70,23 +71,28 @@
   }
     
   // Import multi-file
-  async function handleImport(files){
-    if (!files || !files.length) return;
+  async function handleImportFileList(fileList){
+    if (isLocked()) { alert('Bloccato: sblocca per importare.'); return; }
     const current = store.load();
-    const byKey = new Map(current.map(r => [r.area + '|' + r.channel + '|' + r.date, r]));
-
-    for (const f of files){
+    const byKey = new Map(current.map(r => [r.area+'|'+r.channel+'|'+r.date, r]));
+    for (const f of Array.from(fileList||[])) {
       try{
         const text = await f.text();
         const obj = JSON.parse(text);
-        const rec = parseRec(obj);
-        if (!rec.channel) throw new Error('CH mancante');
-        byKey.set(rec.area + '|' + rec.channel + '|' + rec.date, rec);
-      }catch(e){ alert('File non valido: ' + f.name); }
+        const arr = Array.isArray(obj) ? obj : (obj.records || obj.data || obj.export || [obj]);
+        for (const raw of arr){
+          const rec = normalizeOne(raw);
+          if (rec){
+            const k = rec.area+'|'+rec.channel+'|'+rec.date;
+            byKey.set(k, rec);
+          }
+        }
+      }catch(e){ alert('File non valido: '+f.name); }
     }
-    const merged = Array.from(byKey.values()).sort((a,b)=> new Date(a.date)-new Date(b.date));
+    const merged = Array.from(byKey.values()).sort((a,b)=>(a.channel||'').localeCompare(b.channel||''));
     store.save(merged);
-    render();
+    const input = $('#import-input'); if (input) input.value = '';
+    renderAll();
   }
 
   // Export con PIN
