@@ -234,6 +234,60 @@
       b.onclick = () => { $$('.segmented .seg').forEach(x=>x.classList.remove('on')); b.classList.add('on'); renderHome(); };
     });
   }
+  
+// ===================================
+// HOME — controllo CH in ritardo
+// ===================================
+function renderDelays() {
+  const delaySec = document.getElementById('delay-section');
+  const delayList = document.getElementById('delay-list');
+  if (!delaySec || !delayList) return;
+
+  const data = store.load();
+  if (!data.length) {
+    delaySec.hidden = true;
+    return;
+  }
+
+  const today = new Date();
+  const maxDays = 7; // soglia di ritardo in giorni
+  const map = new Map();
+
+  // raggruppa per CH -> data più recente
+  for (const r of data) {
+    const ch = r.channel || 'CH?';
+    const d = new Date(r.date);
+    if (!map.has(ch) || d > map.get(ch)) {
+      map.set(ch, d);
+    }
+  }
+
+  const delayed = [];
+  for (const [ch, d] of map.entries()) {
+    const diff = (today - d) / 86400000; // giorni di differenza
+    if (diff > maxDays) {
+      delayed.push({ ch, days: Math.floor(diff), date: d.toISOString().split('T')[0] });
+    }
+  }
+
+  // Se nessuno è in ritardo, nascondi la sezione
+  if (!delayed.length) {
+    delaySec.hidden = true;
+    return;
+  }
+
+  // Altrimenti mostra elenco
+  delaySec.hidden = false;
+  delayList.innerHTML = delayed
+    .sort((a,b)=> b.days - a.days)
+    .map(d => `
+      <li>
+        <strong>${d.ch}</strong> — <span class="muted">${d.days} giorni di ritardo</span> 
+        <span class="small"> (ultimo aggiornamento: ${d.date})</span>
+      </li>
+    `)
+    .join('');
+}
 
   // ===================================
   // CHECKLIST — card + comprimi/espandi + stampa singola
