@@ -10,31 +10,35 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body data-page="notes">
-  <header class="appbar">
-    <div class="brand">
-      <a href="index.html" class="btn back">← Supervisore</a>
-      <img src="assets/skf-logo.png" alt="SKF" class="brand-logo">
-      <span class="brand-title">SKF 5S</span>
-      <span class="brand-badge">— Note</span>
-    </div>
-    <nav class="actions">
-      <div class="filters">
-        <label>Da <input type="date" id="f-from" class="ctrl"></label>
-        <label>A <input type="date" id="f-to" class="ctrl"></label>
-        <label>CH <input type="text" id="f-ch" class="ctrl" placeholder="Es. CH 24"></label>
-        <button id="f-apply" class="btn">Filtra</button>
-      </div>
-    </nav>
-  </header>
+<header class="appbar">
+  <div class="brand">
+    <a href="index.html" class="btn back">Supervisor</a>
+    <span class="brand-title">SKF 5S</span>
+    <span class="brand-badge">— Note</span>
+  </div>
 
-  <main class="container">
-    <section class="card">
-      <h2>Note per data e S <small id="note-count"></small></h2>
-      <div id="notes-list" class="stack"></div>
-    </section>
-  </main>
+  <nav class="filters">
+    <select id="f-type" class="chip">
+      <option value="all">Tutti</option>
+      <option value="Rettifica">Rettifica</option>
+      <option value="MONTAGGIO">Montaggio</option>
+    </select>
+    <input id="f-from" type="date" class="chip" aria-label="Da">
+    <input id="f-to" type="date" class="chip" aria-label="A">
+    <input id="f-ch" type="text" placeholder="Es. CH 24" class="chip">
+    <button id="f-apply" class="btn primary">Filtra</button>
+    <button id="f-clear" class="btn">Pulisci</button>
+  </nav>
+</header>
 
-  <footer class="version">v2.3.3</footer>
-  <script src="app.js"></script>
+<main class="container">
+  <section class="card">
+    <h3>Note per data e S <small id="notes-count"></small></h3>
+    <div id="notes-list" class="notes"></div>
+  </section>
+</main>
+
+<footer class="version">v2.3.8</footer>
+<script src="app.js"></script>
 </body>
 </html>
