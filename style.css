@@ -165,5 +165,5 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif
 .note-ul li { margin:4px 0; }
 
 /* evidenziazione linkata */
-.note-hl { outline:3px solid #ff8a8a; background:#fff8f8; transition:background .4s ease; }
+.note-hl { outline:3px solid #ff8a8a; background:#fff8f8; }
 }
