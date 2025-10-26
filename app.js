@@ -386,62 +386,103 @@ function afterChecklistRender(){
   //  - #f-ch (text)
   //  - #notes-count, #notes-counter (opzionali)
   // ===================================
-  function renderNotes(){
-    const box = $('#notes-list'); if (!box) return;
+  // NOTE — elenco raggruppato: una card per CH (area) e data
+function renderNotes(){
+  const box = document.querySelector('#notes-list');
+  if (!box) return;
 
-    const rows = [];
-    for (const r of store.load()){
-      for (const n of (r.notes || [])){
-        rows.push({
-          ch:   r.channel,
-          area: r.area,
-          s:    n.s,
-          text: n.text,
-          date: n.date || r.date
-        });
+  // ---- leggi filtri (compatibile con la tua UI attuale)
+  const typeVal = (document.querySelector('#f-type')?.value || 'all');           // all | Rettifica | MONTAGGIO
+  const fromVal = (document.querySelector('#f-from')?.value || '');              // yyyy-mm-dd
+  const toVal   = (document.querySelector('#f-to')?.value   || '');              // yyyy-mm-dd
+  const chVal   = (document.querySelector('#f-ch')?.value   || '').trim().toLowerCase();
+
+  const inRange = (d) => {
+    const t = new Date(d).getTime();
+    if (fromVal && t < new Date(fromVal).getTime()) return false;
+    if (toVal   && t > new Date(toVal).getTime() + 86400000 - 1) return false;
+    return true;
+  };
+  const sKey = (s) => {
+    // normalizza "s", "S", "1S", "S1", ecc. -> "S1".."S5"
+    const m = String(s||'').match(/[1-5]/);
+    return m ? ('S' + m[0]) : 'S1';
+  };
+
+  // ---- costruisci gruppi: (area|CH|data) -> { area, ch, date, byS: { S1:[...], ... } }
+  const groups = new Map();
+  for (const r of store.load()){
+    if (typeVal !== 'all' && r.area !== typeVal) continue;
+    if (chVal && String(r.channel).toLowerCase().indexOf(chVal) === -1) continue;
+
+    const baseDate = r.date || new Date().toISOString();
+    for (const n of (r.notes || [])){
+      const noteDate = n.date || baseDate;
+      if (!inRange(noteDate)) continue;
+
+      const key = `${r.area}|${r.channel}|${noteDate}`;
+      if (!groups.has(key)){
+        groups.set(key, { area: r.area, ch: r.channel, date: noteDate, byS: { S1:[], S2:[], S3:[], S4:[], S5:[] } });
       }
-    }
-
-    const typeVal = $('#f-type')?.value || 'all';
-    const fromVal = $('#f-from')?.value || '';
-    const toVal   = $('#f-to')?.value   || '';
-    const chVal   = ($('#f-ch')?.value  || '').trim().toLowerCase();
-
-    const inRange = (d) => {
-      const t = new Date(d).getTime();
-      if (fromVal && t < new Date(fromVal).getTime()) return false;
-      if (toVal   && t > new Date(toVal).getTime()+86400000-1) return false;
-      return true;
-    };
-
-    const list = rows
-      .filter(r => (typeVal==='all' ? true : r.area===typeVal))
-      .filter(r => (!chVal ? true : ((''+r.ch).toLowerCase().includes(chVal))))
-      .filter(r => inRange(r.date))
-      .sort((a,b)=> new Date(b.date) - new Date(a.date));
-
-    box.innerHTML = '';
-    if ($('#notes-count'))   $('#notes-count').textContent   = `(${list.length})`;
-    if ($('#notes-counter')) $('#notes-counter').textContent = `${list.length} note`;
-
-    if (!list.length){
-      box.innerHTML = '<div class="muted">Nessuna nota con i filtri selezionati.</div>';
-      return;
-    }
-
-    for (const n of list){
-      const S = (n.s||'').toString().match(/[1-5]/)?.[0] || '1';
-      const el = document.createElement('div');
-      el.className = 'note';
-      el.innerHTML = `
-        <div style="display:flex;justify-content:space-between;gap:.5rem;flex-wrap:wrap">
-          <div><strong>${n.ch}</strong> • <span class="pill s${S}">S${S}</span> <span class="chip">${n.area||''}</span></div>
-          <div class="muted">${n.date||''}</div>
-        </div>
-        <div style="margin-top:.45rem;white-space:pre-wrap">${n.text||''}</div>`;
-      box.appendChild(el);
+      const g = groups.get(key);
+      g.byS[sKey(n.s)].push(String(n.text||'').trim());
     }
   }
+
+  // ---- ordina gruppi (più recenti in alto)
+  const list = Array.from(groups.values()).sort((a,b)=> new Date(b.date) - new Date(a.date));
+
+  // ---- contatori
+  const totalNotes = list.reduce((acc,g)=> acc + Object.values(g.byS).reduce((s,arr)=> s+arr.length, 0), 0);
+  const cnt1 = document.querySelector('#notes-count');
+  const cnt2 = document.querySelector('#notes-counter');
+  if (cnt1) cnt1.textContent = `(${totalNotes})`;
+  if (cnt2) cnt2.textContent = `${totalNotes} note`;
+
+  // ---- render
+  box.innerHTML = '';
+  if (!list.length){
+    box.innerHTML = '<div class="muted">Nessuna nota con i filtri selezionati.</div>';
+    return;
+  }
+
+  for (const g of list){
+    const card = document.createElement('article');
+    card.className = 'note grouped';
+
+    // header card
+    card.innerHTML = `
+      <div class="note-head">
+        <div class="left">
+          <strong>${g.ch}</strong>
+          <span class="chip">${g.area||''}</span>
+        </div>
+        <div class="muted">${g.date}</div>
+      </div>
+    `;
+
+    // blocchi S1..S5 (solo quelli presenti)
+    const wrap = document.createElement('div');
+    wrap.className = 'swrap';
+    (['S1','S2','S3','S4','S5']).forEach((S,i)=>{
+      const arr = g.byS[S] || [];
+      if (!arr.length) return;
+      const blk = document.createElement('div');
+      blk.className = 'sblock';
+      blk.innerHTML = `
+        <div class="sblock-head">
+          <span class="pill s${i+1}">${S}</span>
+        </div>
+        <ul class="sitems">
+          ${arr.map(t => `<li>${t.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</li>`).join('')}
+        </ul>
+      `;
+      wrap.appendChild(blk);
+    });
+    card.appendChild(wrap);
+    box.appendChild(card);
+  }
+}
 
   // ===================================
   // Bind comuni (rispetta la tua UI/ID)
