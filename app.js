@@ -662,11 +662,7 @@ $('#btn-notes')?.addEventListener('click', (e) => {
 
     // Registrazione SW: usa il tuo sw.js già presente (non forzo network-first qui)
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').catch(err => console.warn('[SW register]', err));
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').then(r => r.update()).catch(console.warn);
+      navigator.serviceWorker.register('sw.js').then(r => r.update()).catch(console.warn);    
 }
 
-    }
-  });
-})();
+ 
