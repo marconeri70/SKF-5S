@@ -1,6 +1,6 @@
 // sw.js — v2.3.11 (network-first per documenti e script, cache sicura per asset)
 // Cambia SEMPRE CACHE_NAME quando pubblichi una nuova build.
-const CACHE_NAME = 'skf5s-cache-v2.3.11';
+const CACHE_NAME = 'skf5s-cache-v2.3.12';
 
 // Asset statici sicuri da mettere in cache (icone/immagine 5S)
 const STATIC_ASSETS = [
