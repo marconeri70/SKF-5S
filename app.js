@@ -397,10 +397,16 @@
     $('#btn-export-supervisor')?.addEventListener('click', exportAll);
 
     // Note
-    $('#btn-notes')?.addEventListener('click', () => {
-      // se il tuo bottone cambia pagina, mantieni. Se sei già in notes.html, forza il render.
-      renderNotes();
-    });
+// Note: se siamo in home -> vai su notes.html; se già su notes -> ricalcola elenco
+$('#btn-notes')?.addEventListener('click', (e) => {
+  const page = document.body.getAttribute('data-page'); // "home" | "notes" | "checklist" ...
+  if (page !== 'notes') {
+    e?.preventDefault?.();
+    location.href = 'notes.html';
+  } else {
+    renderNotes(); // già nella pagina note: aggiorna subito la lista
+  }
+});
 
     // Filtri note
     $('#f-apply')?.addEventListener('click', renderNotes);
