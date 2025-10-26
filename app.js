@@ -302,10 +302,6 @@
     initCommon();
     initLock();
     render();
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
-  });
-})();
-
 // Registrazione SW + forzo update immediato
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
