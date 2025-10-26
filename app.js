@@ -238,52 +238,59 @@
 // ===================================
 // HOME — controllo CH in ritardo
 // ===================================
+// ===================================
+// HOME — controllo CH in ritardo (con link alle note evidenziate)
+// ===================================
 function renderDelays() {
-  const delaySec = document.getElementById('delay-section');
+  const delaySec  = document.getElementById('delay-section');
   const delayList = document.getElementById('delay-list');
   if (!delaySec || !delayList) return;
 
   const data = store.load();
-  if (!data.length) {
-    delaySec.hidden = true;
-    return;
-  }
+  if (!data.length) { delaySec.hidden = true; return; }
 
-  const today = new Date();
-  const maxDays = 7; // soglia di ritardo in giorni
-  const map = new Map();
+  const today   = new Date();
+  const maxDays = 7; // soglia
 
-  // raggruppa per CH -> data più recente
+  // mappa CH -> ultimo record
+  const lastByCh = new Map();
   for (const r of data) {
     const ch = r.channel || 'CH?';
-    const d = new Date(r.date);
-    if (!map.has(ch) || d > map.get(ch)) {
-      map.set(ch, d);
+    const d  = new Date(r.date);
+    if (!lastByCh.has(ch) || d > new Date(lastByCh.get(ch).date)) {
+      lastByCh.set(ch, r);
     }
   }
 
   const delayed = [];
-  for (const [ch, d] of map.entries()) {
-    const diff = (today - d) / 86400000; // giorni di differenza
+  for (const [ch, rec] of lastByCh.entries()) {
+    const d = new Date(rec.date);
+    const diff = Math.floor((today - d) / 86400000);
     if (diff > maxDays) {
-      delayed.push({ ch, days: Math.floor(diff), date: d.toISOString().split('T')[0] });
+      delayed.push({
+        ch,
+        area: rec.area || '',
+        days: diff,
+        date: d.toISOString().split('T')[0],         // solo yyyy-mm-dd
+        iso:  rec.date                                // ISO completo per match
+      });
     }
   }
 
-  // Se nessuno è in ritardo, nascondi la sezione
-  if (!delayed.length) {
-    delaySec.hidden = true;
-    return;
-  }
+  if (!delayed.length) { delaySec.hidden = true; return; }
 
-  // Altrimenti mostra elenco
   delaySec.hidden = false;
   delayList.innerHTML = delayed
     .sort((a,b)=> b.days - a.days)
     .map(d => `
-      <li>
-        <strong>${d.ch}</strong> — <span class="muted">${d.days} giorni di ritardo</span> 
-        <span class="small"> (ultimo aggiornamento: ${d.date})</span>
+      <li class="delay-item">
+        <strong>${d.ch}</strong>
+        <span class="muted">— ${d.days} giorni di ritardo</span>
+        <span class="small">(ultimo aggiornamento: ${d.date}${d.area ? ` • ${d.area}` : ''})</span>
+        <button class="btn tiny outline"
+          onclick="location.href='notes.html?hlCh=${encodeURIComponent(d.ch)}&hlDate=${encodeURIComponent(d.iso)}'">
+          Vedi note
+        </button>
       </li>
     `)
     .join('');
