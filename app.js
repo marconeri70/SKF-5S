@@ -439,109 +439,127 @@ function afterChecklistRender(){
   $('#btn-print-all')?.addEventListener('click', () => window.print());
 }
 
-  // ===================================
-  // NOTE — elenco + filtri (usa i tuoi id presenti in notes.html)
-  //  - #notes-list
-  //  - #f-type (select con all/Rettifica/MONTAGGIO)
-  //  - #f-from, #f-to (date)
-  //  - #f-ch (text)
-  //  - #notes-count, #notes-counter (opzionali)
-  // ===================================
-  // NOTE — elenco raggruppato: una card per CH (area) e data
+// ===================================
+// NOTE — elenco + filtri + evidenziazione da link (hlCh, hlDate)
+// ===================================
 function renderNotes(){
-  const box = document.querySelector('#notes-list');
+  const box = $('#notes-list'); 
   if (!box) return;
 
-  // ---- leggi filtri (compatibile con la tua UI attuale)
-  const typeVal = (document.querySelector('#f-type')?.value || 'all');           // all | Rettifica | MONTAGGIO
-  const fromVal = (document.querySelector('#f-from')?.value || '');              // yyyy-mm-dd
-  const toVal   = (document.querySelector('#f-to')?.value   || '');              // yyyy-mm-dd
-  const chVal   = (document.querySelector('#f-ch')?.value   || '').trim().toLowerCase();
+  // --- prepara righe note piatte
+  const rows = [];
+  for (const r of store.load()){
+    const arr = Array.isArray(r.notes) ? r.notes : [];
+    for (const n of arr){
+      rows.push({
+        ch:   r.channel,
+        area: r.area,
+        // normalizza S
+        s:    (n.s || '').toString().toUpperCase(),
+        text: n.text || '',
+        date: n.date || r.date
+      });
+    }
+  }
 
-  const inRange = (d) => {
+  // --- filtri UI
+  const typeVal = $('#f-type')?.value || 'all';
+  const fromVal = $('#f-from')?.value || '';
+  const toVal   = $('#f-to')?.value   || '';
+  const chVal   = ($('#f-ch')?.value  || '').trim().toLowerCase();
+
+  const inRange = d => {
     const t = new Date(d).getTime();
     if (fromVal && t < new Date(fromVal).getTime()) return false;
     if (toVal   && t > new Date(toVal).getTime() + 86400000 - 1) return false;
     return true;
   };
-  const sKey = (s) => {
-    // normalizza "s", "S", "1S", "S1", ecc. -> "S1".."S5"
-    const m = String(s||'').match(/[1-5]/);
-    return m ? ('S' + m[0]) : 'S1';
-  };
 
-  // ---- costruisci gruppi: (area|CH|data) -> { area, ch, date, byS: { S1:[...], ... } }
+  const filtered = rows
+    .filter(r => typeVal==='all' ? true : r.area===typeVal)
+    .filter(r => !chVal || (''+r.ch).toLowerCase().includes(chVal))
+    .filter(r => inRange(r.date))
+    .sort((a,b)=> new Date(b.date) - new Date(a.date));
+
+  // --- raggruppa per CH + data (giorno) + area
   const groups = new Map();
-  for (const r of store.load()){
-    if (typeVal !== 'all' && r.area !== typeVal) continue;
-    if (chVal && String(r.channel).toLowerCase().indexOf(chVal) === -1) continue;
-
-    const baseDate = r.date || new Date().toISOString();
-    for (const n of (r.notes || [])){
-      const noteDate = n.date || baseDate;
-      if (!inRange(noteDate)) continue;
-
-      const key = `${r.area}|${r.channel}|${noteDate}`;
-      if (!groups.has(key)){
-        groups.set(key, { area: r.area, ch: r.channel, date: noteDate, byS: { S1:[], S2:[], S3:[], S4:[], S5:[] } });
-      }
-      const g = groups.get(key);
-      g.byS[sKey(n.s)].push(String(n.text||'').trim());
-    }
+  for (const r of filtered){
+    const day = new Date(r.date).toISOString(); // ISO completo per match esatto
+    const key = `${r.ch}|${day}|${r.area||''}`;
+    const g = groups.get(key) || { ch:r.ch, area:r.area, dateISO:day, items:[] };
+    g.items.push(r);
+    groups.set(key, g);
   }
 
-  // ---- ordina gruppi (più recenti in alto)
-  const list = Array.from(groups.values()).sort((a,b)=> new Date(b.date) - new Date(a.date));
-
-  // ---- contatori
-  const totalNotes = list.reduce((acc,g)=> acc + Object.values(g.byS).reduce((s,arr)=> s+arr.length, 0), 0);
-  const cnt1 = document.querySelector('#notes-count');
-  const cnt2 = document.querySelector('#notes-counter');
-  if (cnt1) cnt1.textContent = `(${totalNotes})`;
-  if (cnt2) cnt2.textContent = `${totalNotes} note`;
-
-  // ---- render
+  // --- pulisci / aggiorna contatori
   box.innerHTML = '';
-  if (!list.length){
+  $('#notes-count')   && ($('#notes-count').textContent   = `(${filtered.length})`);
+  $('#notes-counter') && ($('#notes-counter').textContent = `${filtered.length} note`);
+
+  if (!filtered.length){
     box.innerHTML = '<div class="muted">Nessuna nota con i filtri selezionati.</div>';
     return;
   }
 
-  for (const g of list){
-    const card = document.createElement('article');
-    card.className = 'note grouped';
+  // --- crea blocchi
+  for (const g of groups.values()){
+    const id = `note-${encodeURIComponent(g.ch)}-${encodeURIComponent(g.dateISO)}`;
+    const wrap = document.createElement('section');
+    wrap.className = 'note-block';
+    wrap.id = id;
+    wrap.dataset.ch   = g.ch;
+    wrap.dataset.date = g.dateISO;
 
-    // header card
-    card.innerHTML = `
-      <div class="note-head">
-        <div class="left">
-          <strong>${g.ch}</strong>
-          <span class="chip">${g.area||''}</span>
-        </div>
-        <div class="muted">${g.date}</div>
-      </div>
+    // intestazione
+    const when = new Date(g.dateISO).toISOString().replace('T', ' ').replace('Z','Z');
+    wrap.innerHTML = `
+      <header class="note-head">
+        <div><strong>${g.ch}</strong> ${g.area ? `• <span class="chip">${g.area}</span>` : ''}</div>
+        <div class="muted small">${when}</div>
+      </header>
+      <div class="note-body"></div>
     `;
 
-    // blocchi S1..S5 (solo quelli presenti)
-    const wrap = document.createElement('div');
-    wrap.className = 'swrap';
-    (['S1','S2','S3','S4','S5']).forEach((S,i)=>{
-      const arr = g.byS[S] || [];
-      if (!arr.length) return;
-      const blk = document.createElement('div');
-      blk.className = 'sblock';
-      blk.innerHTML = `
-        <div class="sblock-head">
-          <span class="pill s${i+1}">${S}</span>
-        </div>
-        <ul class="sitems">
-          ${arr.map(t => `<li>${t.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</li>`).join('')}
-        </ul>
-      `;
-      wrap.appendChild(blk);
-    });
-    card.appendChild(wrap);
-    box.appendChild(card);
+    const body = wrap.querySelector('.note-body');
+
+    // raggruppa per S all'interno del blocco
+    const byS = new Map();
+    for (const it of g.items){
+      const s = it.s && /S[1-5]/i.test(it.s) ? it.s.toUpperCase() : 'S1';
+      (byS.get(s) || byS.set(s, []).get(s)).push(it.text);
+    }
+
+    for (const [s, texts] of byS){
+      const col = document.createElement('div');
+      col.className = 'note-col';
+      col.innerHTML = `<div class="pill ${s.toLowerCase()}">${s}</div>`;
+      const ul = document.createElement('ul');
+      ul.className = 'note-ul';
+      for (const t of texts){
+        const li = document.createElement('li');
+        li.textContent = t;
+        ul.appendChild(li);
+      }
+      col.appendChild(ul);
+      body.appendChild(col);
+    }
+
+    box.appendChild(wrap);
+  }
+
+  // --- evidenziazione da query (hlCh & hlDate)
+  const sp   = new URLSearchParams(location.search);
+  const hlCh = sp.get('hlCh');
+  const hlDt = sp.get('hlDate'); // ISO dell'ultimo aggiornamento
+  if (hlCh && hlDt){
+    const targetId = `note-${encodeURIComponent(hlCh)}-${encodeURIComponent(hlDt)}`;
+    const target = document.getElementById(targetId);
+    if (target){
+      target.classList.add('note-hl');
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // lampeggio leggero per far notare l'evidenziazione
+      setTimeout(()=> target.classList.remove('note-hl'), 4000);
+    }
   }
 }
 
