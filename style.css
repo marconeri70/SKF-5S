@@ -211,3 +211,39 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif
   .btn { padding: 7px 10px; font-size: 13px; }
   .btn.big { padding: 8px 12px; font-size: 13px; }
 }
+
+/* ===== HOME — scorrimento orizzontale card CH ===== */
+.hscroll{
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.board-all{
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(260px, 1fr); /* card larghe coerenti */
+  gap: 14px;
+  padding-bottom: 6px;
+}
+.board{
+  min-width: 260px;
+}
+
+/* ===== Header compatto su mobile + nav orizzontale ===== */
+@media (max-width: 520px){
+  .appbar{ gap: 6px; padding: 8px 10px; }
+  .brand .brand-title{ font-size: 16px; }
+  .brand .brand-badge{ font-size: 12px; padding: 2px 6px; }
+  .actions{
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;           /* fa scorrere i pulsanti */
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;      /* FF */
+  }
+  .btn{ padding: 8px 10px; font-size: 13px; white-space: nowrap; }
+  .btn.icon{ width: 36px; min-width: 36px; padding: 0; }
+  .btn.big{ padding: 8px 12px; font-size: 13px; }
+  .card.split{ grid-template-columns: 1fr; } /* eroe 5S sotto al testo */
+  .hero5s{ max-width: 100%; height: auto; }
+  .chips{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+}
