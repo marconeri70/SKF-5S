@@ -232,9 +232,18 @@
     // toggle tipo
     $$('.segmented .seg').forEach(b=>{
       b.onclick = () => { $$('.segmented .seg').forEach(x=>x.classList.remove('on')); b.classList.add('on'); renderHome(); };
-    });
-  }
-  
+
+    // Abilita drag per la fascia orizzontale dei CH (Home)
+(function enableDragScroll(){
+  const el = document.querySelector('.hscroll');
+  if(!el) return;
+  let isDown=false, startX=0, scrollLeft=0;
+  el.addEventListener('pointerdown', e=>{ isDown=true; startX=e.pageX; scrollLeft=el.scrollLeft; el.setPointerCapture(e.pointerId); });
+  el.addEventListener('pointermove', e=>{ if(!isDown) return; el.scrollLeft = scrollLeft - (e.pageX - startX); });
+  el.addEventListener('pointerup',   ()=>{ isDown=false; });
+  el.addEventListener('pointercancel',()=>{ isDown=false; });
+   })();
+    
 // ===================================
 // HOME — controllo CH in ritardo
 // ===================================
@@ -568,6 +577,10 @@ function renderNotes(){
     // Import multiplo
     $('#btn-import')?.addEventListener('click', () => $('#import-input')?.click());
     $('#import-input')?.addEventListener('change', (e) => handleImport(e.target.files));
+    // dentro initCommon()
+     $('#btn-notes')?.addEventListener('click', () => {
+        location.href = 'notes.html';
+});
 
     // Export (PIN)
     $('#btn-export')?.addEventListener('click', exportAll);
