@@ -228,6 +228,22 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif
   min-width: 260px;
 }
 
+/* ===== HOME — scorrimento orizzontale card CH ===== */
+.hscroll{
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.board-all{
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(260px, 1fr); /* card larghe coerenti */
+  gap: 14px;
+  padding-bottom: 6px;
+}
+.board{
+  min-width: 260px;
+}
+
 /* ===== Header compatto su mobile + nav orizzontale ===== */
 @media (max-width: 520px){
   .appbar{ gap: 6px; padding: 8px 10px; }
