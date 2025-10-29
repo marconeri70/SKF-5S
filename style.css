@@ -168,66 +168,6 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif
 .note-hl { outline:3px solid #ff8a8a; background:#fff8f8; }
 }
 
-/* ======= FIX MOBILE HEADER / PULSANTI ======= */
-@media (max-width: 520px) {
-  .appbar { gap: 6px; padding: 8px 10px; }
-
-  /* il nav dei pulsanti scorre in orizzontale se non c'è spazio */
-  .appbar .actions {
-    display: flex;
-    gap: 8px;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;  /* Firefox */
-    max-width: 100%;
-  }
-  .appbar .actions::-webkit-scrollbar { display: none; } /* Chrome/Safari */
-
-  /* pulsanti più compatti e con testo che non va a capo */
-  .btn { padding: 8px 12px; font-size: 14px; line-height: 1; white-space: nowrap; }
-  .btn.big { padding: 10px 14px; font-size: 14px; }
-  .btn.icon { width: 36px; min-width: 36px; height: 36px; padding: 0; }
-
-  /* logo + titolo più compatti */
-  .brand { gap: 8px; }
-  .brand-title { font-size: 16px; }
-  .brand-badge { font-size: 12px; padding: 2px 6px; }
-
-  /* immagine 5S e colonne: niente overflow */
-  .hero5s { max-width: 100%; height: auto; }
-  .card.split { grid-template-columns: 1fr; gap: 12px; }
-  .card.split .img-col { order: 2; }
-
-  /* legenda e chip strip: impedisci che vadano a capo “brutti” */
-  .legend5s, .chips { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .legend5s::-webkit-scrollbar, .chips::-webkit-scrollbar { display: none; }
-
-  /* piccoli ritocchi spazi */
-  .what5s li { margin: 6px 0; }
-}
-
-/* leggero ritocco per evitare che i pulsanti “saltino” su telefoni con font grande */
-@media (max-width: 360px) {
-  .btn { padding: 7px 10px; font-size: 13px; }
-  .btn.big { padding: 8px 12px; font-size: 13px; }
-}
-
-/* ===== HOME — scorrimento orizzontale card CH ===== */
-.hscroll{
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-.board-all{
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(260px, 1fr); /* card larghe coerenti */
-  gap: 14px;
-  padding-bottom: 6px;
-}
-.board{
-  min-width: 260px;
-}
-
 /* ===== HOME — scorrimento orizzontale card CH ===== */
 .hscroll{
   overflow-x: auto;
@@ -263,3 +203,5 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif
   .hero5s{ max-width: 100%; height: auto; }
   .chips{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
 }
+
+
