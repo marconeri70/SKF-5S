@@ -1,30 +1,3 @@
-// v2.3.9 mobilefix — SW minimale
-const CACHE = 'skf5s-v2-3-9-mobilefix3';
-const ASSETS = [
-  './',
-  './index.html',
-  './checklist.html',
-  './notes.html',
-  './style.css?v=mobilefix3',  // <-- importante
-  './app.js',
-  './manifest.json',
-  './assets/skf-192.png',
-  './assets/skf-512.png',
-  './assets/skf-logo.png',
-  './assets/5S.png'
-];
-
-self.addEventListener('install', e=>{
-  e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)));
-  self.skipWaiting();
-});
-self.addEventListener('activate', e=>{
-  e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));
-  self.clients.claim();
-});
-self.addEventListener('fetch', e=>{
-  const url = new URL(e.request.url);
-  if (ASSETS.some(a => url.pathname + url.search === a.replace('./','/'))){
-    e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)));
-  }
-});
+// v2.3.8 — SW minimale: usa sempre i file più recenti
+self.addEventListener('install', e => self.skipWaiting());
+self.addEventListener('activate', e => self.clients.claim());

@@ -7,8 +7,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="assets/skf-192.png">
   <meta name="theme-color" content="#0d63d6">
-  <!-- bump versione CSS per bypass cache -->
-  <link rel="stylesheet" href="style.css?v=mobilefix3">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body data-page="home">
 <header class="appbar">
@@ -18,14 +17,12 @@
     <span class="brand-title">SKF 5S</span>
     <span class="brand-badge">Supervisor</span>
   </div>
-
-  <!-- la nav diventa scrollabile su mobile -->
   <nav class="actions">
-    <button id="btn-notes" class="btn ghost">Note</button>
+    <button id="btn-notes" class="btn ghost" onclick="location.href='notes.html'">Note</button>
     <button id="btn-import" class="btn primary">Importa</button>
     <input id="import-input" type="file" accept="application/json,.json" multiple hidden>
     <button id="btn-export" class="btn outline">Esporta dati (PIN)</button>
-    <button id="btn-lock" class="btn icon" title="PIN">🔒</button>
+    <button id="btn-lock" class="btn icon" title="Blocco/Sblocco" aria-label="PIN">🔒</button>
     <a href="checklist.html" class="btn big">Vai alla checklist →</a>
   </nav>
 </header>
@@ -57,7 +54,12 @@
       </div>
     </div>
 
-    <!-- wrapper scrollabile orizzontale -->
+<section class="card" id="delay-section" hidden>
+  <h3>⚠️ CH in ritardo</h3>
+  <p class="muted small">I seguenti canali non sono stati aggiornati da più di 7 giorni:</p>
+  <ul id="delay-list" class="delay-list"></ul>
+</section>
+     
     <div class="hscroll">
       <div id="board-all" class="board-all"></div>
     </div>
@@ -76,7 +78,7 @@
 
 <footer class="safe-bottom">
   <button id="btn-export-supervisor" class="btn huge outline">Esporta dati per Supervisore (PIN)</button>
-  <div class="version">v2.3.9 • PWA ready</div>
+  <div class="version">v2.3.8 • PWA ready</div>
 </footer>
 
 <script src="app.js"></script>
