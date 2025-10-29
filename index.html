@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <title>SKF 5S — Supervisor</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="assets/skf-192.png">
@@ -17,8 +17,10 @@
     <span class="brand-title">SKF 5S</span>
     <span class="brand-badge">Supervisor</span>
   </div>
-  <nav class="actions">
-    <button id="btn-notes" class="btn ghost" onclick="location.href='notes.html'">Note</button>
+
+  <!-- azioni: su mobile scorrono orizzontalmente -->
+  <nav class="actions" aria-label="Azioni">
+    <button id="btn-notes" class="btn ghost">Note</button>
     <button id="btn-import" class="btn primary">Importa</button>
     <input id="import-input" type="file" accept="application/json,.json" multiple hidden>
     <button id="btn-export" class="btn outline">Esporta dati (PIN)</button>
@@ -40,8 +42,14 @@
       </ol>
     </div>
     <div class="col img-col">
-      <img src="assets/5S.png" alt="Schema 5S" class="hero5s">
+      <img src="assets/5S.png" alt="Schema 5S" class="hero5s" loading="eager">
     </div>
+  </section>
+
+  <!-- CH in ritardo -->
+  <section id="delay-section" class="card" hidden>
+    <h3>⚠️ CH in ritardo</h3>
+    <ul id="delay-list" class="delay-list"></ul>
   </section>
 
   <section class="card">
@@ -54,12 +62,7 @@
       </div>
     </div>
 
-<section class="card" id="delay-section" hidden>
-  <h3>⚠️ CH in ritardo</h3>
-  <p class="muted small">I seguenti canali non sono stati aggiornati da più di 7 giorni:</p>
-  <ul id="delay-list" class="delay-list"></ul>
-</section>
-     
+    <!-- strip CH: scorre orizzontale su mobile -->
     <div class="hscroll">
       <div id="board-all" class="board-all"></div>
     </div>
@@ -72,13 +75,14 @@
       <span class="dot s5">5S</span>
     </div>
 
+    <!-- chip CH: scroll orizzontale -->
     <div id="chip-strip" class="chips"></div>
   </section>
 </main>
 
 <footer class="safe-bottom">
   <button id="btn-export-supervisor" class="btn huge outline">Esporta dati per Supervisore (PIN)</button>
-  <div class="version">v2.3.8 • PWA ready</div>
+  <div class="version">v2.3.12 • PWA ready</div>
 </footer>
 
 <script src="app.js"></script>
