@@ -104,3 +104,29 @@ body{
   .btn{padding:7px 10px;font-size:13px}
   .btn.icon{width:36px;min-width:36px;height:36px}
 }
+
+/* evidenziazione scheda note */
+.note-hl {
+  border: 3px solid #ff5a5a;
+  background: #fff4f4;
+  scroll-margin-top: 100px; /* per fermarla sotto la barra blu */
+}
+
+/* correzione layout home CH */
+.hscroll {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 8px;
+}
+
+/* pulsanti chiari in sezione ritardi */
+#delay-section .btn.tiny {
+  background: #fff;
+  color: #0b3b8f;
+  border: 1px solid #dbe4ff;
+}
+#delay-section .btn.tiny:hover {
+  background: #e6eeff;
+}
